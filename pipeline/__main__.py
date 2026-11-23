@@ -41,21 +41,41 @@ def parser():
     enroll.add_argument("--recall-root", type=Path)
     enroll.add_argument("--profile", type=Path)
 
-    for name in ("propose", "review", "summarize", "relate"):
-        command = commands.add_parser(name)
-        command.add_argument("episodes", nargs="+")
-        command.add_argument("--path", type=Path, help="Review sheet path for one episode")
-        if name == "review":
-            command.add_argument("--apply", action="store_true")
-            command.add_argument("--refresh", action="store_true")
-        if name == "summarize":
-            command.add_argument("--model", default="qwen3.5:9b")
-        if name == "relate":
-            command.add_argument("--embedding-model", default="bge-m3")
+    propose = commands.add_parser("propose", help="Ask Claude to propose topics and links for review")
+    propose.add_argument("episodes", nargs="*", help="Episode numbers (EP45) or GUIDs; default is all")
+    propose.add_argument("--catalog", action="store_true", help="Work from show notes and chapter titles")
+    propose.add_argument("--from-file", type=Path, help="Import proposals written in a Claude Code session instead of calling the API")
+    propose.add_argument("--redo", action="store_true", help="Ask again even if a proposal exists")
+    propose.add_argument("--paths-only", action="store_true", help="Only propose cross-episode chapter links")
+    propose.add_argument("--no-paths", action="store_true", help="Skip cross-episode chapter links")
+    propose.add_argument("--workers", type=int, default=4)
+
+    review = commands.add_parser("review", help="Open the local review page")
+    review.add_argument("action", choices=["serve"])
+    review.add_argument("--port", type=int, default=8787)
+
+    for name in ("summarize", "relate"):
+        commands.add_parser(name, help="Transcript stage (M2)").add_argument("episodes", nargs="*")
 
     export = commands.add_parser("export", help="Atomically write a public-only atlas snapshot")
     export.add_argument("--output", type=Path, default=ROOT / "public/data/v1/atlas.json")
+    export.add_argument("--fonts-dir", type=Path, default=ROOT / "public/fonts")
+    export.add_argument("--serif-font", type=Path, help="Source Han Serif / Noto Serif SC file to subset")
+    export.add_argument("--no-fonts", action="store_true")
     return cli
+
+
+def load_env(path):
+    """Read KEY=VALUE lines from .env without overriding the real environment."""
+    if not path.is_file():
+        return
+    for line in path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        key = key.strip().removeprefix("export ").strip()
+        os.environ.setdefault(key, value.strip().strip('"').strip("'"))
 
 
 def time_value(value):
@@ -141,7 +161,23 @@ def transcribe_command(store, args):
     return bool(failures)
 
 
+def status_command(store):
+    episodes = store.episodes()
+    transcripts = dict(store.transcripts())
+    print(f"{len(episodes)} episodes · {len(transcripts)} transcripts")
+    for kind in ("episode", "path"):
+        counts = {}
+        for entry in store.proposals(kind).values():
+            counts[entry["status"]] = counts.get(entry["status"], 0) + 1
+        label = "episode topics" if kind == "episode" else "chapter links"
+        print(f"{label}: " + (", ".join(f"{count} {state}" for state, count in sorted(counts.items())) or "none"))
+    for row in store.db.execute("SELECT kind, state, COUNT(*) AS n FROM jobs GROUP BY kind, state ORDER BY kind"):
+        print(f"{row['kind']} jobs: {row['n']} {row['state']}")
+    return 0
+
+
 def main(argv=None):
+    load_env(ROOT / ".env")
     cli = parser()
     args = cli.parse_args(argv)
     try:
@@ -163,10 +199,12 @@ def main(argv=None):
                 profile = args.profile or args.work_dir / "speaker-profile.json"
                 enroll([sample_value(sample) for sample in [*args.samples, *args.extra_samples]], profile, recall_root=args.recall_root)
                 print(f"Speaker profile ready at {profile}")
+            elif args.command == "status":
+                return status_command(store)
             else:
                 from .editorial import run
 
-                run(store, args)
+                return run(store, args)
     except (OSError, ValueError, RuntimeError) as error:
         print(error, file=sys.stderr)
         return 1

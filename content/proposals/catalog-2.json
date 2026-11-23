@@ -1,0 +1,123 @@
+{
+  "source": "Claude Code session (Claude Opus 5.5), 2026-11-23",
+  "basis": "单集标题、官方主题和章节标题，未听原声",
+  "episodes": {
+    "EP26": {
+      "topics": [["self-worth", "内在审判者从哪里来，以及改变自我指责的入口"], ["emotion-body", "恐惧驱动、反刍和不相信放松是安全的"]],
+      "chapters": {"203": ["emotion-body"], "268": ["emotion-body"], "633": ["emotion-body", "self-worth"], "983": ["self-worth"], "1026": ["self-worth"], "1323": ["self-worth"], "1556": ["self-worth"], "1625": ["self-worth"], "1717": ["self-trust"], "1837": ["self-trust"], "1996": ["self-worth"], "2079": ["emotion-body"], "2187": ["self-worth"], "2341": ["self-worth"], "2548": ["self-worth"], "2801": ["self-worth"], "2900": ["self-worth"]}
+    },
+    "EP27": {
+      "topics": [["self-worth", "停止否定自己、走出内耗的五步练习"]]
+    },
+    "EP28": {
+      "topics": [["meaning", "人生有没有错误选择，只有当下此刻可选"], ["self-trust", "「你是谁」是持续创造的过程，爱问我想成为谁"]],
+      "chapters": {"159": ["meaning"], "387": ["meaning"], "563": ["meaning"], "610": ["rhythm"], "936": ["self-trust"], "1336": ["meaning"], "1523": ["self-trust"], "1700": ["meaning"], "1869": ["meaning"], "1962": ["meaning"], "2387": ["emotion-body"], "2618": ["meaning"], "2825": ["meaning"], "2964": ["meaning"]}
+    },
+    "EP29": {
+      "topics": [["rhythm", "如何熬过漫长的无反馈期，执行力和坚持"], ["meaning", "时间奖励笨拙但耐心的人，坚持还是离开"]],
+      "chapters": {"438": ["rhythm"], "635": ["self-trust"], "1042": ["meaning"], "1394": ["rhythm"], "1538": ["meaning"], "1623": ["rhythm"], "2417": ["self-worth"], "3406": ["meaning"], "3528": ["meaning"]},
+      "unfit": [["职业与创业", "副业、电商选品和收入增长占了大半篇幅"]]
+    },
+    "EP30": {
+      "topics": [["self-worth", "健康羞耻与毒性羞耻，以及修复羞耻的方法"]],
+      "chapters": {"93": ["self-worth"], "268": ["self-worth"], "571": ["self-worth"], "717": ["self-worth"], "797": ["self-worth"], "1067": ["self-worth"], "1246": ["self-worth", "boundaries"], "1534": ["self-worth", "self-trust"], "1754": ["self-trust"], "1813": ["self-worth"], "2059": ["self-worth"], "2239": ["self-worth"], "2537": ["emotion-body"]}
+    },
+    "EP31": {
+      "topics": [["self-trust", "真实不是毫无修饰，而是不背叛自己"], ["self-worth", "价值条件、被观看的焦虑和社交媒体放大的羞耻"]],
+      "chapters": {"107": ["self-trust"], "145": ["self-trust"], "283": ["self-worth"], "367": ["self-trust"], "460": ["self-trust"], "508": ["self-trust"], "709": ["self-trust"], "876": ["self-worth"], "993": ["self-worth"], "1162": ["self-worth"], "1247": ["self-trust"], "1404": ["connection"], "1463": ["self-worth"], "1640": ["self-trust"], "1704": ["self-trust"], "2108": ["self-trust"], "2243": ["self-trust"], "2433": ["meaning"], "2649": ["self-trust"]}
+    },
+    "EP32": {
+      "topics": [["emotion-body", "痛和苦的区别，身体是回到当下的锚点"], ["meaning", "臣服，以及生命此刻希望我做什么"]],
+      "chapters": {"189": ["emotion-body"], "310": ["emotion-body"], "474": ["emotion-body"], "597": ["emotion-body"], "765": ["emotion-body"], "859": ["emotion-body"], "910": ["emotion-body"], "1202": ["emotion-body"], "1495": ["emotion-body"], "1650": ["emotion-body"], "1743": ["meaning"], "1904": ["emotion-body"], "2045": ["meaning"], "2224": ["emotion-body"], "2377": ["meaning"], "2417": ["meaning"]}
+    },
+    "EP33": {
+      "topics": [["connection", "混合型依恋：想靠近又想逃离"], ["boundaries", "自我分化：连接但不融合，爱不是债务"], ["emotion-body", "爱被身体识别为危险，抗议、僵住和关闭"]],
+      "chapters": {"95": ["connection"], "138": ["connection"], "391": ["connection", "emotion-body"], "508": ["connection"], "631": ["connection"], "700": ["connection"], "852": ["emotion-body", "connection"], "894": ["connection"], "974": ["boundaries"], "1171": ["connection"], "1336": ["connection", "emotion-body"], "1468": ["connection"], "1847": ["boundaries"], "2030": ["boundaries"], "2331": ["connection"], "2685": ["connection"]}
+    },
+    "EP34": {
+      "topics": [["rhythm", "行动力的五层通行证，从停滞到重新开始"], ["self-trust", "你真的想要这个目标吗"]],
+      "chapters": {"159": ["rhythm"], "324": ["rhythm"], "448": ["rhythm"], "533": ["rhythm"], "704": ["self-trust"], "936": ["self-trust"], "1117": ["rhythm"], "1191": ["rhythm"], "1572": ["rhythm"], "1692": ["rhythm"], "1929": ["rhythm"], "2163": ["self-worth"], "2313": ["rhythm"], "2460": ["rhythm"], "2805": ["rhythm"], "3042": ["rhythm"]}
+    },
+    "EP35": {
+      "topics": [["self-trust", "主体性从哲学史到心理修复，以及它为何会变成新枷锁"]],
+      "chapters": {"149": ["self-trust"], "242": ["self-trust"], "384": ["self-trust"], "459": ["self-trust"], "588": ["self-trust"], "621": ["self-trust"], "697": ["self-trust"], "809": ["self-trust"], "953": ["self-trust"], "1127": ["self-trust"], "1232": ["self-trust", "emotion-body"], "1277": ["self-trust"], "1434": ["self-trust"], "1689": ["emotion-body"], "1844": ["self-trust"], "2083": ["self-trust", "connection"], "2289": ["self-trust"], "2360": ["self-trust"], "2808": ["self-trust"]}
+    },
+    "EP36": {
+      "topics": [["emotion-body", "跳出非黑即白，让矛盾的经验同时存在"], ["connection", "整合能力从关系和容器里长出来"]],
+      "chapters": {"129": ["emotion-body"], "410": ["emotion-body"], "533": ["emotion-body"], "708": ["emotion-body"], "863": ["self-worth"], "952": ["emotion-body"], "1022": ["connection"], "1158": ["connection"], "1378": ["emotion-body"], "1471": ["emotion-body"], "1523": ["connection"], "1743": ["self-trust"], "1865": ["connection"], "2011": ["emotion-body"], "2135": ["emotion-body"], "2210": ["emotion-body"], "2391": ["connection"], "2700": ["emotion-body"], "3311": ["emotion-body"]}
+    },
+    "EP37": {
+      "topics": [["self-worth", "不敢赚钱、不敢花钱和配得感"], ["boundaries", "不敢谈钱、怕计较，慷慨与创伤性让步"], ["meaning", "赚钱也是一种对抗虚无的练习"]],
+      "chapters": {"615": ["meaning"], "663": ["meaning"], "767": ["boundaries"], "828": ["boundaries"], "934": ["boundaries"], "1096": ["boundaries"], "1288": ["self-worth"], "1505": ["self-worth"], "1731": ["self-worth"], "1805": ["emotion-body"], "1967": ["self-worth"], "2213": ["emotion-body"], "2351": ["emotion-body"], "2523": ["self-trust"], "2641": ["self-trust"]},
+      "unfit": [["金钱", "金钱关系是整集主线，七颗星只能分别接住它的几个侧面"]]
+    },
+    "EP38": {
+      "topics": [["meaning", "被抛入、荒诞、永恒轮回和爱你的命运"]],
+      "chapters": {"171": ["meaning"], "283": ["meaning"], "379": ["meaning"], "465": ["meaning"], "608": ["meaning"], "864": ["meaning"], "1049": ["meaning"], "1143": ["connection"], "1290": ["meaning"], "1484": ["meaning"], "1587": ["emotion-body"], "1632": ["meaning"], "1752": ["meaning"], "2086": ["meaning"], "2259": ["meaning"], "2393": ["meaning"], "2614": ["meaning"]}
+    },
+    "EP39": {
+      "topics": [["rhythm", "五把启动大脑的钥匙，给自己写一份使用指南"], ["self-worth", "大脑卡住时第一反应是责怪自己"]],
+      "chapters": {"139": ["self-worth"], "198": ["self-worth"], "324": ["rhythm"], "556": ["rhythm"], "742": ["rhythm", "emotion-body"], "816": ["emotion-body"], "1019": ["rhythm"], "1147": ["rhythm"], "1219": ["rhythm"], "1354": ["rhythm"], "1427": ["rhythm"], "1468": ["connection"], "1601": ["meaning"], "1709": ["meaning"], "1836": ["rhythm"], "2030": ["rhythm"], "2340": ["rhythm"], "2510": ["rhythm"], "2704": ["rhythm"], "2898": ["rhythm"]}
+    },
+    "S1": {
+      "topics": [["meaning", "遇到新机会时向前还是守住当下"]],
+      "chapters": {"295": ["meaning"], "376": ["rhythm"], "615": ["self-worth"], "928": ["meaning"], "1349": ["meaning"], "1484": ["rhythm"], "2707": ["meaning"], "2922": ["meaning"]},
+      "unfit": [["职业与创业", "嘉宾的跨境电商项目、选品和开店流程是主体"]]
+    },
+    "EP40": {
+      "topics": [["emotion-body", "攻击性、愤怒、麻木和如何驾驭黑色生命力"], ["self-worth", "攻击转向自己：内在批评者、羞耻和证明欲"]],
+      "chapters": {"95": ["emotion-body"], "211": ["rhythm"], "323": ["self-worth"], "441": ["emotion-body"], "599": ["emotion-body"], "669": ["self-worth"], "809": ["self-worth"], "890": ["self-worth"], "953": ["self-worth", "emotion-body"], "1164": ["self-worth"], "1326": ["emotion-body"], "1551": ["emotion-body"], "1840": ["emotion-body"], "2059": ["emotion-body"], "2575": ["emotion-body"], "2770": ["emotion-body"], "2840": ["emotion-body"], "2902": ["self-worth"]}
+    },
+    "S2": {
+      "topics": [["emotion-body", "雨夜冥想，睡前安放紧绷与焦虑"]]
+    },
+    "EP41": {
+      "topics": [["self-worth", "接纳的四个层面：把外部事件和「我这个人」分开"], ["emotion-body", "停止对抗、允许感受，以及改变时的阵痛期"]],
+      "chapters": {"180": ["self-worth"], "407": ["self-worth"], "566": ["emotion-body"], "703": ["self-worth"], "843": ["self-worth"], "918": ["self-worth"], "929": ["emotion-body"], "1054": ["emotion-body"], "1402": ["self-worth"], "1609": ["emotion-body"], "1732": ["self-worth"], "1938": ["self-trust"], "2141": ["emotion-body"], "2471": ["emotion-body"], "2606": ["emotion-body"], "2704": ["rhythm"], "2921": ["emotion-body"], "3010": ["emotion-body"], "3382": ["meaning"]}
+    },
+    "S3": {
+      "topics": [["meaning", "两难选择：离职、婚育和心动与安稳"], ["emotion-body", "大脑总能找到下一件害怕的事，失控行为在替你做什么"], ["connection", "爱和安全感存不下来，心动与安全不必二选一"]],
+      "chapters": {"162": ["meaning"], "285": ["emotion-body"], "469": ["connection"], "561": ["emotion-body"], "734": ["rhythm"], "928": ["emotion-body"], "1128": ["self-worth"], "1163": ["rhythm"], "1229": ["meaning"], "1274": ["meaning"], "1397": ["meaning"], "1646": ["meaning"], "1860": ["meaning"], "1938": ["emotion-body"], "2171": ["meaning"], "2241": ["connection"], "2482": ["self-trust"], "2560": ["connection"], "2653": ["connection"]}
+    },
+    "EP42": {
+      "topics": [["self-trust", "从运动里学自我信任：评判型自我与本能自我"], ["emotion-body", "越想控制越失控，放松的专注"]],
+      "chapters": {"120": ["self-trust"], "194": ["emotion-body"], "248": ["emotion-body"], "338": ["emotion-body"], "454": ["emotion-body"], "571": ["self-trust"], "662": ["self-worth"], "844": ["emotion-body"], "972": ["self-trust"], "1114": ["emotion-body"], "1243": ["rhythm"], "1322": ["emotion-body"], "1550": ["emotion-body"], "1621": ["self-trust"], "1687": ["rhythm"], "1838": ["meaning"], "2180": ["emotion-body"], "2251": ["self-trust"], "2569": ["self-trust", "emotion-body"], "2662": ["self-trust"], "2847": ["self-trust"], "2958": ["self-trust"], "3172": ["self-trust"]}
+    },
+    "EP43": {
+      "topics": [["self-worth", "比较是尺子，不要让它变成裁判"], ["self-trust", "「想要」和「不能落后」是两种动力"]],
+      "chapters": {"156": ["self-worth"], "225": ["self-worth"], "287": ["self-worth"], "425": ["self-worth"], "532": ["self-worth"], "615": ["self-worth"], "761": ["self-worth"], "893": ["self-worth"], "1064": ["self-worth"], "1339": ["self-trust"], "1507": ["self-trust"], "2023": ["self-trust"], "2399": ["meaning"], "2593": ["meaning"], "2841": ["self-worth"]}
+    },
+    "EP44": {
+      "topics": [["boundaries", "东亚母女的粘连、角色颠倒和学会放手"], ["connection", "过早独立的小孩，和两个完整个体的重新相遇"], ["self-trust", "被侵蚀的自我感受信任，「我选择」还是「我必须」"]],
+      "chapters": {"223": ["boundaries"], "404": ["connection"], "499": ["connection"], "583": ["connection"], "754": ["emotion-body"], "939": ["connection"], "977": ["connection"], "1181": ["connection"], "1492": ["boundaries"], "1557": ["boundaries"], "1714": ["connection", "boundaries"], "1844": ["connection"], "1907": ["boundaries"], "2058": ["boundaries"], "2204": ["boundaries"], "2325": ["self-trust"], "2612": ["self-trust"], "2764": ["emotion-body"], "2849": ["self-trust"], "2977": ["boundaries"], "3031": ["connection", "boundaries"], "3126": ["connection"]}
+    },
+    "EP45": {
+      "topics": [["self-trust", "第一经验如何被弄丢，以及忠于自己做判断的四步"], ["meaning", "常人、自由的眩晕：不是先找到自己再做选择"]],
+      "chapters": {"252": ["self-trust"], "361": ["self-trust"], "647": ["self-trust"], "713": ["self-trust"], "956": ["self-trust"], "1066": ["self-trust"], "1116": ["self-trust", "emotion-body"], "1159": ["self-trust"], "1266": ["self-trust"], "1540": ["self-trust"], "1698": ["meaning"], "1863": ["meaning"], "2136": ["self-trust"], "2457": ["self-trust"], "2628": ["meaning"], "2779": ["self-trust"], "2840": ["self-trust"], "2941": ["self-trust"]}
+    },
+    "EP46": {
+      "topics": [["rhythm", "低精力的三笔隐形支出和真正回血的方式"], ["meaning", "生命的浓度：每一个 yes 里都包含很多个 no"]],
+      "chapters": {"121": ["rhythm"], "453": ["rhythm"], "501": ["rhythm"], "598": ["rhythm"], "736": ["self-worth"], "799": ["rhythm"], "949": ["rhythm"], "1030": ["emotion-body"], "1115": ["rhythm"], "1131": ["rhythm"], "1293": ["boundaries"], "1408": ["rhythm"], "1554": ["rhythm"], "1593": ["rhythm"], "1935": ["meaning"], "2042": ["rhythm"], "2218": ["meaning"], "2361": ["self-trust"], "2563": ["rhythm"], "2864": ["rhythm"]}
+    },
+    "EP47": {
+      "topics": [["connection", "缺的不是爱，而是体验爱的能力；关系里的我执"], ["meaning", "Be before doing，永恒由当下串成"]],
+      "chapters": {"218": ["connection"], "326": ["connection"], "850": ["meaning"], "1028": ["self-trust"], "1125": ["meaning"], "1313": ["meaning"], "1428": ["meaning"], "1550": ["connection"], "1752": ["meaning"], "2282": ["connection"], "2462": ["connection"], "2616": ["connection"], "2833": ["meaning"], "2974": ["meaning"], "3173": ["meaning"], "3279": ["emotion-body"], "3467": ["connection"]}
+    },
+    "EP48": {
+      "topics": [["emotion-body", "内隐记忆、恐惧路径和身体如何重演过去"]],
+      "chapters": {"335": ["emotion-body"], "553": ["emotion-body"], "710": ["emotion-body"], "866": ["emotion-body"], "1001": ["emotion-body"], "1109": ["connection"], "1272": ["emotion-body"], "1515": ["connection"], "1586": ["self-trust"], "1720": ["emotion-body"], "1844": ["emotion-body"], "2126": ["emotion-body"], "2307": ["emotion-body"], "2412": ["emotion-body"], "2629": ["emotion-body"], "2756": ["emotion-body"], "2944": ["emotion-body"], "2961": ["emotion-body"], "3171": ["emotion-body"], "3233": ["emotion-body"]}
+    },
+    "EP49": {
+      "topics": [["rhythm", "临时的生活、先苦后甜的隐形代价和享受等待"], ["meaning", "好运设计、障碍即游戏，唯一真正拥有的是过程"]],
+      "chapters": {"232": ["meaning"], "447": ["meaning"], "626": ["meaning"], "853": ["rhythm"], "928": ["meaning"], "986": ["rhythm"], "1108": ["meaning"], "1245": ["meaning"], "1351": ["meaning"], "1561": ["meaning"], "1729": ["rhythm"], "1854": ["rhythm"], "1992": ["rhythm"], "2198": ["rhythm"], "2337": ["rhythm"], "2608": ["self-trust"], "2883": ["self-trust"], "2972": ["meaning"], "3020": ["meaning"]}
+    },
+    "EP50": {
+      "topics": [["boundaries", "永远兜底、示弱与让渡、内疚成为关系工具"], ["connection", "受伤也是讨要爱的方式，底层其实是爱和成熟的依赖"]],
+      "chapters": {"25": ["emotion-body"], "229": ["emotion-body"], "309": ["connection"], "459": ["self-trust"], "600": ["boundaries"], "735": ["emotion-body"], "909": ["boundaries"], "1022": ["connection"], "1201": ["boundaries"], "1394": ["boundaries"], "1521": ["boundaries"], "1573": ["boundaries"], "1766": ["meaning"], "1961": ["self-trust"], "2002": ["emotion-body"], "2066": ["boundaries"], "2176": ["emotion-body"], "2335": ["self-worth"], "2544": ["connection"], "2690": ["connection"], "2767": ["connection"]}
+    },
+    "EP51": {
+      "topics": [["boundaries", "「淡」可能是盔甲：边界、防御和无数个「算了」"], ["connection", "执着纯粹的爱、在场，以及爱是一种信念行动"]],
+      "chapters": {"140": ["boundaries"], "259": ["connection"], "382": ["boundaries"], "433": ["boundaries"], "627": ["boundaries"], "813": ["boundaries"], "1002": ["boundaries"], "1084": ["boundaries", "connection"], "1211": ["connection"], "1419": ["emotion-body"], "1461": ["connection"], "1763": ["self-trust"], "1897": ["emotion-body"], "2143": ["connection"], "2239": ["connection", "boundaries"], "2366": ["boundaries"], "2566": ["meaning"], "2754": ["boundaries", "self-trust"], "2955": ["connection"]}
+    }
+  }
+}

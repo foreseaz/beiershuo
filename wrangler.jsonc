@@ -2,5 +2,7 @@
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "beiershuo",
   "compatibility_date": "2026-11-23",
-  "assets": {}
+  "assets": {
+    "not_found_handling": "single-page-application"
+  }
 }

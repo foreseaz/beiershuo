@@ -1,0 +1,5 @@
+# Python 3.12 (3.13 removed audioop, which 留声's transcription modules use).
+anthropic>=2.13
+numpy>=2.0
+sherpa-onnx>=2.0
+fonttools[woff]>=4.60

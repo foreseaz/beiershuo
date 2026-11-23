@@ -63,6 +63,16 @@ class Store:
                 approval_key TEXT NOT NULL,
                 data TEXT NOT NULL
             );
+            CREATE TABLE IF NOT EXISTS proposals (
+                kind TEXT NOT NULL,
+                key TEXT NOT NULL,
+                proposal TEXT NOT NULL,
+                decision TEXT,
+                status TEXT NOT NULL DEFAULT 'proposed',
+                published TEXT,
+                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY(kind, key)
+            );
             CREATE TABLE IF NOT EXISTS jobs (
                 kind TEXT NOT NULL,
                 episode_id TEXT NOT NULL REFERENCES episodes(id),
@@ -72,6 +82,10 @@ class Store:
                 PRIMARY KEY(kind, episode_id)
             );
         """)
+
+        columns = {row["name"] for row in self.db.execute("PRAGMA table_info(proposals)")}
+        if "published" not in columns:
+            self.db.execute("ALTER TABLE proposals ADD COLUMN published TEXT")
 
     def close(self):
         self.db.close()
@@ -150,6 +164,43 @@ class Store:
                 INSERT INTO summaries VALUES (?, ?, ?, ?)
                 ON CONFLICT(moment_id) DO UPDATE SET approval_key=excluded.approval_key,data=excluded.data
             """, (moment_id, episode_id, approval_key, serialize(data)))
+
+    def save_proposal(self, kind, key, proposal):
+        """Store a model proposal. A new proposal sends the item back to review.
+
+        `published` keeps the last approved decision, so the public snapshot
+        keeps the previous version until the new proposal is approved.
+        """
+        with self.db:
+            self.db.execute("""
+                INSERT INTO proposals(kind,key,proposal) VALUES (?,?,?)
+                ON CONFLICT(kind,key) DO UPDATE SET
+                    proposal=excluded.proposal,decision=NULL,status='proposed',updated_at=CURRENT_TIMESTAMP
+            """, (kind, key, serialize(proposal)))
+
+    def proposals(self, kind):
+        rows = self.db.execute("SELECT * FROM proposals WHERE kind=? ORDER BY key", (kind,))
+        return {row["key"]: {
+            "proposal": json.loads(row["proposal"]),
+            "decision": json.loads(row["decision"]) if row["decision"] else None,
+            "status": row["status"],
+            "published": json.loads(row["published"]) if row["published"] else None,
+            "updatedAt": row["updated_at"],
+        } for row in rows}
+
+    def decide(self, kind, key, status, decision):
+        """Record a review. Approving publishes the decision; rejecting withdraws it."""
+        if status not in ("proposed", "approved", "rejected"):
+            raise ValueError(f"Unknown review status {status!r}")
+        value = serialize(decision) if decision is not None else None
+        with self.db:
+            changed = self.db.execute("""
+                UPDATE proposals SET status=?,decision=?,updated_at=CURRENT_TIMESTAMP,
+                    published=CASE ? WHEN 'approved' THEN ? WHEN 'rejected' THEN NULL ELSE published END
+                WHERE kind=? AND key=?
+            """, (status, value, status, value, kind, key)).rowcount
+        if not changed:
+            raise ValueError(f"No {kind} proposal {key!r}")
 
     def job(self, kind, episode_id, state, detail=""):
         with self.db:

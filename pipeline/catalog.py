@@ -26,6 +26,8 @@ CHAPTER_END = re.compile(
     r"本期文案|内耗急救心法|在迷雾里散步|成为我自己\s*」|想加入成长计划)"
 )
 TIMESTAMP = re.compile(r"(?<![0-9:])(?:(\d{1,2}):)?(\d{1,2}):([0-5]\d)(?![\d:])")
+REFERENCE_START = re.compile(r"(延伸阅读|引用书籍|引用\s*&\s*延伸书目|本期提到[^\n:：]*[:：]|延伸影片)")
+REFERENCE_END = re.compile(r"(联系方式|本期音乐|想要了解更多|想了解更多|下次见|下周见|小红书|商务合作)")
 TAGGED_TOPIC = re.compile(r"本期主题\s*[：:｜|]?\s*[「『《]([^」』》\n]+)")
 PLAIN_TOPIC = re.compile(r"(?m)本期主题\s*[：:｜|]\s*([^\n]+)")
 
@@ -57,6 +59,20 @@ def parse_chapters(description, duration):
     return [{"startSec": start, "title": chapters[start]} for start in sorted(chapters)]
 
 
+def parse_references(description):
+    """Books, films and people listed in the show notes' reference section, one item per line."""
+    text = unicodedata.normalize("NFKC", description or "")
+    start = REFERENCE_START.search(text)
+    if not start:
+        return []
+    block = text[start.start():]
+    end = REFERENCE_END.search(block, 1)
+    block = block[:end.start()] if end else block
+    # Several notes run titles together on one line: split before each new 《title》 as well.
+    items = re.split(r"\n+|(?=《)", block)
+    return [item.strip(" \t/·-–—:：0123456789.、") for item in items if len(item.strip()) > 1][:40]
+
+
 def normalize_catalog(payload):
     episodes = {}
     for row in payload.get("results", []):
@@ -86,6 +102,7 @@ def normalize_catalog(payload):
             "xiaoyuzhouUrl": f"https://www.xiaoyuzhoufm.com/episode/{guid}",
             "officialTopic": topic.group(1).strip() if topic else None,
             "chapters": parse_chapters(description, duration),
+            "references": parse_references(description),
         }
         previous = episodes.setdefault(guid, episode)
         if previous != episode:

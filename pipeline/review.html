@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>贝儿说 · 本地审核</title>
+<style>
+  :root { --bg:#0f1226; --panel:#171b34; --line:#2a2f52; --text:#ece6da; --muted:#9a9fbd; --accent:#8fa2ff; --ok:#7fd1a3; --bad:#f08a8a; }
+  * { box-sizing: border-box; }
+  body { margin:0; font:14px/1.55 -apple-system, "PingFang SC", sans-serif; background:var(--bg); color:var(--text); }
+  header { position:sticky; top:0; z-index:2; display:flex; flex-wrap:wrap; gap:12px; align-items:center; padding:12px 20px; background:#0c0f20ee; border-bottom:1px solid var(--line); backdrop-filter:blur(8px); }
+  h1 { font-size:16px; margin:0 12px 0 0; font-weight:600; }
+  button, select, textarea { font:inherit; color:inherit; }
+  button { background:#232849; border:1px solid var(--line); border-radius:8px; padding:5px 11px; cursor:pointer; }
+  button:hover { border-color:var(--accent); }
+  button.on { background:var(--accent); color:#0c0f20; border-color:var(--accent); }
+  button.approve { border-color:#3d6b52; } button.reject { border-color:#6b3d3d; }
+  main { max-width:1100px; margin:0 auto; padding:16px 20px 120px; }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 16px; margin:12px 0; }
+  .row { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+  .title { font-weight:600; font-size:15px; }
+  .muted { color:var(--muted); }
+  .badge { font-size:12px; padding:1px 8px; border-radius:99px; border:1px solid var(--line); }
+  .badge.approved { color:var(--ok); border-color:#3d6b52; } .badge.rejected { color:var(--bad); border-color:#6b3d3d; } .badge.proposed { color:#f5d27a; border-color:#6b5d3d; }
+  .chip { border-radius:99px; padding:2px 10px; font-size:12px; border:1px solid var(--line); background:transparent; }
+  .chip.on { color:#0c0f20; border-color:transparent; }
+  .reasons { margin:6px 0 2px; padding-left:18px; color:var(--muted); font-size:13px; }
+  table { width:100%; border-collapse:collapse; margin-top:10px; }
+  td { padding:5px 6px; border-top:1px solid var(--line); vertical-align:top; }
+  td.time { width:64px; white-space:nowrap; }
+  td.time button { padding:1px 7px; font-variant-numeric:tabular-nums; }
+  .ends { display:grid; grid-template-columns:1fr auto 1fr; gap:10px; align-items:center; margin:8px 0; }
+  .end { background:#11142a; border:1px solid var(--line); border-radius:10px; padding:8px 10px; }
+  textarea { width:100%; min-height:52px; background:#11142a; border:1px solid var(--line); border-radius:8px; padding:6px 8px; }
+  select { background:#11142a; border:1px solid var(--line); border-radius:8px; padding:4px 8px; }
+  #player { position:fixed; left:0; right:0; bottom:0; padding:10px 20px; background:#0c0f20f2; border-top:1px solid var(--line); display:flex; gap:12px; align-items:center; }
+  #player audio { flex:1; height:34px; }
+  #toast { position:fixed; right:20px; bottom:70px; background:#232849; border:1px solid var(--line); padding:8px 14px; border-radius:10px; opacity:0; transition:opacity .2s; }
+  #toast.show { opacity:1; }
+</style>
+</head>
+<body>
+<header>
+  <h1>贝儿说 · 本地审核</h1>
+  <div class="row" id="tabs"></div>
+  <div class="row" id="filters"></div>
+  <span class="muted" id="summary"></span>
+  <button id="bulk" title="把所有还没审的提议按原样通过">通过全部未审提议</button>
+</header>
+<main id="list"></main>
+<div id="player"><span id="nowPlaying" class="muted">点任一时间点试听原声</span><audio id="audio" controls preload="none"></audio></div>
+<div id="toast"></div>
+<script>
+const state = { tab: 'episode', filter: 'proposed', data: null }
+const $ = (selector) => document.querySelector(selector)
+const time = (s) => { s = Math.floor(s); const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), r = String(s % 60).padStart(2, '0'); return h ? `${h}:${String(m).padStart(2, '0')}:${r}` : `${String(m).padStart(2, '0')}:${r}` }
+const el = (tag, props = {}, ...children) => { const node = Object.assign(document.createElement(tag), props); node.append(...children.filter(c => c != null)); return node }
+
+function toast(text) { const t = $('#toast'); t.textContent = text; t.classList.add('show'); clearTimeout(t.timer); t.timer = setTimeout(() => t.classList.remove('show'), 1800) }
+
+function play(episode, startSec, label) {
+  if (!episode.audioUrl) { toast('这一集没有公开音源'); return }
+  const audio = $('#audio')
+  if (audio.dataset.src !== episode.audioUrl) { audio.src = episode.audioUrl; audio.dataset.src = episode.audioUrl }
+  const seek = () => { audio.currentTime = startSec; audio.play() }
+  if (audio.readyState >= 1) {
+    seek()
+  } else {
+    audio.addEventListener('loadedmetadata', seek, { once: true })
+    audio.load()
+  }
+  $('#nowPlaying').textContent = `${episode.ref} · ${time(startSec)} ${label}`
+}
+
+async function load() {
+  const response = await fetch('/api/state')
+  state.data = await response.json()
+  render()
+}
+
+async function decide(kind, key, status, decision) {
+  const response = await fetch('/api/decide', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ kind, key, status, decision }) })
+  const body = await response.json()
+  if (!response.ok) { toast(body.error || '保存失败'); return false }
+  const bucket = kind === 'episode' ? state.data.episodeProposals : state.data.pathProposals
+  Object.assign(bucket[key], { status, decision })
+  toast(status === 'approved' ? '已通过' : status === 'rejected' ? '已驳回' : '已退回待审')
+  render()
+  return true
+}
+
+function topicChip(topic, on, toggle) {
+  const chip = el('button', { className: `chip${on ? ' on' : ''}`, textContent: topic.title, type: 'button' })
+  if (on) chip.style.background = topic.color
+  chip.onclick = toggle
+  return chip
+}
+
+function episodeCard(episode, entry) {
+  const topics = state.data.topics
+  const source = entry.decision && entry.status === 'approved' ? entry.decision : entry.proposal
+  const draft = {
+    episodeTopics: (source.episodeTopics || []).map(item => typeof item === 'string' ? item : item.topicId),
+    chapters: new Map((source.chapters || []).map(item => [item.startSec, [...item.topicIds]])),
+  }
+  const card = el('section', { className: 'card' })
+  const draw = () => {
+    card.replaceChildren()
+    card.append(el('div', { className: 'row' },
+      el('span', { className: 'title', textContent: `${episode.ref}《${episode.title}》` }),
+      el('span', { className: `badge ${entry.status}`, textContent: { proposed: '待审', approved: '已通过', rejected: '已驳回' }[entry.status] }),
+      episode.officialTopic ? el('span', { className: 'muted', textContent: `官方主题：${episode.officialTopic}` }) : null,
+    ))
+    card.append(el('div', { className: 'row', style: 'margin-top:8px' }, el('span', { className: 'muted', textContent: '单集主题' }),
+      ...topics.map(topic => topicChip(topic, draft.episodeTopics.includes(topic.id), () => {
+        const list = draft.episodeTopics
+        list.includes(topic.id) ? list.splice(list.indexOf(topic.id), 1) : list.push(topic.id)
+        draw()
+      }))))
+    const reasons = (entry.proposal.episodeTopics || []).map(item => {
+      const topic = topics.find(t => t.id === item.topicId)
+      return el('li', { textContent: `${topic ? topic.title : item.topicId}：${item.reason}` })
+    })
+    const unfit = (entry.proposal.unfit || []).map(item => el('li', { textContent: `放不进七颗星：「${item.label}」${item.reason}` }))
+    if (reasons.length || unfit.length) card.append(el('ul', { className: 'reasons' }, ...reasons, ...unfit))
+    const table = el('table')
+    for (const chapter of episode.chapters) {
+      const ids = draft.chapters.get(chapter.startSec) || []
+      table.append(el('tr', {},
+        el('td', { className: 'time' }, el('button', { type: 'button', textContent: time(chapter.startSec), onclick: () => play(episode, chapter.startSec, chapter.title) })),
+        el('td', { textContent: chapter.title }),
+        el('td', {}, el('div', { className: 'row' }, ...topics.map(topic => topicChip(topic, ids.includes(topic.id), () => {
+          const next = ids.includes(topic.id) ? ids.filter(id => id !== topic.id) : [...ids, topic.id]
+          draft.chapters.set(chapter.startSec, next)
+          draw()
+        })))),
+      ))
+    }
+    if (episode.chapters.length) card.append(table)
+    const decision = () => ({ episodeTopics: draft.episodeTopics, chapters: [...draft.chapters].map(([startSec, topicIds]) => ({ startSec, topicIds })) })
+    card.append(el('div', { className: 'row', style: 'margin-top:10px' },
+      el('button', { className: 'approve', type: 'button', textContent: '通过', onclick: () => decide('episode', episode.id, 'approved', decision()) }),
+      el('button', { className: 'reject', type: 'button', textContent: '驳回', onclick: () => decide('episode', episode.id, 'rejected', decision()) }),
+      entry.status !== 'proposed' ? el('button', { type: 'button', textContent: '退回待审', onclick: () => decide('episode', episode.id, 'proposed', null) }) : null,
+    ))
+  }
+  draw()
+  return card
+}
+
+function pathCard(key, entry) {
+  const episodes = new Map(state.data.episodes.map(e => [e.id, e]))
+  const p = entry.proposal
+  const draft = { ...(entry.decision || { kind: p.kind, reason: p.reason }) }
+  const end = (episodeId, startSec) => {
+    const episode = episodes.get(episodeId)
+    const chapter = episode.chapters.find(c => c.startSec === startSec) || { title: '' }
+    return el('div', { className: 'end' },
+      el('div', { className: 'muted', textContent: `${episode.ref}《${episode.title}》` }),
+      el('div', { className: 'row' }, el('button', { type: 'button', textContent: `▶ ${time(startSec)}`, onclick: () => play(episode, startSec, chapter.title) }), el('span', { textContent: chapter.title })))
+  }
+  const kind = el('select', {}, ...[['related', '相似处境'], ['perspective', '另一种看法'], ['continues', '接着听']].map(([value, label]) => el('option', { value, textContent: label, selected: draft.kind === value })))
+  kind.onchange = () => { draft.kind = kind.value }
+  const reason = el('textarea', { value: draft.reason })
+  reason.oninput = () => { draft.reason = reason.value }
+  return el('section', { className: 'card' },
+    el('div', { className: 'row' }, el('span', { className: `badge ${entry.status}`, textContent: { proposed: '待审', approved: '已通过', rejected: '已驳回' }[entry.status] }), kind),
+    el('div', { className: 'ends' }, end(p.sourceEpisodeId, p.sourceStartSec), el('span', { className: 'muted', textContent: '→' }), end(p.targetEpisodeId, p.targetStartSec)),
+    reason,
+    el('div', { className: 'row', style: 'margin-top:8px' },
+      el('button', { className: 'approve', type: 'button', textContent: '通过', onclick: () => decide('path', key, 'approved', draft) }),
+      el('button', { className: 'reject', type: 'button', textContent: '驳回', onclick: () => decide('path', key, 'rejected', draft) }),
+      entry.status !== 'proposed' ? el('button', { type: 'button', textContent: '退回待审', onclick: () => decide('path', key, 'proposed', null) }) : null,
+    ))
+}
+
+function render() {
+  const { data } = state
+  const tabs = [['episode', '单集主题'], ['path', '跨集连线']]
+  $('#tabs').replaceChildren(...tabs.map(([id, label]) => el('button', { className: state.tab === id ? 'on' : '', textContent: label, onclick: () => { state.tab = id; render() } })))
+  const filters = [['proposed', '待审'], ['approved', '已通过'], ['rejected', '已驳回'], ['all', '全部']]
+  $('#filters').replaceChildren(...filters.map(([id, label]) => el('button', { className: state.filter === id ? 'on' : '', textContent: label, onclick: () => { state.filter = id; render() } })))
+  const bucket = state.tab === 'episode' ? data.episodeProposals : data.pathProposals
+  const entries = Object.entries(bucket)
+  const counts = entries.reduce((acc, [, entry]) => (acc[entry.status] = (acc[entry.status] || 0) + 1, acc), {})
+  $('#summary').textContent = `待审 ${counts.proposed || 0} · 已通过 ${counts.approved || 0} · 已驳回 ${counts.rejected || 0}`
+  const visible = entries.filter(([, entry]) => state.filter === 'all' || entry.status === state.filter)
+  const list = $('#list')
+  if (!entries.length) {
+    list.replaceChildren(el('p', { className: 'muted', textContent: '还没有提议。先运行 python -m pipeline propose --catalog' }))
+    return
+  }
+  if (state.tab === 'episode') {
+    const order = new Map(data.episodes.map((e, i) => [e.id, i]))
+    visible.sort((a, b) => order.get(b[0]) - order.get(a[0]))
+    list.replaceChildren(...visible.map(([key, entry]) => episodeCard(data.episodes.find(e => e.id === key), entry)))
+  } else {
+    list.replaceChildren(...visible.map(([key, entry]) => pathCard(key, entry)))
+  }
+}
+
+$('#bulk').onclick = async () => {
+  const kind = state.tab
+  const bucket = kind === 'episode' ? state.data.episodeProposals : state.data.pathProposals
+  const pending = Object.entries(bucket).filter(([, entry]) => entry.status === 'proposed')
+  if (!pending.length || !confirm(`按原样通过 ${pending.length} 条未审提议？`)) return
+  for (const [key, entry] of pending) {
+    const p = entry.proposal
+    const decision = kind === 'episode'
+      ? { episodeTopics: p.episodeTopics.map(item => item.topicId), chapters: p.chapters }
+      : { kind: p.kind, reason: p.reason }
+    if (!await decide(kind, key, 'approved', decision)) break
+  }
+}
+
+load()
+</script>
+</body>
+</html>

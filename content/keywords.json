@@ -1,0 +1,10 @@
+{
+  "_note": "Everyday words listeners might search for. The export counts how often each appears in episode and chapter titles and drops the ones that never appear. People, books, concepts and topic aliases are added automatically.",
+  "keywords": [
+    "内耗", "焦虑", "迷茫", "孤独", "安全感", "控制", "恐惧", "依赖", "被看见", "放松", "休息", "精力",
+    "创伤", "身体", "情绪", "关系", "亲密关系", "爱", "意义", "选择", "自由", "失败", "改变", "当下", "在场",
+    "母女", "比较", "金钱", "工作", "自责", "内在小孩", "小孩", "分离", "失去", "悲伤", "幸福", "快乐", "无聊",
+    "等待", "结果", "证明", "价值", "低谷", "停滞", "行动", "高功能", "防御", "麻木", "愤怒", "嫉妒", "信任",
+    "真实", "自我", "接住", "回应", "暂停", "冥想", "睡前", "命运", "死亡", "好运", "臣服", "边界感", "淡人", "都行"
+  ]
+}

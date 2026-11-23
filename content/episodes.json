@@ -1,0 +1,5 @@
+{
+  "_note": "Per-episode overrides keyed by episode number (EP51) or S-ref. musicBed: the episode plays its own background music under the talk, so the site's music goes silent while it plays.",
+  "EP50": {"musicBed": true},
+  "EP51": {"musicBed": true}
+}

@@ -19,7 +19,12 @@ export type Episode = {
   xiaoyuzhouUrl: string
   officialTopic: string | null
   chapters: { startSec: number; title: string }[]
+  topicIds?: string[]
+  /** The episode carries its own background music, so the site music stays silent while it plays. */
+  musicBed?: boolean
 }
+
+export type RelationKind = 'related' | 'perspective' | 'continues'
 
 export type Moment = {
   id: string
@@ -40,7 +45,7 @@ type Relation = {
   sourceMomentId: string
   targetMomentId: string
   reason: string
-  kind: 'related' | 'perspective' | 'continues'
+  kind: RelationKind
 }
 
 type ChapterPath = {
@@ -51,6 +56,7 @@ type ChapterPath = {
   targetStartSec: number
   topicIds: string[]
   reason: string
+  kind?: RelationKind
 }
 
 export type Atlas = {
@@ -62,6 +68,39 @@ export type Atlas = {
   moments: Moment[]
   relations: Relation[]
   chapterPaths?: ChapterPath[]
+  entities?: Entity[]
+  keywords?: { text: string; count: number }[]
+}
+
+export type EntityKind = 'person' | 'book' | 'concept'
+
+export type Mention = { episodeId: string; startSec: number | null; momentId: string | null; via: 'chapter' | 'title' | 'notes' }
+
+export type Entity = {
+  id: string
+  kind: EntityKind
+  name: string
+  note: string
+  aliases: string[]
+  author?: string
+  people?: string[]
+  topicIds: string[]
+  mentions: Mention[]
+}
+
+export const ENTITY_ROUTES: Record<EntityKind, string> = { person: 'people', book: 'books', concept: 'concepts' }
+export const ENTITY_LABELS: Record<EntityKind, string> = { person: '人物', book: '书', concept: '概念' }
+
+export function entityPath(entity: Pick<Entity, 'kind' | 'id'>) {
+  return `/${ENTITY_ROUTES[entity.kind]}/${entity.id}`
+}
+
+/** `/people/winnicott` → { kind: 'person', id: 'winnicott' } */
+export function parseEntityPath(pathname: string): { kind: EntityKind; id: string } | null {
+  const match = pathname.match(/^\/(people|books|concepts)\/([a-z0-9-]+)\/?$/)
+  if (!match) return null
+  const kind = (Object.keys(ENTITY_ROUTES) as EntityKind[]).find(key => ENTITY_ROUTES[key] === match[1])!
+  return { kind, id: match[2] }
 }
 
 export type Anchor = { episode: Episode; startSec: number; title: string }
@@ -145,7 +184,7 @@ export function getAtlasPaths(atlas: Atlas): AtlasPath[] {
     const targetTopicId = path.topicIds[1] ?? to?.topicIds.find(id => id !== sourceTopicId) ?? sourceTopicId
     if (!sourceTopicId || !targetTopicId) continue
     paths.push({
-      id: path.id, sourceTopicId, targetTopicId, reason: path.reason, label: '节目导读',
+      id: path.id, sourceTopicId, targetTopicId, reason: path.reason, label: path.kind ? labels[path.kind] : '节目导读',
       source: { episode: sourceEpisode, ...sourceChapter }, target: { episode: targetEpisode, ...targetChapter },
       sourceMomentId: from?.id, targetMomentId: to?.id,
     })
