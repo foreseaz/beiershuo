@@ -13,7 +13,7 @@ const SCALE = [62, 64, 66, 69, 71, 74, 76, 78, 81] // MIDI: D4 E4 F#4 A4 B4 D5 E
 const PREFERENCE = 'beiershuo:music'
 const TRACK_URL = '/audio/bgm.mp3'
 
-type Engine = { start(): void; level(value: number, seconds?: number): void; suspend(): void; resume(): void; dispose(): void }
+type Engine = { start(): Promise<boolean>; level(value: number, seconds?: number): void; suspend(): void; resume(): void; dispose(): void }
 
 const frequency = (midi: number) => 440 * Math.pow(2, (midi - 69) / 12)
 
@@ -108,9 +108,13 @@ class AmbientEngine implements Engine {
     this.timer = window.setTimeout(this.phrase, 2600 + Math.random() * 4200)
   }
 
-  start() {
-    void this.context.resume()
+  async start() {
+    if (this.context.state !== 'running') {
+      try { await this.context.resume() } catch { return false }
+    }
+    if (this.context.state !== 'running') return false
     if (!this.timer) this.timer = window.setTimeout(this.phrase, 800)
+    return true
   }
 
   level(value: number, seconds = 1.2) {
@@ -129,38 +133,55 @@ class AmbientEngine implements Engine {
   }
 }
 
-/** A licensed recording, looped, routed through a gain node so ducking ramps smoothly. */
+/**
+ * A licensed recording, looped. Volume is ramped on the element itself: routing it through an
+ * AudioContext leaves the context suspended on load, so autoplay would succeed and stay silent.
+ */
 class TrackEngine implements Engine {
-  private readonly context = new AudioContext()
-  private readonly master = this.context.createGain()
   private readonly audio = new Audio(TRACK_URL)
+  private ramp = 0
+  private alive = true
+  private started = false
 
   constructor() {
     this.audio.loop = true
     this.audio.preload = 'auto'
-    this.master.gain.value = 0
-    this.context.createMediaElementSource(this.audio).connect(this.master).connect(this.context.destination)
+    this.audio.volume = 0
   }
 
-  start() {
-    void this.context.resume()
-    void this.audio.play().catch(() => undefined)
+  async start() {
+    try { await this.audio.play() } catch { return false }
+    if (!this.alive) return false
+    this.started = true
+    if (document.hidden) this.audio.pause()
+    return true
   }
 
   // Recordings are mixed much louder than the generated piece.
   level(value: number, seconds = 1.2) {
-    const now = this.context.currentTime
-    this.master.gain.cancelScheduledValues(now)
-    this.master.gain.setTargetAtTime(value * 0.55, now, seconds / 3)
+    const target = Math.min(1, Math.max(0, value * 0.55))
+    const from = this.audio.volume
+    const began = performance.now()
+    const duration = Math.max(seconds, 0.05) * 1000
+    cancelAnimationFrame(this.ramp)
+    const step = (now: number) => {
+      if (!this.alive) return
+      const t = Math.min(1, (now - began) / duration)
+      const eased = 1 - (1 - t) ** 3
+      this.audio.volume = from + (target - from) * eased
+      if (t < 1) this.ramp = requestAnimationFrame(step)
+    }
+    this.ramp = requestAnimationFrame(step)
   }
 
-  suspend() { void this.context.suspend() }
-  resume() { void this.context.resume() }
+  suspend() { this.audio.pause() }
+  resume() { if (this.started && this.alive) void this.audio.play().catch(() => undefined) }
 
   dispose() {
+    this.alive = false
+    cancelAnimationFrame(this.ramp)
     this.audio.pause()
     this.audio.removeAttribute('src')
-    void this.context.close()
   }
 }
 
@@ -190,19 +211,19 @@ export const TRACK_CREDIT = '《Iki》Hideyuki Hashimoto'
 type Source = 'pending' | 'file' | 'generative'
 
 /**
- * Plays the site music after the first interaction (browsers block autoplay) and ducks it under
- * episodes. A file deployed at /audio/bgm.mp3 is used when present; otherwise the generated piece.
+ * Starts the site music on load and ducks it under episodes. A file at /audio/bgm.mp3 is used
+ * when present; otherwise the generated piece. If a browser blocks audible autoplay, the next
+ * click or key starts it.
  */
 export function useAmbient(duck: Duck) {
   const [enabled, setEnabled] = useState(readPreference)
   const [source, setSource] = useState<Source>('pending')
   const [running, setRunning] = useState(false)
   const engine = useRef<Engine | null>(null)
-  const wants = useRef(false)
+  const wants = useRef(readPreference())
   const state = useRef({ enabled, duck })
   state.current = { enabled, duck }
 
-  // Decide the source before the first click, so the engine can be built inside the gesture.
   useEffect(() => {
     let live = true
     void hasTrack().then(found => { if (live) setSource(found ? 'file' : 'generative') })
@@ -214,25 +235,30 @@ export function useAmbient(duck: Duck) {
     if (!engine.current) {
       try { engine.current = source === 'file' ? new TrackEngine() : new AmbientEngine() } catch { return }
     }
-    engine.current.start()
-    engine.current.level(LEVELS[state.current.duck], 3)
-    setRunning(true)
+    const current = engine.current
+    void current.start().then(ok => {
+      if (!ok || engine.current !== current || !wants.current || !state.current.enabled) return
+      current.level(LEVELS[state.current.duck], 3)
+      setRunning(true)
+    })
   }, [source])
 
   useEffect(() => { startIfReady() }, [startIfReady])
 
+  // Browsers that reject autoplay still allow play() inside a later gesture.
   useEffect(() => {
+    if (!enabled || running || source === 'pending') return
     const begin = () => {
       wants.current = true
       startIfReady()
     }
-    window.addEventListener('pointerdown', begin, { once: true })
-    window.addEventListener('keydown', begin, { once: true })
+    window.addEventListener('pointerdown', begin)
+    window.addEventListener('keydown', begin)
     return () => {
       window.removeEventListener('pointerdown', begin)
       window.removeEventListener('keydown', begin)
     }
-  }, [startIfReady])
+  }, [enabled, running, source, startIfReady])
 
   useEffect(() => {
     if (running) engine.current?.level(enabled ? LEVELS[duck] : 0, duck === 'none' ? 2.5 : 0.8)
