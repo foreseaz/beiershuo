@@ -72,7 +72,10 @@ export type Atlas = {
   keywords?: { text: string; count: number }[]
 }
 
-export type EntityKind = 'person' | 'book' | 'concept'
+/** The show's page on 小宇宙, used by the brand mark. */
+export const SHOW_XIAOYUZHOU = 'https://www.xiaoyuzhoufm.com/podcast/6847be042278dd073b42f27c'
+
+export type EntityKind = 'person' | 'book' | 'film' | 'concept'
 
 export type Mention = { episodeId: string; startSec: number | null; momentId: string | null; via: 'chapter' | 'title' | 'notes' }
 
@@ -86,18 +89,35 @@ export type Entity = {
   people?: string[]
   topicIds: string[]
   mentions: Mention[]
+  /** Parent topic for concepts that appear as sub-topic stars. */
+  topic?: string
+  image?: { src: string; credit: string; source: string }
+  year?: number
+  format?: string
+  link?: { href: string; label: string }
 }
 
-export const ENTITY_ROUTES: Record<EntityKind, string> = { person: 'people', book: 'books', concept: 'concepts' }
-export const ENTITY_LABELS: Record<EntityKind, string> = { person: '人物', book: '书', concept: '概念' }
+export const ENTITY_ROUTES: Record<EntityKind, string> = { person: 'people', book: 'books', film: 'films', concept: 'concepts' }
+export const ENTITY_LABELS: Record<EntityKind, string> = { person: '人物', book: '书', film: '影片/节目', concept: '概念' }
 
 export function entityPath(entity: Pick<Entity, 'kind' | 'id'>) {
   return `/${ENTITY_ROUTES[entity.kind]}/${entity.id}`
 }
 
+export type Route = { kind: EntityKind; id: string } | { index: EntityKind } | null
+
+/** `/people` → the people index, `/people/winnicott` → one person, anything else → the star map. */
+export function parseRoute(pathname: string): Route {
+  const index = pathname.match(/^\/(people|books|films|concepts)\/?$/)
+  if (index) return { index: (Object.keys(ENTITY_ROUTES) as EntityKind[]).find(key => ENTITY_ROUTES[key] === index[1])! }
+  return parseEntityPath(pathname)
+}
+
+export const indexPath = (kind: EntityKind) => `/${ENTITY_ROUTES[kind]}`
+
 /** `/people/winnicott` → { kind: 'person', id: 'winnicott' } */
 export function parseEntityPath(pathname: string): { kind: EntityKind; id: string } | null {
-  const match = pathname.match(/^\/(people|books|concepts)\/([a-z0-9-]+)\/?$/)
+  const match = pathname.match(/^\/(people|books|films|concepts)\/([a-z0-9-]+)\/?$/)
   if (!match) return null
   const kind = (Object.keys(ENTITY_ROUTES) as EntityKind[]).find(key => ENTITY_ROUTES[key] === match[1])!
   return { kind, id: match[2] }

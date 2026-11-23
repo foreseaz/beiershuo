@@ -1,0 +1,445 @@
+{
+  "kierkegaard": {
+    "link": {
+      "href": "https://zh.wikipedia.org/wiki/%E7%B4%A2%E5%80%AB%C2%B7%E5%85%8B%E7%88%BE%E5%87%B1%E9%83%AD%E7%88%BE",
+      "label": "维基百科"
+    },
+    "image": {
+      "src": "/people/kierkegaard.jpg",
+      "credit": "La Biblioteca Real de Dinamarca · Public domain",
+      "source": "https://commons.wikimedia.org/wiki/File:S%C3%B8ren_Kierkegaard_(1813-1855)_-_(cropped).jpg"
+    }
+  },
+  "sartre": {
+    "link": {
+      "href": "https://zh.wikipedia.org/wiki/%E8%AE%A9-%E4%BF%9D%E7%BD%97%C2%B7%E8%90%A8%E7%89%B9",
+      "label": "维基百科"
+    },
+    "image": {
+      "src": "/people/sartre.jpg",
+      "credit": "Unknown authorUnknown author · CC BY-SA 3.0 nl",
+      "source": "https://commons.wikimedia.org/wiki/File:Jean_Paul_Sartre_1965.jpg"
+    }
+  },
+  "heidegger": {
+    "link": {
+      "href": "https://zh.wikipedia.org/wiki/%E9%A9%AC%E4%B8%81%C2%B7%E6%B5%B7%E5%BE%B7%E6%A0%BC%E5%B0%94",
+      "label": "维基百科"
+    },
+    "image": {
+      "src": "/people/heidegger.jpeg",
+      "credit": "Willy Pragher · CC BY 4.0",
+      "source": "https://commons.wikimedia.org/wiki/File:Freiburg,_Z%C3%A4hringen-_Jahnhalle,_Prof._Martin_Heidegger_w%C3%A4hrend_eines_Vortrags_-_LABW_-_Staatsarchiv_Freiburg_W_134_Nr._023740f_(cropped).jpeg"
+    }
+  },
+  "nietzsche": {
+    "link": {
+      "href": "https://zh.wikipedia.org/wiki/%E5%BC%97%E9%87%8C%E5%BE%B7%E9%87%8C%E5%B8%8C%C2%B7%E5%B0%BC%E9%87%87",
+      "label": "维基百科"
+    },
+    "image": {
+      "src": "/people/nietzsche.jpg",
+      "credit": "Friedrich Hermann Hartmann · Public domain",
+      "source": "https://commons.wikimedia.org/wiki/File:Nietzsche187a.jpg"
+    }
+  },
+  "camus": {
+    "link": {
+      "href": "https://zh.wikipedia.org/wiki/%E9%98%BF%E5%B0%94%E8%B4%9D%C2%B7%E5%8A%A0%E7%BC%AA",
+      "label": "维基百科"
+    },
+    "image": {
+      "src": "/people/camus.jpg",
+      "credit": "Photograph by United Press International · Public domain",
+      "source": "https://commons.wikimedia.org/wiki/File:Albert_Camus,_gagnant_de_prix_Nobel,_portrait_en_buste,_pos%C3%A9_au_bureau,_faisant_face_%C3%A0_gauche,_cigarette_de_tabagisme.jpg"
+    }
+  },
+  "frankl": {
+    "link": {
+      "href": "https://zh.wikipedia.org/wiki/%E7%BB%B4%E5%85%8B%E5%A4%9A%C2%B7%E5%BC%97%E5%85%B0%E5%85%8B",
+      "label": "维基百科"
+    },
+    "image": {
+      "src": "/people/frankl.jpg",
+      "credit": "Prof. Dr. Franz Vesely · CC BY-SA 3.0 de",
+      "source": "https://commons.wikimedia.org/wiki/File:Viktor_Frankl2.jpg"
+    }
+  },
+  "yalom": {
+    "link": {
+      "href": "https://zh.wikipedia.org/wiki/%E6%AD%90%E6%96%87%C2%B7%E4%BA%9E%E9%9A%86",
+      "label": "维基百科"
+    },
+    "image": {
+      "src": "/people/yalom.jpg",
+      "credit": "User:Masangina · CC BY-SA 3.0",
+      "source": "https://commons.wikimedia.org/wiki/File:Yalom.jpg"
+    }
+  },
+  "rollo-may": {
+    "link": {
+      "href": "https://zh.wikipedia.org/wiki/%E7%BE%85%E6%B4%9B%C2%B7%E6%A2%85",
+      "label": "维基百科"
+    },
+    "image": {
+      "src": "/people/rollo-may.jpg",
+      "credit": "Unknown photographer · Public domain",
+      "source": "https://commons.wikimedia.org/wiki/File:Rollo_May_USD_Alcal%C3%A1_1977.jpg"
+    }
+  },
+  "rogers": {
+    "link": {
+      "href": "https://zh.wikipedia.org/wiki/%E5%8D%A1%E7%88%BE%C2%B7%E7%BE%85%E5%93%B2%E6%96%AF",
+      "label": "维基百科"
+    },
+    "image": {
+      "src": "/people/rogers.jpg",
+      "credit": "The original uploader was Didius at Dutch Wikipedia. · CC BY 2.5",
+      "source": "https://commons.wikimedia.org/wiki/File:Carl_Ransom_Rogers.jpg"
+    }
+  },
+  "winnicott": {
+    "link": {
+      "href": "https://zh.wikipedia.org/wiki/%E5%94%90%E7%BA%B3%E5%BE%B7%C2%B7%E5%A8%81%E5%B0%BC%E7%A7%91%E7%89%B9",
+      "label": "维基百科"
+    }
+  },
+  "bowlby": {
+    "link": {
+      "href": "https://zh.wikipedia.org/wiki/%E7%B4%84%E7%BF%B0%C2%B7%E9%AE%91%E6%AF%94",
+      "label": "维基百科"
+    }
+  },
+  "fairbairn": {
+    "link": {
+      "href": "https://zh.wikipedia.org/wiki/%E7%BD%97%E7%BA%B3%E5%BE%B7%C2%B7%E8%B4%B9%E5%B0%94%E8%B4%9D%E6%81%A9",
+      "label": "维基百科"
+    },
+    "image": {
+      "src": "/people/fairbairn.jpg",
+      "credit": "Institute of Psychoanalysis · CC0",
+      "source": "https://commons.wikimedia.org/wiki/File:Ronald_Fairbairn.jpg"
+    }
+  },
+  "horney": {
+    "link": {
+      "href": "https://zh.wikipedia.org/wiki/%E5%8D%A1%E4%BC%A6%C2%B7%E9%9C%8D%E5%A6%AE",
+      "label": "维基百科"
+    },
+    "image": {
+      "src": "/people/horney.jpg",
+      "credit": "Courtesy of Renate Horney Patterson, who holds the copyright. · CC BY-SA 3.0",
+      "source": "https://commons.wikimedia.org/wiki/File:Karen_Horney_1938.jpg"
+    }
+  },
+  "fromm": {
+    "link": {
+      "href": "https://zh.wikipedia.org/wiki/%E5%9F%83%E9%87%8C%E5%B8%8C%C2%B7%E5%BC%97%E7%BD%97%E5%A7%86",
+      "label": "维基百科"
+    },
+    "image": {
+      "src": "/people/fromm.jpg",
+      "credit": "Müller-May · CC BY-SA 3.0 de",
+      "source": "https://commons.wikimedia.org/wiki/File:Erich_Fromm_1974.jpg"
+    }
+  },
+  "adler": {
+    "link": {
+      "href": "https://zh.wikipedia.org/wiki/%E9%98%BF%E5%B0%94%E5%BC%97%E9%9B%B7%E5%BE%B7%C2%B7%E9%98%BF%E5%BE%B7%E5%8B%92",
+      "label": "维基百科"
+    },
+    "image": {
+      "src": "/people/adler.png",
+      "credit": "佚名 · Public domain",
+      "source": "https://commons.wikimedia.org/wiki/File:Alfred_Adler1.png"
+    }
+  },
+  "descartes": {
+    "link": {
+      "href": "https://zh.wikipedia.org/wiki/%E5%8B%92%E5%86%85%C2%B7%E7%AC%9B%E5%8D%A1%E5%84%BF",
+      "label": "维基百科"
+    },
+    "image": {
+      "src": "/people/descartes.jpg",
+      "credit": "After Frans Hals · Public domain",
+      "source": "https://commons.wikimedia.org/wiki/File:Frans_Hals_-_Portret_van_Ren%C3%A9_Descartes.jpg"
+    }
+  },
+  "kant": {
+    "link": {
+      "href": "https://zh.wikipedia.org/wiki/%E4%BC%8A%E6%9B%BC%E5%8A%AA%E5%B0%94%C2%B7%E5%BA%B7%E5%BE%B7",
+      "label": "维基百科"
+    },
+    "image": {
+      "src": "/people/kant.jpg",
+      "credit": "Johann Gottlieb Becker (1720-1782) · Public domain",
+      "source": "https://commons.wikimedia.org/wiki/File:Immanuel_Kant_-_Gemaelde_1.jpg"
+    }
+  },
+  "hegel": {
+    "link": {
+      "href": "https://zh.wikipedia.org/wiki/%E6%A0%BC%E5%A5%A5%E5%B0%94%E6%A0%BC%C2%B7%E5%A8%81%E5%BB%89%C2%B7%E5%BC%97%E9%87%8C%E5%BE%B7%E9%87%8C%E5%B8%8C%C2%B7%E9%BB%91%E6%A0%BC%E5%B0%94",
+      "label": "维基百科"
+    },
+    "image": {
+      "src": "/people/hegel.jpg",
+      "credit": "Jakob Schlesinger · Public domain",
+      "source": "https://commons.wikimedia.org/wiki/File:Jakob_Schlesinger_-_Hegel_1831.jpg"
+    }
+  },
+  "foucault": {
+    "link": {
+      "href": "https://zh.wikipedia.org/wiki/%E7%B1%B3%E6%AD%87%E5%B0%94%C2%B7%E7%A6%8F%E6%9F%AF",
+      "label": "维基百科"
+    },
+    "image": {
+      "src": "/people/foucault.jpg",
+      "credit": "Jerry Bauer · Public domain",
+      "source": "https://commons.wikimedia.org/wiki/File:Photo_of_Michel_Foucault_on_1970_dustjacket_of_The_Order_of_Things.jpg"
+    }
+  },
+  "aristotle": {
+    "link": {
+      "href": "https://zh.wikipedia.org/wiki/%E4%BA%9A%E9%87%8C%E5%A3%AB%E5%A4%9A%E5%BE%B7",
+      "label": "维基百科"
+    },
+    "image": {
+      "src": "/people/aristotle.jpg",
+      "credit": "After Lysippos · Public domain",
+      "source": "https://commons.wikimedia.org/wiki/File:Aristotle_Altemps_Inv8575.jpg"
+    }
+  },
+  "schopenhauer": {
+    "link": {
+      "href": "https://zh.wikipedia.org/wiki/%E9%98%BF%E5%9B%BE%E5%B0%94%C2%B7%E5%8F%94%E6%9C%AC%E5%8D%8E",
+      "label": "维基百科"
+    },
+    "image": {
+      "src": "/people/schopenhauer.jpg",
+      "credit": "Johann Schäfer · Public domain",
+      "source": "https://commons.wikimedia.org/wiki/File:Arthur_Schopenhauer_by_J_Sch%C3%A4fer,_1859b.jpg"
+    }
+  },
+  "harry-frankfurt": {
+    "link": {
+      "href": "https://zh.wikipedia.org/wiki/%E5%93%88%E9%87%8C%C2%B7%E5%AF%8C%E8%98%AD%E5%85%8B%E7%A6%8F",
+      "label": "维基百科"
+    },
+    "image": {
+      "src": "/people/harry-frankfurt.jpg",
+      "credit": "American Council of Learned Societies (ACLS) · CC BY 3.0",
+      "source": "https://commons.wikimedia.org/wiki/File:Harry_Frankfurt_at_2017_ACLS_Annual_Meeting.jpg"
+    }
+  },
+  "beauvoir": {
+    "link": {
+      "href": "https://zh.wikipedia.org/wiki/%E8%A5%BF%E8%92%99%C2%B7%E5%BE%B7%C2%B7%E6%B3%A2%E5%A8%83",
+      "label": "维基百科"
+    },
+    "image": {
+      "src": "/people/beauvoir.jpg",
+      "credit": "Moshe Milner · CC BY-SA 3.0",
+      "source": "https://commons.wikimedia.org/wiki/File:Simone_De_Beauvoir_(cropped).jpg"
+    }
+  },
+  "byung-chul-han": {
+    "link": {
+      "href": "https://zh.wikipedia.org/wiki/%E9%9F%93%E7%82%B3%E5%93%B2",
+      "label": "维基百科"
+    },
+    "image": {
+      "src": "/people/byung-chul-han.jpg",
+      "credit": "ActuaLitté · CC BY-SA 2.0",
+      "source": "https://commons.wikimedia.org/wiki/File:2015_Byung-Chul_Han_(3x4_cropped).jpg"
+    }
+  },
+  "susan-cain": {
+    "link": {
+      "href": "https://en.wikipedia.org/wiki/Susan%20Cain",
+      "label": "维基百科"
+    },
+    "image": {
+      "src": "/people/susan-cain.jpg",
+      "credit": "Susan Cain · CC BY-SA 3.0",
+      "source": "https://commons.wikimedia.org/wiki/File:SusanCainPortrait_250px_20120305.jpg"
+    }
+  },
+  "naval": {
+    "link": {
+      "href": "https://en.wikipedia.org/wiki/Naval%20Ravikant",
+      "label": "维基百科"
+    },
+    "image": {
+      "src": "/people/naval.jpg",
+      "credit": "Elias Bizannes · CC BY-SA 2.0",
+      "source": "https://commons.wikimedia.org/wiki/File:Naval_Ravikant_(cropped).jpg"
+    }
+  },
+  "kahneman": {
+    "link": {
+      "href": "https://zh.wikipedia.org/wiki/%E4%B8%B9%E5%B0%BC%E5%B0%94%C2%B7%E5%8D%A1%E5%B0%BC%E6%9B%BC",
+      "label": "维基百科"
+    },
+    "image": {
+      "src": "/people/kahneman.jpg",
+      "credit": "nrkbeta · CC BY-SA 2.0",
+      "source": "https://commons.wikimedia.org/wiki/File:Daniel_Kahneman_(3283955327)_(cropped).jpg"
+    }
+  },
+  "gary-klein": {
+    "link": {
+      "href": "https://en.wikipedia.org/wiki/Gary%20A.%20Klein",
+      "label": "维基百科"
+    }
+  },
+  "damasio": {
+    "link": {
+      "href": "https://zh.wikipedia.org/wiki/%E5%AE%89%E4%B8%9C%E5%B0%BC%E5%A5%A5%C2%B7%E8%BE%BE%E9%A9%AC%E8%A5%BF%E5%A5%A5",
+      "label": "维基百科"
+    },
+    "image": {
+      "src": "/people/damasio.png",
+      "credit": "Fronteiras do Pensamento · CC BY-SA 2.0",
+      "source": "https://commons.wikimedia.org/wiki/File:Ant%C3%B3nio_Dam%C3%A1sio_no_Fronteiras_do_Pensamento_Porto_Alegre_2013_cropped.png"
+    }
+  },
+  "van-der-kolk": {
+    "link": {
+      "href": "https://en.wikipedia.org/wiki/Bessel%20van%20der%20Kolk",
+      "label": "维基百科"
+    },
+    "image": {
+      "src": "/people/van-der-kolk.jpg",
+      "credit": "Cross Cultures TV · CC BY 3.0",
+      "source": "https://commons.wikimedia.org/wiki/File:Bessel_van_der_Kolk_2022.jpg"
+    }
+  },
+  "tolle": {
+    "link": {
+      "href": "https://zh.wikipedia.org/wiki/%E8%89%BE%E5%85%8B%E5%93%88%E7%89%B9%C2%B7%E6%89%98%E5%8B%92",
+      "label": "维基百科"
+    },
+    "image": {
+      "src": "/people/tolle.jpg",
+      "credit": "Kyle Hoobin (twitter.com/kylehoobin) · CC BY-SA 3.0",
+      "source": "https://commons.wikimedia.org/wiki/File:Eckhart_Tolle_front.jpg"
+    }
+  },
+  "michael-singer": {
+    "link": {
+      "href": "https://en.wikipedia.org/wiki/Michael%20Alan%20Singer",
+      "label": "维基百科"
+    }
+  },
+  "walsch": {
+    "link": {
+      "href": "https://zh.wikipedia.org/wiki/%E5%B0%BC%E5%B0%94%C2%B7%E5%94%90%E7%BA%B3%C2%B7%E6%B2%83%E8%AE%B8",
+      "label": "维基百科"
+    },
+    "image": {
+      "src": "/people/walsch.jpg",
+      "credit": "Sarah Rozenthuler and Gil Dekel · CC BY-SA 3.0",
+      "source": "https://commons.wikimedia.org/wiki/File:Neale_Donald_Walsch.jpg"
+    }
+  },
+  "hesse": {
+    "link": {
+      "href": "https://zh.wikipedia.org/wiki/%E8%B5%AB%E5%B0%94%E6%9B%BC%C2%B7%E9%BB%91%E5%A1%9E",
+      "label": "维基百科"
+    },
+    "image": {
+      "src": "/people/hesse.jpg",
+      "credit": "Unknown authorUnknown author · CC BY-SA 3.0 nl",
+      "source": "https://commons.wikimedia.org/wiki/File:Hermann_Hesse_2.jpg"
+    }
+  },
+  "gallwey": {
+    "link": {
+      "href": "https://en.wikipedia.org/wiki/Timothy%20Gallwey",
+      "label": "维基百科"
+    }
+  },
+  "ehrenberg": {
+    "link": {
+      "href": "https://en.wikipedia.org/wiki/Alain%20Ehrenberg",
+      "label": "维基百科"
+    },
+    "image": {
+      "src": "/people/ehrenberg.jpg",
+      "credit": "Pymouss · CC BY-SA 3.0",
+      "source": "https://commons.wikimedia.org/wiki/File:Rennes_ForumLib%C3%A92010_Alain_Ehrenberg.jpg"
+    }
+  },
+  "rd-laing": {
+    "link": {
+      "href": "https://zh.wikipedia.org/wiki/%E9%9A%86%E7%B4%8D%C2%B7%E5%A4%A7%E8%A1%9B%C2%B7%E9%80%A3%E6%81%A9",
+      "label": "维基百科"
+    },
+    "image": {
+      "src": "/people/rd-laing.jpg",
+      "credit": "No machine-readable author provided. Profero assumed (based on copyright claims). · CC BY 2.5",
+      "source": "https://commons.wikimedia.org/wiki/File:Ronald_D._Laing.jpg"
+    }
+  },
+  "daniel-sloss": {
+    "link": {
+      "href": "https://en.wikipedia.org/wiki/Daniel%20Sloss",
+      "label": "维基百科"
+    },
+    "image": {
+      "src": "/people/daniel-sloss.jpg",
+      "credit": "Bryan Berlin · CC BY-SA 4.0",
+      "source": "https://commons.wikimedia.org/wiki/File:Daniel_Sloss_at_the_2025_Edinburgh_Festival_Fringe-08_(cropped).jpg"
+    }
+  },
+  "zhang-jiaqi": {
+    "link": {
+      "href": "https://en.wikipedia.org/wiki/Zhang%20Jiaqi",
+      "label": "维基百科"
+    }
+  },
+  "ma-tianyu": {
+    "link": {
+      "href": "https://zh.wikipedia.org/wiki/%E9%A9%AC%E5%A4%A9%E5%AE%87",
+      "label": "维基百科"
+    },
+    "image": {
+      "src": "/people/ma-tianyu.jpg",
+      "credit": "rayofsunshine · CC BY 2.5",
+      "source": "https://commons.wikimedia.org/wiki/File:180915_%E5%87%89%E7%94%9F%E6%88%91%E4%BB%AC%E5%8F%AF%E4%B8%8D%E5%8F%AF%E4%BB%A5%E4%B8%8D%E5%BF%A7%E4%BC%A4_%E5%BC%80%E6%92%AD%E5%8F%91%E5%B8%83%E4%BC%9A_(1).jpg"
+    }
+  },
+  "jules-verne": {
+    "link": {
+      "href": "https://zh.wikipedia.org/wiki/%E5%84%92%E5%8B%92%C2%B7%E5%87%A1%E5%B0%94%E7%BA%B3",
+      "label": "维基百科"
+    },
+    "image": {
+      "src": "/people/jules-verne.jpg",
+      "credit": "Étienne Carjat / Adam Cuerden · Public domain",
+      "source": "https://commons.wikimedia.org/wiki/File:Jules_Verne_by_%C3%89tienne_Carjat.jpg"
+    }
+  },
+  "denis-villeneuve": {
+    "link": {
+      "href": "https://zh.wikipedia.org/wiki/%E4%B8%B9%E5%B0%BC%E6%96%AF%C2%B7%E7%BB%B4%E5%8B%92%E5%BC%97",
+      "label": "维基百科"
+    },
+    "image": {
+      "src": "/people/denis-villeneuve.jpg",
+      "credit": "Raph_PH · CC BY 2.0",
+      "source": "https://commons.wikimedia.org/wiki/File:DVilleneuveRFH121024_(12_of_23)_(54061976489)_(cropped).jpg"
+    }
+  },
+  "tony-kaye": {
+    "link": {
+      "href": "https://en.wikipedia.org/wiki/Tony%20Kaye%20%28director%29",
+      "label": "维基百科"
+    },
+    "image": {
+      "src": "/people/tony-kaye.jpg",
+      "credit": "Colleen Sturtevant · CC BY-SA 4.0",
+      "source": "https://commons.wikimedia.org/wiki/File:Tony_Kaye_2026.jpg"
+    }
+  }
+}

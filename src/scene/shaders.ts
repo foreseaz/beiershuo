@@ -181,6 +181,8 @@ uniform float uOpacity;
 uniform float uDash;
 uniform float uPulse;
 uniform float uTime;
+uniform float uFade;
+uniform float uFadeSpan;
 varying float vU;
 varying float vSide;
 void main() {
@@ -191,6 +193,84 @@ void main() {
   float ends = smoothstep(0.0, 0.03, vU) * smoothstep(1.0, 0.97, vU);
   float head = fract(uTime * 0.11);
   float pulse = uPulse * exp(-pow((vU - head) * 16.0, 2.0)) * 3.0;
-  gl_FragColor = vec4(color * (uIntensity + pulse) * max(across, 0.0) * dash * ends * uOpacity, 1.0);
+  // A leaving thread becomes a short ray that points towards the other nebula.
+  float fade = uFade > 0.0 ? smoothstep(uFadeSpan, 0.0, vU) : uFade < 0.0 ? smoothstep(1.0 - uFadeSpan, 1.0, vU) : 1.0;
+  gl_FragColor = vec4(color * (uIntensity + pulse) * max(across, 0.0) * dash * ends * fade * uOpacity, 1.0);
+}
+`
+
+// A topic nebula: slowly drifting domain-warped noise, tinted, fading to nothing at the edge.
+export const nebulaFragment = /* glsl */ `
+uniform vec3 uTint;
+uniform vec3 uCoreTint;
+uniform float uIntensity;
+uniform float uTime;
+uniform float uSeed;
+varying vec2 vUv;
+
+float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+float noise(vec2 p) {
+  vec2 i = floor(p), f = fract(p);
+  vec2 u = f * f * (3.0 - 2.0 * f);
+  return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), u.x), mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x), u.y);
+}
+float fbm(vec2 p) {
+  float value = 0.0, amplitude = 0.5;
+  mat2 turn = mat2(1.6, 1.2, -1.2, 1.6);
+  for (int i = 0; i < 5; i++) { value += amplitude * noise(p); p = turn * p; amplitude *= 0.5; }
+  return value;
+}
+
+void main() {
+  vec2 p = vUv;
+  float r = length(p);
+  float falloff = smoothstep(1.0, 0.05, r);
+  falloff *= falloff;
+  vec2 q = p * 1.7 + vec2(uSeed * 3.1, uSeed * 1.7);
+  vec2 warp = vec2(fbm(q + uTime * 0.012), fbm(q + vec2(4.3, 1.9) - uTime * 0.009));
+  float gas = fbm(q * 1.3 + warp * 1.6);
+  float filaments = smoothstep(0.52, 0.9, fbm(q * 3.1 - warp));
+  float lanes = smoothstep(0.35, 0.7, fbm(q * 2.3 + warp * 2.0 + 7.0));
+  float cloud = smoothstep(0.4, 0.95, gas) * falloff * (0.45 + 0.55 * lanes);
+  float core = exp(-r * r * 9.0);
+  vec3 color = uTint * (cloud * 0.9 + filaments * falloff * 0.35) + uCoreTint * core * 0.45;
+  gl_FragColor = vec4(color * uIntensity, 1.0);
+}
+`
+
+// A camera-facing quad that can be stretched and turned, so nebula layers are not round puffs.
+export const nebulaVertex = /* glsl */ `
+uniform float uScale;
+uniform vec2 uStretch;
+uniform float uTurn;
+varying vec2 vUv;
+void main() {
+  vUv = uv * 2.0 - 1.0;
+  vec2 p = position.xy * uStretch;
+  float c = cos(uTurn), s = sin(uTurn);
+  p = mat2(c, s, -s, c) * p;
+  vec4 view = modelViewMatrix * vec4(0.0, 0.0, 0.0, 1.0);
+  view.xy += p * uScale;
+  gl_Position = projectionMatrix * view;
+}
+`
+
+// Bakes one nebula layer into a texture once; uv spans -1..1 like a billboard.
+export const bakeVertex = /* glsl */ `
+varying vec2 vUv;
+void main() {
+  vUv = uv * 2.0 - 1.0;
+  gl_Position = vec4(position.xy, 0.0, 1.0);
+}
+`
+
+// Draws a baked nebula layer: cheap texture read, slowly turning, tinted by intensity.
+export const nebulaTextureFragment = /* glsl */ `
+uniform sampler2D uMap;
+uniform float uIntensity;
+varying vec2 vUv;
+void main() {
+  vec3 color = texture2D(uMap, vUv * 0.5 + 0.5).rgb;
+  gl_FragColor = vec4(color * uIntensity, 1.0);
 }
 `

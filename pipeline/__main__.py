@@ -57,6 +57,9 @@ def parser():
     for name in ("summarize", "relate"):
         commands.add_parser(name, help="Transcript stage (M2)").add_argument("episodes", nargs="*")
 
+    portraits = commands.add_parser("portraits", help="Fetch free-licensed portraits and Wikipedia links for people")
+    portraits.add_argument("--refresh", action="store_true")
+
     export = commands.add_parser("export", help="Atomically write a public-only atlas snapshot")
     export.add_argument("--output", type=Path, default=ROOT / "public/data/v1/atlas.json")
     export.add_argument("--fonts-dir", type=Path, default=ROOT / "public/fonts")
@@ -199,6 +202,10 @@ def main(argv=None):
                 profile = args.profile or args.work_dir / "speaker-profile.json"
                 enroll([sample_value(sample) for sample in [*args.samples, *args.extra_samples]], profile, recall_root=args.recall_root)
                 print(f"Speaker profile ready at {profile}")
+            elif args.command == "portraits":
+                from .portraits import run as fetch_portraits
+
+                return fetch_portraits(args.content_dir, ROOT / "public", refresh=args.refresh)
             elif args.command == "status":
                 return status_command(store)
             else:

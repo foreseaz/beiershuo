@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "contentRevision": "8bc17fb475f1cb7b",
+  "contentRevision": "d5c7caf12a612f45",
   "show": {
     "name": "次要人生｜Flip Your Mind",
     "host": "倪贝儿",
@@ -15255,6 +15255,15 @@
         "克尔凯郭尔",
         "Kierkegaard"
       ],
+      "image": {
+        "src": "/people/kierkegaard.jpg",
+        "credit": "La Biblioteca Real de Dinamarca · Public domain",
+        "source": "https://commons.wikimedia.org/wiki/File:S%C3%B8ren_Kierkegaard_(1813-1855)_-_(cropped).jpg"
+      },
+      "link": {
+        "href": "https://zh.wikipedia.org/wiki/%E7%B4%A2%E5%80%AB%C2%B7%E5%85%8B%E7%88%BE%E5%87%B1%E9%83%AD%E7%88%BE",
+        "label": "维基百科"
+      },
       "topicIds": [],
       "mentions": [
         {
@@ -15280,6 +15289,15 @@
         "萨特",
         "Sartre"
       ],
+      "image": {
+        "src": "/people/sartre.jpg",
+        "credit": "Unknown authorUnknown author · CC BY-SA 3.0 nl",
+        "source": "https://commons.wikimedia.org/wiki/File:Jean_Paul_Sartre_1965.jpg"
+      },
+      "link": {
+        "href": "https://zh.wikipedia.org/wiki/%E8%AE%A9-%E4%BF%9D%E7%BD%97%C2%B7%E8%90%A8%E7%89%B9",
+        "label": "维基百科"
+      },
       "topicIds": [],
       "mentions": [
         {
@@ -15305,6 +15323,15 @@
         "海德格尔",
         "Heidegger"
       ],
+      "image": {
+        "src": "/people/heidegger.jpeg",
+        "credit": "Willy Pragher · CC BY 4.0",
+        "source": "https://commons.wikimedia.org/wiki/File:Freiburg,_Z%C3%A4hringen-_Jahnhalle,_Prof._Martin_Heidegger_w%C3%A4hrend_eines_Vortrags_-_LABW_-_Staatsarchiv_Freiburg_W_134_Nr._023740f_(cropped).jpeg"
+      },
+      "link": {
+        "href": "https://zh.wikipedia.org/wiki/%E9%A9%AC%E4%B8%81%C2%B7%E6%B5%B7%E5%BE%B7%E6%A0%BC%E5%B0%94",
+        "label": "维基百科"
+      },
       "topicIds": [],
       "mentions": [
         {
@@ -15336,6 +15363,15 @@
         "尼采",
         "Nietzsche"
       ],
+      "image": {
+        "src": "/people/nietzsche.jpg",
+        "credit": "Friedrich Hermann Hartmann · Public domain",
+        "source": "https://commons.wikimedia.org/wiki/File:Nietzsche187a.jpg"
+      },
+      "link": {
+        "href": "https://zh.wikipedia.org/wiki/%E5%BC%97%E9%87%8C%E5%BE%B7%E9%87%8C%E5%B8%8C%C2%B7%E5%B0%BC%E9%87%87",
+        "label": "维基百科"
+      },
       "topicIds": [],
       "mentions": [
         {
@@ -15361,6 +15397,15 @@
         "加缪",
         "Camus"
       ],
+      "image": {
+        "src": "/people/camus.jpg",
+        "credit": "Photograph by United Press International · Public domain",
+        "source": "https://commons.wikimedia.org/wiki/File:Albert_Camus,_gagnant_de_prix_Nobel,_portrait_en_buste,_pos%C3%A9_au_bureau,_faisant_face_%C3%A0_gauche,_cigarette_de_tabagisme.jpg"
+      },
+      "link": {
+        "href": "https://zh.wikipedia.org/wiki/%E9%98%BF%E5%B0%94%E8%B4%9D%C2%B7%E5%8A%A0%E7%BC%AA",
+        "label": "维基百科"
+      },
       "topicIds": [],
       "mentions": [
         {
@@ -15386,6 +15431,15 @@
         "弗兰克尔",
         "Frankl"
       ],
+      "image": {
+        "src": "/people/frankl.jpg",
+        "credit": "Prof. Dr. Franz Vesely · CC BY-SA 3.0 de",
+        "source": "https://commons.wikimedia.org/wiki/File:Viktor_Frankl2.jpg"
+      },
+      "link": {
+        "href": "https://zh.wikipedia.org/wiki/%E7%BB%B4%E5%85%8B%E5%A4%9A%C2%B7%E5%BC%97%E5%85%B0%E5%85%8B",
+        "label": "维基百科"
+      },
       "topicIds": [],
       "mentions": [
         {
@@ -15407,6 +15461,15 @@
         "亚隆",
         "Yalom"
       ],
+      "image": {
+        "src": "/people/yalom.jpg",
+        "credit": "User:Masangina · CC BY-SA 3.0",
+        "source": "https://commons.wikimedia.org/wiki/File:Yalom.jpg"
+      },
+      "link": {
+        "href": "https://zh.wikipedia.org/wiki/%E6%AD%90%E6%96%87%C2%B7%E4%BA%9E%E9%9A%86",
+        "label": "维基百科"
+      },
       "topicIds": [],
       "mentions": [
         {
@@ -15451,6 +15514,15 @@
         "罗洛·梅",
         "Rollo May"
       ],
+      "image": {
+        "src": "/people/rollo-may.jpg",
+        "credit": "Unknown photographer · Public domain",
+        "source": "https://commons.wikimedia.org/wiki/File:Rollo_May_USD_Alcal%C3%A1_1977.jpg"
+      },
+      "link": {
+        "href": "https://zh.wikipedia.org/wiki/%E7%BE%85%E6%B4%9B%C2%B7%E6%A2%85",
+        "label": "维基百科"
+      },
       "topicIds": [],
       "mentions": [
         {
@@ -15476,6 +15548,15 @@
         "罗杰斯",
         "Rogers"
       ],
+      "image": {
+        "src": "/people/rogers.jpg",
+        "credit": "The original uploader was Didius at Dutch Wikipedia. · CC BY 2.5",
+        "source": "https://commons.wikimedia.org/wiki/File:Carl_Ransom_Rogers.jpg"
+      },
+      "link": {
+        "href": "https://zh.wikipedia.org/wiki/%E5%8D%A1%E7%88%BE%C2%B7%E7%BE%85%E5%93%B2%E6%96%AF",
+        "label": "维基百科"
+      },
       "topicIds": [],
       "mentions": [
         {
@@ -15507,6 +15588,10 @@
         "温尼科特",
         "Winnicott"
       ],
+      "link": {
+        "href": "https://zh.wikipedia.org/wiki/%E5%94%90%E7%BA%B3%E5%BE%B7%C2%B7%E5%A8%81%E5%B0%BC%E7%A7%91%E7%89%B9",
+        "label": "维基百科"
+      },
       "topicIds": [],
       "mentions": [
         {
@@ -15538,6 +15623,10 @@
         "鲍尔比",
         "Bowlby"
       ],
+      "link": {
+        "href": "https://zh.wikipedia.org/wiki/%E7%B4%84%E7%BF%B0%C2%B7%E9%AE%91%E6%AF%94",
+        "label": "维基百科"
+      },
       "topicIds": [],
       "mentions": [
         {
@@ -15557,6 +15646,15 @@
         "费尔贝恩",
         "Fairbairn"
       ],
+      "image": {
+        "src": "/people/fairbairn.jpg",
+        "credit": "Institute of Psychoanalysis · CC0",
+        "source": "https://commons.wikimedia.org/wiki/File:Ronald_Fairbairn.jpg"
+      },
+      "link": {
+        "href": "https://zh.wikipedia.org/wiki/%E7%BD%97%E7%BA%B3%E5%BE%B7%C2%B7%E8%B4%B9%E5%B0%94%E8%B4%9D%E6%81%A9",
+        "label": "维基百科"
+      },
       "topicIds": [],
       "mentions": [
         {
@@ -15576,6 +15674,15 @@
         "霍妮",
         "Horney"
       ],
+      "image": {
+        "src": "/people/horney.jpg",
+        "credit": "Courtesy of Renate Horney Patterson, who holds the copyright. · CC BY-SA 3.0",
+        "source": "https://commons.wikimedia.org/wiki/File:Karen_Horney_1938.jpg"
+      },
+      "link": {
+        "href": "https://zh.wikipedia.org/wiki/%E5%8D%A1%E4%BC%A6%C2%B7%E9%9C%8D%E5%A6%AE",
+        "label": "维基百科"
+      },
       "topicIds": [],
       "mentions": [
         {
@@ -15595,6 +15702,15 @@
         "弗洛姆",
         "Fromm"
       ],
+      "image": {
+        "src": "/people/fromm.jpg",
+        "credit": "Müller-May · CC BY-SA 3.0 de",
+        "source": "https://commons.wikimedia.org/wiki/File:Erich_Fromm_1974.jpg"
+      },
+      "link": {
+        "href": "https://zh.wikipedia.org/wiki/%E5%9F%83%E9%87%8C%E5%B8%8C%C2%B7%E5%BC%97%E7%BD%97%E5%A7%86",
+        "label": "维基百科"
+      },
       "topicIds": [],
       "mentions": [
         {
@@ -15620,6 +15736,15 @@
         "阿德勒",
         "Adler"
       ],
+      "image": {
+        "src": "/people/adler.png",
+        "credit": "佚名 · Public domain",
+        "source": "https://commons.wikimedia.org/wiki/File:Alfred_Adler1.png"
+      },
+      "link": {
+        "href": "https://zh.wikipedia.org/wiki/%E9%98%BF%E5%B0%94%E5%BC%97%E9%9B%B7%E5%BE%B7%C2%B7%E9%98%BF%E5%BE%B7%E5%8B%92",
+        "label": "维基百科"
+      },
       "topicIds": [],
       "mentions": [
         {
@@ -15639,6 +15764,15 @@
         "笛卡尔",
         "Descartes"
       ],
+      "image": {
+        "src": "/people/descartes.jpg",
+        "credit": "After Frans Hals · Public domain",
+        "source": "https://commons.wikimedia.org/wiki/File:Frans_Hals_-_Portret_van_Ren%C3%A9_Descartes.jpg"
+      },
+      "link": {
+        "href": "https://zh.wikipedia.org/wiki/%E5%8B%92%E5%86%85%C2%B7%E7%AC%9B%E5%8D%A1%E5%84%BF",
+        "label": "维基百科"
+      },
       "topicIds": [],
       "mentions": [
         {
@@ -15658,6 +15792,15 @@
         "康德",
         "Kant"
       ],
+      "image": {
+        "src": "/people/kant.jpg",
+        "credit": "Johann Gottlieb Becker (1720-1782) · Public domain",
+        "source": "https://commons.wikimedia.org/wiki/File:Immanuel_Kant_-_Gemaelde_1.jpg"
+      },
+      "link": {
+        "href": "https://zh.wikipedia.org/wiki/%E4%BC%8A%E6%9B%BC%E5%8A%AA%E5%B0%94%C2%B7%E5%BA%B7%E5%BE%B7",
+        "label": "维基百科"
+      },
       "topicIds": [],
       "mentions": [
         {
@@ -15677,6 +15820,15 @@
         "黑格尔",
         "Hegel"
       ],
+      "image": {
+        "src": "/people/hegel.jpg",
+        "credit": "Jakob Schlesinger · Public domain",
+        "source": "https://commons.wikimedia.org/wiki/File:Jakob_Schlesinger_-_Hegel_1831.jpg"
+      },
+      "link": {
+        "href": "https://zh.wikipedia.org/wiki/%E6%A0%BC%E5%A5%A5%E5%B0%94%E6%A0%BC%C2%B7%E5%A8%81%E5%BB%89%C2%B7%E5%BC%97%E9%87%8C%E5%BE%B7%E9%87%8C%E5%B8%8C%C2%B7%E9%BB%91%E6%A0%BC%E5%B0%94",
+        "label": "维基百科"
+      },
       "topicIds": [],
       "mentions": [
         {
@@ -15696,6 +15848,15 @@
         "福柯",
         "Foucault"
       ],
+      "image": {
+        "src": "/people/foucault.jpg",
+        "credit": "Jerry Bauer · Public domain",
+        "source": "https://commons.wikimedia.org/wiki/File:Photo_of_Michel_Foucault_on_1970_dustjacket_of_The_Order_of_Things.jpg"
+      },
+      "link": {
+        "href": "https://zh.wikipedia.org/wiki/%E7%B1%B3%E6%AD%87%E5%B0%94%C2%B7%E7%A6%8F%E6%9F%AF",
+        "label": "维基百科"
+      },
       "topicIds": [],
       "mentions": [
         {
@@ -15715,6 +15876,15 @@
         "亚里士多德",
         "Aristotle"
       ],
+      "image": {
+        "src": "/people/aristotle.jpg",
+        "credit": "After Lysippos · Public domain",
+        "source": "https://commons.wikimedia.org/wiki/File:Aristotle_Altemps_Inv8575.jpg"
+      },
+      "link": {
+        "href": "https://zh.wikipedia.org/wiki/%E4%BA%9A%E9%87%8C%E5%A3%AB%E5%A4%9A%E5%BE%B7",
+        "label": "维基百科"
+      },
       "topicIds": [],
       "mentions": [
         {
@@ -15734,6 +15904,15 @@
         "叔本华",
         "Schopenhauer"
       ],
+      "image": {
+        "src": "/people/schopenhauer.jpg",
+        "credit": "Johann Schäfer · Public domain",
+        "source": "https://commons.wikimedia.org/wiki/File:Arthur_Schopenhauer_by_J_Sch%C3%A4fer,_1859b.jpg"
+      },
+      "link": {
+        "href": "https://zh.wikipedia.org/wiki/%E9%98%BF%E5%9B%BE%E5%B0%94%C2%B7%E5%8F%94%E6%9C%AC%E5%8D%8E",
+        "label": "维基百科"
+      },
       "topicIds": [],
       "mentions": [
         {
@@ -15754,6 +15933,15 @@
         "法兰克福",
         "Frankfurt"
       ],
+      "image": {
+        "src": "/people/harry-frankfurt.jpg",
+        "credit": "American Council of Learned Societies (ACLS) · CC BY 3.0",
+        "source": "https://commons.wikimedia.org/wiki/File:Harry_Frankfurt_at_2017_ACLS_Annual_Meeting.jpg"
+      },
+      "link": {
+        "href": "https://zh.wikipedia.org/wiki/%E5%93%88%E9%87%8C%C2%B7%E5%AF%8C%E8%98%AD%E5%85%8B%E7%A6%8F",
+        "label": "维基百科"
+      },
       "topicIds": [],
       "mentions": [
         {
@@ -15773,6 +15961,15 @@
         "波伏娃",
         "Beauvoir"
       ],
+      "image": {
+        "src": "/people/beauvoir.jpg",
+        "credit": "Moshe Milner · CC BY-SA 3.0",
+        "source": "https://commons.wikimedia.org/wiki/File:Simone_De_Beauvoir_(cropped).jpg"
+      },
+      "link": {
+        "href": "https://zh.wikipedia.org/wiki/%E8%A5%BF%E8%92%99%C2%B7%E5%BE%B7%C2%B7%E6%B3%A2%E5%A8%83",
+        "label": "维基百科"
+      },
       "topicIds": [],
       "mentions": [
         {
@@ -15792,6 +15989,15 @@
         "韩炳哲",
         "Byung-Chul Han"
       ],
+      "image": {
+        "src": "/people/byung-chul-han.jpg",
+        "credit": "ActuaLitté · CC BY-SA 2.0",
+        "source": "https://commons.wikimedia.org/wiki/File:2015_Byung-Chul_Han_(3x4_cropped).jpg"
+      },
+      "link": {
+        "href": "https://zh.wikipedia.org/wiki/%E9%9F%93%E7%82%B3%E5%93%B2",
+        "label": "维基百科"
+      },
       "topicIds": [],
       "mentions": [
         {
@@ -15812,6 +16018,15 @@
         "苏珊·凯恩",
         "Susan Cain"
       ],
+      "image": {
+        "src": "/people/susan-cain.jpg",
+        "credit": "Susan Cain · CC BY-SA 3.0",
+        "source": "https://commons.wikimedia.org/wiki/File:SusanCainPortrait_250px_20120305.jpg"
+      },
+      "link": {
+        "href": "https://en.wikipedia.org/wiki/Susan%20Cain",
+        "label": "维基百科"
+      },
       "topicIds": [],
       "mentions": [
         {
@@ -15831,6 +16046,15 @@
         "纳瓦尔",
         "Naval"
       ],
+      "image": {
+        "src": "/people/naval.jpg",
+        "credit": "Elias Bizannes · CC BY-SA 2.0",
+        "source": "https://commons.wikimedia.org/wiki/File:Naval_Ravikant_(cropped).jpg"
+      },
+      "link": {
+        "href": "https://en.wikipedia.org/wiki/Naval%20Ravikant",
+        "label": "维基百科"
+      },
       "topicIds": [],
       "mentions": [
         {
@@ -15850,6 +16074,15 @@
         "卡尼曼",
         "Kahneman"
       ],
+      "image": {
+        "src": "/people/kahneman.jpg",
+        "credit": "nrkbeta · CC BY-SA 2.0",
+        "source": "https://commons.wikimedia.org/wiki/File:Daniel_Kahneman_(3283955327)_(cropped).jpg"
+      },
+      "link": {
+        "href": "https://zh.wikipedia.org/wiki/%E4%B8%B9%E5%B0%BC%E5%B0%94%C2%B7%E5%8D%A1%E5%B0%BC%E6%9B%BC",
+        "label": "维基百科"
+      },
       "topicIds": [],
       "mentions": [
         {
@@ -15869,6 +16102,10 @@
         "克莱因",
         "Gary Klein"
       ],
+      "link": {
+        "href": "https://en.wikipedia.org/wiki/Gary%20A.%20Klein",
+        "label": "维基百科"
+      },
       "topicIds": [],
       "mentions": [
         {
@@ -15888,6 +16125,15 @@
         "达玛西奥",
         "Damasio"
       ],
+      "image": {
+        "src": "/people/damasio.png",
+        "credit": "Fronteiras do Pensamento · CC BY-SA 2.0",
+        "source": "https://commons.wikimedia.org/wiki/File:Ant%C3%B3nio_Dam%C3%A1sio_no_Fronteiras_do_Pensamento_Porto_Alegre_2013_cropped.png"
+      },
+      "link": {
+        "href": "https://zh.wikipedia.org/wiki/%E5%AE%89%E4%B8%9C%E5%B0%BC%E5%A5%A5%C2%B7%E8%BE%BE%E9%A9%AC%E8%A5%BF%E5%A5%A5",
+        "label": "维基百科"
+      },
       "topicIds": [],
       "mentions": [
         {
@@ -15907,6 +16153,15 @@
         "范德考克",
         "van der Kolk"
       ],
+      "image": {
+        "src": "/people/van-der-kolk.jpg",
+        "credit": "Cross Cultures TV · CC BY 3.0",
+        "source": "https://commons.wikimedia.org/wiki/File:Bessel_van_der_Kolk_2022.jpg"
+      },
+      "link": {
+        "href": "https://en.wikipedia.org/wiki/Bessel%20van%20der%20Kolk",
+        "label": "维基百科"
+      },
       "topicIds": [],
       "mentions": []
     },
@@ -15919,6 +16174,15 @@
         "托利",
         "Eckhart Tolle"
       ],
+      "image": {
+        "src": "/people/tolle.jpg",
+        "credit": "Kyle Hoobin (twitter.com/kylehoobin) · CC BY-SA 3.0",
+        "source": "https://commons.wikimedia.org/wiki/File:Eckhart_Tolle_front.jpg"
+      },
+      "link": {
+        "href": "https://zh.wikipedia.org/wiki/%E8%89%BE%E5%85%8B%E5%93%88%E7%89%B9%C2%B7%E6%89%98%E5%8B%92",
+        "label": "维基百科"
+      },
       "topicIds": [],
       "mentions": []
     },
@@ -15932,6 +16196,10 @@
         "迈克尔·辛格",
         "Michael Singer"
       ],
+      "link": {
+        "href": "https://en.wikipedia.org/wiki/Michael%20Alan%20Singer",
+        "label": "维基百科"
+      },
       "topicIds": [],
       "mentions": []
     },
@@ -15944,6 +16212,15 @@
         "沃尔什",
         "Walsch"
       ],
+      "image": {
+        "src": "/people/walsch.jpg",
+        "credit": "Sarah Rozenthuler and Gil Dekel · CC BY-SA 3.0",
+        "source": "https://commons.wikimedia.org/wiki/File:Neale_Donald_Walsch.jpg"
+      },
+      "link": {
+        "href": "https://zh.wikipedia.org/wiki/%E5%B0%BC%E5%B0%94%C2%B7%E5%94%90%E7%BA%B3%C2%B7%E6%B2%83%E8%AE%B8",
+        "label": "维基百科"
+      },
       "topicIds": [],
       "mentions": []
     },
@@ -15956,6 +16233,15 @@
         "黑塞",
         "Hesse"
       ],
+      "image": {
+        "src": "/people/hesse.jpg",
+        "credit": "Unknown authorUnknown author · CC BY-SA 3.0 nl",
+        "source": "https://commons.wikimedia.org/wiki/File:Hermann_Hesse_2.jpg"
+      },
+      "link": {
+        "href": "https://zh.wikipedia.org/wiki/%E8%B5%AB%E5%B0%94%E6%9B%BC%C2%B7%E9%BB%91%E5%A1%9E",
+        "label": "维基百科"
+      },
       "topicIds": [],
       "mentions": []
     },
@@ -15968,6 +16254,10 @@
         "加尔韦",
         "Gallwey"
       ],
+      "link": {
+        "href": "https://en.wikipedia.org/wiki/Timothy%20Gallwey",
+        "label": "维基百科"
+      },
       "topicIds": [],
       "mentions": [
         {
@@ -16025,6 +16315,15 @@
         "埃伦伯格",
         "Ehrenberg"
       ],
+      "image": {
+        "src": "/people/ehrenberg.jpg",
+        "credit": "Pymouss · CC BY-SA 3.0",
+        "source": "https://commons.wikimedia.org/wiki/File:Rennes_ForumLib%C3%A92010_Alain_Ehrenberg.jpg"
+      },
+      "link": {
+        "href": "https://en.wikipedia.org/wiki/Alain%20Ehrenberg",
+        "label": "维基百科"
+      },
       "topicIds": [],
       "mentions": []
     },
@@ -16038,6 +16337,15 @@
         "R.D.莱恩",
         "莱恩"
       ],
+      "image": {
+        "src": "/people/rd-laing.jpg",
+        "credit": "No machine-readable author provided. Profero assumed (based on copyright claims). · CC BY 2.5",
+        "source": "https://commons.wikimedia.org/wiki/File:Ronald_D._Laing.jpg"
+      },
+      "link": {
+        "href": "https://zh.wikipedia.org/wiki/%E9%9A%86%E7%B4%8D%C2%B7%E5%A4%A7%E8%A1%9B%C2%B7%E9%80%A3%E6%81%A9",
+        "label": "维基百科"
+      },
       "topicIds": [],
       "mentions": [
         {
@@ -16056,6 +16364,15 @@
       "aliases": [
         "Daniel Sloss"
       ],
+      "image": {
+        "src": "/people/daniel-sloss.jpg",
+        "credit": "Bryan Berlin · CC BY-SA 4.0",
+        "source": "https://commons.wikimedia.org/wiki/File:Daniel_Sloss_at_the_2025_Edinburgh_Festival_Fringe-08_(cropped).jpg"
+      },
+      "link": {
+        "href": "https://en.wikipedia.org/wiki/Daniel%20Sloss",
+        "label": "维基百科"
+      },
       "topicIds": [],
       "mentions": [
         {
@@ -16074,6 +16391,10 @@
       "aliases": [
         "张家齐"
       ],
+      "link": {
+        "href": "https://en.wikipedia.org/wiki/Zhang%20Jiaqi",
+        "label": "维基百科"
+      },
       "topicIds": [],
       "mentions": [
         {
@@ -16092,6 +16413,15 @@
       "aliases": [
         "马天宇"
       ],
+      "image": {
+        "src": "/people/ma-tianyu.jpg",
+        "credit": "rayofsunshine · CC BY 2.5",
+        "source": "https://commons.wikimedia.org/wiki/File:180915_%E5%87%89%E7%94%9F%E6%88%91%E4%BB%AC%E5%8F%AF%E4%B8%8D%E5%8F%AF%E4%BB%A5%E4%B8%8D%E5%BF%A7%E4%BC%A4_%E5%BC%80%E6%92%AD%E5%8F%91%E5%B8%83%E4%BC%9A_(1).jpg"
+      },
+      "link": {
+        "href": "https://zh.wikipedia.org/wiki/%E9%A9%AC%E5%A4%A9%E5%AE%87",
+        "label": "维基百科"
+      },
       "topicIds": [],
       "mentions": [
         {
@@ -16101,6 +16431,69 @@
           "momentId": "m-52f91f23218d"
         }
       ]
+    },
+    {
+      "id": "jules-verne",
+      "kind": "person",
+      "name": "儒勒·凡尔纳",
+      "note": "法国小说家，《海底两万里》的作者。",
+      "aliases": [
+        "凡尔纳",
+        "Jules Verne"
+      ],
+      "image": {
+        "src": "/people/jules-verne.jpg",
+        "credit": "Étienne Carjat / Adam Cuerden · Public domain",
+        "source": "https://commons.wikimedia.org/wiki/File:Jules_Verne_by_%C3%89tienne_Carjat.jpg"
+      },
+      "link": {
+        "href": "https://zh.wikipedia.org/wiki/%E5%84%92%E5%8B%92%C2%B7%E5%87%A1%E5%B0%94%E7%BA%B3",
+        "label": "维基百科"
+      },
+      "topicIds": [],
+      "mentions": []
+    },
+    {
+      "id": "denis-villeneuve",
+      "kind": "person",
+      "name": "丹尼斯·维伦纽瓦",
+      "note": "加拿大导演，执导电影《降临》。",
+      "aliases": [
+        "维伦纽瓦",
+        "Denis Villeneuve"
+      ],
+      "image": {
+        "src": "/people/denis-villeneuve.jpg",
+        "credit": "Raph_PH · CC BY 2.0",
+        "source": "https://commons.wikimedia.org/wiki/File:DVilleneuveRFH121024_(12_of_23)_(54061976489)_(cropped).jpg"
+      },
+      "link": {
+        "href": "https://zh.wikipedia.org/wiki/%E4%B8%B9%E5%B0%BC%E6%96%AF%C2%B7%E7%BB%B4%E5%8B%92%E5%BC%97",
+        "label": "维基百科"
+      },
+      "topicIds": [],
+      "mentions": []
+    },
+    {
+      "id": "tony-kaye",
+      "kind": "person",
+      "name": "托尼·凯耶",
+      "note": "英国导演，执导电影《超脱》。",
+      "aliases": [
+        "托尼·凯耶",
+        "Tony Kaye"
+      ],
+      "image": {
+        "src": "/people/tony-kaye.jpg",
+        "credit": "Colleen Sturtevant · CC BY-SA 4.0",
+        "source": "https://commons.wikimedia.org/wiki/File:Tony_Kaye_2026.jpg"
+      },
+      "link": {
+        "href": "https://en.wikipedia.org/wiki/Tony%20Kaye%20%28director%29",
+        "label": "维基百科"
+      },
+      "topicIds": [],
+      "mentions": []
     },
     {
       "id": "mans-search-for-meaning",
@@ -16678,6 +17071,98 @@
       ]
     },
     {
+      "id": "twenty-thousand-leagues",
+      "kind": "book",
+      "name": "海底两万里",
+      "note": "凡尔纳的科幻小说，讲鹦鹉螺号在海底的航行。",
+      "aliases": [
+        "海底两万里",
+        "Twenty Thousand Leagues Under the Seas"
+      ],
+      "author": "jules-verne",
+      "topicIds": [],
+      "mentions": [
+        {
+          "episodeId": "6ac61a6e195d838e2aee30d0",
+          "startSec": 3168,
+          "via": "chapter",
+          "momentId": "m-4b0e09be2999"
+        }
+      ]
+    },
+    {
+      "id": "arrival",
+      "kind": "film",
+      "name": "降临",
+      "note": "如果提前知道会失去，你还会选择相遇吗？",
+      "aliases": [
+        "降临",
+        "Arrival"
+      ],
+      "people": [
+        "denis-villeneuve"
+      ],
+      "year": 2016,
+      "format": "电影",
+      "topicIds": [],
+      "mentions": [
+        {
+          "episodeId": "6a691d6bb581962ce2bd0548",
+          "startSec": 465,
+          "via": "chapter",
+          "momentId": "m-c2dbf855f54c"
+        }
+      ]
+    },
+    {
+      "id": "detachment",
+      "kind": "film",
+      "name": "超脱",
+      "note": "一位代课老师在冷漠和抽离里，与他人短暂地连接。",
+      "aliases": [
+        "超脱",
+        "Detachment"
+      ],
+      "people": [
+        "tony-kaye"
+      ],
+      "year": 2011,
+      "format": "电影",
+      "topicIds": [],
+      "mentions": [
+        {
+          "episodeId": "6afca55ca4a79edf137ae1cb",
+          "startSec": null,
+          "via": "notes",
+          "momentId": null
+        }
+      ]
+    },
+    {
+      "id": "jigsaw",
+      "kind": "film",
+      "name": "Jigsaw",
+      "note": "Daniel Sloss 用拼图比喻亲密关系的单口喜剧。",
+      "aliases": [
+        "拼图理论",
+        "Jigsaw"
+      ],
+      "people": [
+        "daniel-sloss"
+      ],
+      "year": 2018,
+      "format": "脱口秀特辑",
+      "topicIds": [],
+      "mentions": [
+        {
+          "episodeId": "69cbcf8be2c8be315507ccf8",
+          "startSec": 1636,
+          "via": "chapter",
+          "momentId": "m-0cc2ab863cfe"
+        }
+      ]
+    },
+    {
       "id": "existentialism",
       "kind": "concept",
       "name": "存在主义",
@@ -16691,6 +17176,7 @@
         "heidegger",
         "yalom"
       ],
+      "topic": "meaning",
       "topicIds": [],
       "mentions": [
         {
@@ -16734,6 +17220,7 @@
         "虚无",
         "无意义"
       ],
+      "topic": "meaning",
       "topicIds": [],
       "mentions": [
         {
@@ -16810,6 +17297,7 @@
       "people": [
         "yalom"
       ],
+      "topic": "meaning",
       "topicIds": [],
       "mentions": [
         {
@@ -16843,6 +17331,7 @@
       "people": [
         "camus"
       ],
+      "topic": "meaning",
       "topicIds": [],
       "mentions": [
         {
@@ -16876,6 +17365,7 @@
       "people": [
         "heidegger"
       ],
+      "topic": "meaning",
       "topicIds": [],
       "mentions": [
         {
@@ -16904,6 +17394,7 @@
       "people": [
         "heidegger"
       ],
+      "topic": "meaning",
       "topicIds": [],
       "mentions": [
         {
@@ -16925,6 +17416,7 @@
       "people": [
         "heidegger"
       ],
+      "topic": "meaning",
       "topicIds": [],
       "mentions": [
         {
@@ -16946,6 +17438,7 @@
       "people": [
         "nietzsche"
       ],
+      "topic": "meaning",
       "topicIds": [],
       "mentions": [
         {
@@ -16968,6 +17461,7 @@
       "people": [
         "nietzsche"
       ],
+      "topic": "meaning",
       "topicIds": [],
       "mentions": [
         {
@@ -16989,6 +17483,7 @@
       "people": [
         "frankl"
       ],
+      "topic": "meaning",
       "topicIds": [],
       "mentions": [
         {
@@ -17010,6 +17505,7 @@
       "people": [
         "frankl"
       ],
+      "topic": "emotion-body",
       "topicIds": [],
       "mentions": [
         {
@@ -17028,6 +17524,7 @@
       "aliases": [
         "习得性无助"
       ],
+      "topic": "rhythm",
       "topicIds": [],
       "mentions": [
         {
@@ -17055,6 +17552,7 @@
       "people": [
         "winnicott"
       ],
+      "topic": "self-trust",
       "topicIds": [],
       "mentions": [
         {
@@ -17082,6 +17580,7 @@
       "people": [
         "winnicott"
       ],
+      "topic": "connection",
       "topicIds": [],
       "mentions": [
         {
@@ -17100,6 +17599,7 @@
       "aliases": [
         "心智化"
       ],
+      "topic": "self-trust",
       "topicIds": [],
       "mentions": [
         {
@@ -17125,6 +17625,7 @@
         "标记化镜映",
         "镜映"
       ],
+      "topic": "self-trust",
       "topicIds": [],
       "mentions": [
         {
@@ -17143,6 +17644,7 @@
       "aliases": [
         "强迫性重复"
       ],
+      "topic": "emotion-body",
       "topicIds": [],
       "mentions": [
         {
@@ -17161,6 +17663,7 @@
       "aliases": [
         "客体恒常性"
       ],
+      "topic": "connection",
       "topicIds": [],
       "mentions": [
         {
@@ -17179,6 +17682,7 @@
       "aliases": [
         "自我分化"
       ],
+      "topic": "boundaries",
       "topicIds": [],
       "mentions": [
         {
@@ -17198,6 +17702,7 @@
         "趋近-回避冲突",
         "趋近回避"
       ],
+      "topic": "connection",
       "topicIds": [],
       "mentions": [
         {
@@ -17219,6 +17724,7 @@
       "people": [
         "bowlby"
       ],
+      "topic": "connection",
       "topicIds": [],
       "mentions": [
         {
@@ -17247,6 +17753,7 @@
       "people": [
         "bowlby"
       ],
+      "topic": "connection",
       "topicIds": [],
       "mentions": [
         {
@@ -17274,6 +17781,7 @@
       "people": [
         "bowlby"
       ],
+      "topic": "connection",
       "topicIds": [],
       "mentions": [
         {
@@ -17295,6 +17803,7 @@
       "people": [
         "fairbairn"
       ],
+      "topic": "connection",
       "topicIds": [],
       "mentions": [
         {
@@ -17317,6 +17826,7 @@
       "people": [
         "rogers"
       ],
+      "topic": "connection",
       "topicIds": [],
       "mentions": [
         {
@@ -17351,6 +17861,7 @@
       "people": [
         "horney"
       ],
+      "topic": "self-worth",
       "topicIds": [],
       "mentions": [
         {
@@ -17369,6 +17880,7 @@
       "aliases": [
         "内射"
       ],
+      "topic": "self-worth",
       "topicIds": [],
       "mentions": [
         {
@@ -17389,6 +17901,7 @@
         "内在审判官",
         "内在批评者"
       ],
+      "topic": "self-worth",
       "topicIds": [],
       "mentions": [
         {
@@ -17438,6 +17951,7 @@
         "毒性羞耻",
         "羞耻"
       ],
+      "topic": "self-worth",
       "topicIds": [],
       "mentions": [
         {
@@ -17594,6 +18108,7 @@
       "aliases": [
         "冒名顶替"
       ],
+      "topic": "self-worth",
       "topicIds": [],
       "mentions": [
         {
@@ -17618,6 +18133,7 @@
       "aliases": [
         "配得感"
       ],
+      "topic": "self-worth",
       "topicIds": [],
       "mentions": [
         {
@@ -17662,6 +18178,7 @@
         "自我同情",
         "自我关怀"
       ],
+      "topic": "self-worth",
       "topicIds": [],
       "mentions": [
         {
@@ -17692,6 +18209,7 @@
       "aliases": [
         "讨好"
       ],
+      "topic": "boundaries",
       "topicIds": [],
       "mentions": [
         {
@@ -17812,6 +18330,7 @@
       "aliases": [
         "完美主义"
       ],
+      "topic": "self-worth",
       "topicIds": [],
       "mentions": [
         {
@@ -17860,6 +18379,7 @@
       "aliases": [
         "拖延"
       ],
+      "topic": "rhythm",
       "topicIds": [],
       "mentions": [
         {
@@ -17896,6 +18416,7 @@
       "aliases": [
         "反刍"
       ],
+      "topic": "emotion-body",
       "topicIds": [],
       "mentions": [
         {
@@ -17927,6 +18448,7 @@
         "不确定性不耐受",
         "确定感"
       ],
+      "topic": "emotion-body",
       "topicIds": [],
       "mentions": [
         {
@@ -17970,6 +18492,7 @@
         "解离",
         "抽离"
       ],
+      "topic": "emotion-body",
       "topicIds": [],
       "mentions": [
         {
@@ -18012,6 +18535,7 @@
       "aliases": [
         "非黑即白"
       ],
+      "topic": "emotion-body",
       "topicIds": [],
       "mentions": [
         {
@@ -18048,6 +18572,7 @@
       "aliases": [
         "整合"
       ],
+      "topic": "emotion-body",
       "topicIds": [],
       "mentions": [
         {
@@ -18102,6 +18627,7 @@
       "aliases": [
         "主体性"
       ],
+      "topic": "self-trust",
       "topicIds": [],
       "mentions": [
         {
@@ -18223,6 +18749,7 @@
         "自我异化",
         "异己的自我"
       ],
+      "topic": "self-trust",
       "topicIds": [],
       "mentions": [
         {
@@ -18241,6 +18768,7 @@
       "aliases": [
         "自我决定论"
       ],
+      "topic": "self-trust",
       "topicIds": [],
       "mentions": [
         {
@@ -18259,6 +18787,7 @@
       "aliases": [
         "负强化"
       ],
+      "topic": "emotion-body",
       "topicIds": [],
       "mentions": [
         {
@@ -18283,6 +18812,7 @@
       "aliases": [
         "黑色生命力"
       ],
+      "topic": "emotion-body",
       "topicIds": [],
       "mentions": [
         {
@@ -18319,6 +18849,7 @@
       "aliases": [
         "攻击性"
       ],
+      "topic": "emotion-body",
       "topicIds": [],
       "mentions": [
         {
@@ -18355,6 +18886,7 @@
       "aliases": [
         "预期性哀伤"
       ],
+      "topic": "connection",
       "topicIds": [],
       "mentions": [
         {
@@ -18374,6 +18906,7 @@
         "有限游戏",
         "无限游戏"
       ],
+      "topic": "meaning",
       "topicIds": [],
       "mentions": [
         {
@@ -18398,6 +18931,7 @@
       "aliases": [
         "长期主义"
       ],
+      "topic": "rhythm",
       "topicIds": [],
       "mentions": [
         {
@@ -18434,6 +18968,7 @@
       "aliases": [
         "玩乐力"
       ],
+      "topic": "rhythm",
       "topicIds": [],
       "mentions": [
         {
@@ -18494,6 +19029,7 @@
       "aliases": [
         "休息羞耻"
       ],
+      "topic": "rhythm",
       "topicIds": [],
       "mentions": [
         {
@@ -18524,6 +19060,7 @@
       "aliases": [
         "心理脱离"
       ],
+      "topic": "rhythm",
       "topicIds": [],
       "mentions": [
         {
@@ -18542,6 +19079,7 @@
       "aliases": [
         "静止脸实验"
       ],
+      "topic": "connection",
       "topicIds": [],
       "mentions": [
         {
@@ -18560,6 +19098,7 @@
       "aliases": [
         "烟雾报警器"
       ],
+      "topic": "emotion-body",
       "topicIds": [],
       "mentions": [
         {
@@ -18578,6 +19117,7 @@
       "aliases": [
         "内隐"
       ],
+      "topic": "emotion-body",
       "topicIds": [],
       "mentions": [
         {
@@ -18597,6 +19137,7 @@
         "适应性的偏好",
         "酸葡萄"
       ],
+      "topic": "self-trust",
       "topicIds": [],
       "mentions": [
         {
@@ -18616,6 +19157,7 @@
         "受害者叙事",
         "受害倾向"
       ],
+      "topic": "boundaries",
       "topicIds": [],
       "mentions": [
         {
@@ -18640,6 +19182,7 @@
       "aliases": [
         "臣服"
       ],
+      "topic": "meaning",
       "topicIds": [],
       "mentions": [
         {
@@ -18667,6 +19210,7 @@
       "people": [
         "tolle"
       ],
+      "topic": "emotion-body",
       "topicIds": [],
       "mentions": [
         {
@@ -18686,6 +19230,7 @@
         "接纳",
         "接受"
       ],
+      "topic": "self-worth",
       "topicIds": [],
       "mentions": [
         {
@@ -18741,6 +19286,1630 @@
           "startSec": 1938,
           "via": "chapter",
           "momentId": "m-8fadb9310df6"
+        }
+      ]
+    },
+    {
+      "id": "over-functioning",
+      "kind": "concept",
+      "name": "兜底",
+      "note": "习惯替所有人收拾局面，自己却没人可以依靠。",
+      "aliases": [
+        "兜底",
+        "帮忙",
+        "能干"
+      ],
+      "topic": "boundaries",
+      "topicIds": [],
+      "mentions": [
+        {
+          "episodeId": "6af5b5b414d01a26f8a8ecff",
+          "startSec": 1201,
+          "via": "chapter",
+          "momentId": "m-3a8d26f1e686"
+        },
+        {
+          "episodeId": "6af5b5b414d01a26f8a8ecff",
+          "startSec": 2066,
+          "via": "chapter",
+          "momentId": "m-aa315276770f"
+        }
+      ]
+    },
+    {
+      "id": "defense",
+      "kind": "concept",
+      "name": "防御",
+      "note": "保护自己不再受伤的方式，有时也挡住了亲近。",
+      "aliases": [
+        "防御",
+        "盔甲"
+      ],
+      "topic": "boundaries",
+      "topicIds": [],
+      "mentions": [
+        {
+          "episodeId": "69273c750084e2631de98eeb",
+          "startSec": 437,
+          "via": "chapter",
+          "momentId": "m-8c2165687e42"
+        },
+        {
+          "episodeId": "6ab158a793d5eb3bdc78ec88",
+          "startSec": 893,
+          "via": "chapter",
+          "momentId": "m-b6b6fce6b8b3"
+        },
+        {
+          "episodeId": "6afca55ca4a79edf137ae1cb",
+          "startSec": 433,
+          "via": "chapter",
+          "momentId": "m-a09152867d44"
+        },
+        {
+          "episodeId": "6afca55ca4a79edf137ae1cb",
+          "startSec": 627,
+          "via": "chapter",
+          "momentId": "m-f63e7a10600a"
+        },
+        {
+          "episodeId": "6afca55ca4a79edf137ae1cb",
+          "startSec": 813,
+          "via": "chapter",
+          "momentId": "m-559cea5d13fb"
+        },
+        {
+          "episodeId": "6afca55ca4a79edf137ae1cb",
+          "startSec": 1002,
+          "via": "chapter",
+          "momentId": "m-fabfd870a34a"
+        },
+        {
+          "episodeId": "6afca55ca4a79edf137ae1cb",
+          "startSec": 2366,
+          "via": "chapter",
+          "momentId": "m-17e5a87cab83"
+        },
+        {
+          "episodeId": "6afca55ca4a79edf137ae1cb",
+          "startSec": 2754,
+          "via": "chapter",
+          "momentId": "m-956f09d35c44"
+        }
+      ]
+    },
+    {
+      "id": "boundary",
+      "kind": "concept",
+      "name": "边界感",
+      "note": "分清哪些是我的需要和责任，哪些是你的。",
+      "aliases": [
+        "边界感",
+        "边界"
+      ],
+      "topic": "boundaries",
+      "topicIds": [],
+      "mentions": [
+        {
+          "episodeId": "699b2b0dde29766da92d1d5a",
+          "startSec": 734,
+          "via": "chapter",
+          "momentId": "m-c43f23a196ec"
+        },
+        {
+          "episodeId": "699b2b0dde29766da92d1d5a",
+          "startSec": 1644,
+          "via": "chapter",
+          "momentId": "m-79484d4f71c3"
+        },
+        {
+          "episodeId": "6a4d7f733fb7233cbf456488",
+          "startSec": 1277,
+          "via": "chapter",
+          "momentId": "m-493297e13cb7"
+        },
+        {
+          "episodeId": "6a60a3faa3fec224d5a1a7c7",
+          "startSec": 1096,
+          "via": "chapter",
+          "momentId": "m-778ca25ef991"
+        },
+        {
+          "episodeId": "6afca55ca4a79edf137ae1cb",
+          "startSec": 140,
+          "via": "chapter",
+          "momentId": "m-bc33ce31f62c"
+        },
+        {
+          "episodeId": "6afca55ca4a79edf137ae1cb",
+          "startSec": 1084,
+          "via": "chapter",
+          "momentId": "m-ae6c501618f4"
+        }
+      ]
+    },
+    {
+      "id": "enmeshment",
+      "kind": "concept",
+      "name": "粘连",
+      "note": "关系里彼此的情绪和责任缠在一起，分不开。",
+      "aliases": [
+        "粘连",
+        "角色颠倒",
+        "示弱"
+      ],
+      "topic": "boundaries",
+      "topicIds": [],
+      "mentions": [
+        {
+          "episodeId": "6aba1466195d838e2aeb0579",
+          "startSec": 223,
+          "via": "chapter",
+          "momentId": "m-345a03a875f6"
+        },
+        {
+          "episodeId": "6aba1466195d838e2aeb0579",
+          "startSec": 1557,
+          "via": "chapter",
+          "momentId": "m-b9d21ab49a5a"
+        },
+        {
+          "episodeId": "6aba1466195d838e2aeb0579",
+          "startSec": 2204,
+          "via": "chapter",
+          "momentId": "m-df4df029896d"
+        },
+        {
+          "episodeId": "6af5b5b414d01a26f8a8ecff",
+          "startSec": 1394,
+          "via": "chapter",
+          "momentId": "m-48bd569953fa"
+        }
+      ]
+    },
+    {
+      "id": "loneliness",
+      "kind": "concept",
+      "name": "孤独",
+      "note": "有人陪也可能孤独；独处是状态，孤独是体验。",
+      "aliases": [
+        "孤独",
+        "独处"
+      ],
+      "topic": "connection",
+      "topicIds": [],
+      "mentions": [
+        {
+          "episodeId": "686cf7ea60f8f77d40778e37",
+          "startSec": 349,
+          "via": "chapter",
+          "momentId": "m-e2e50f600899"
+        },
+        {
+          "episodeId": "69273c750084e2631de98eeb",
+          "startSec": 677,
+          "via": "chapter",
+          "momentId": "m-eef92105171e"
+        },
+        {
+          "episodeId": "69cbcf8be2c8be315507ccf8",
+          "startSec": 148,
+          "via": "chapter",
+          "momentId": "m-a0ea5939e076"
+        },
+        {
+          "episodeId": "69cbcf8be2c8be315507ccf8",
+          "startSec": 323,
+          "via": "chapter",
+          "momentId": "m-7c4172531623"
+        },
+        {
+          "episodeId": "69cbcf8be2c8be315507ccf8",
+          "startSec": 419,
+          "via": "chapter",
+          "momentId": "m-ea7a31dc6a94"
+        },
+        {
+          "episodeId": "69cbcf8be2c8be315507ccf8",
+          "startSec": 520,
+          "via": "chapter",
+          "momentId": "m-662f0a44c7d8"
+        },
+        {
+          "episodeId": "69cbcf8be2c8be315507ccf8",
+          "startSec": 609,
+          "via": "chapter",
+          "momentId": "m-23e174fe7121"
+        },
+        {
+          "episodeId": "69cbcf8be2c8be315507ccf8",
+          "startSec": 965,
+          "via": "chapter",
+          "momentId": "m-0dbd3bf193b9"
+        },
+        {
+          "episodeId": "69cbcf8be2c8be315507ccf8",
+          "startSec": 1111,
+          "via": "chapter",
+          "momentId": "m-4a43413c4352"
+        },
+        {
+          "episodeId": "69cbcf8be2c8be315507ccf8",
+          "startSec": 1234,
+          "via": "chapter",
+          "momentId": "m-116d47881760"
+        },
+        {
+          "episodeId": "69cbcf8be2c8be315507ccf8",
+          "startSec": 1413,
+          "via": "chapter",
+          "momentId": "m-e27a692ae345"
+        },
+        {
+          "episodeId": "69cbcf8be2c8be315507ccf8",
+          "startSec": 2125,
+          "via": "chapter",
+          "momentId": "m-446c2442db29"
+        },
+        {
+          "episodeId": "69cbcf8be2c8be315507ccf8",
+          "startSec": 2257,
+          "via": "chapter",
+          "momentId": "m-bf358e0ed6e7"
+        },
+        {
+          "episodeId": "69cbcf8be2c8be315507ccf8",
+          "startSec": 2373,
+          "via": "chapter",
+          "momentId": "m-c9b71d133fe2"
+        },
+        {
+          "episodeId": "69cbcf8be2c8be315507ccf8",
+          "startSec": 2573,
+          "via": "chapter",
+          "momentId": "m-76f97fd7e56d"
+        },
+        {
+          "episodeId": "6aa06097f03e74ee6b0749ce",
+          "startSec": 2241,
+          "via": "chapter",
+          "momentId": "m-e16c350a0fe0"
+        }
+      ]
+    },
+    {
+      "id": "grief",
+      "kind": "concept",
+      "name": "丧失与哀伤",
+      "note": "失去之后的痛，常常是爱换了一种形状。",
+      "aliases": [
+        "丧失",
+        "哀伤",
+        "悲伤",
+        "失去"
+      ],
+      "topic": "connection",
+      "topicIds": [],
+      "mentions": [
+        {
+          "episodeId": "6991c08766e2c303778a3c65",
+          "startSec": 1118,
+          "via": "chapter",
+          "momentId": "m-b948192a3cb5"
+        },
+        {
+          "episodeId": "699b2b0dde29766da92d1d5a",
+          "startSec": 1270,
+          "via": "chapter",
+          "momentId": "m-d880df7b2dec"
+        },
+        {
+          "episodeId": "69c8dea9e2c8be3155c95ad0",
+          "startSec": 307,
+          "via": "chapter",
+          "momentId": "m-0b1b9ec8b34f"
+        },
+        {
+          "episodeId": "69c8dea9e2c8be3155c95ad0",
+          "startSec": 468,
+          "via": "chapter",
+          "momentId": "m-a7f98b0d72f7"
+        },
+        {
+          "episodeId": "69c8dea9e2c8be3155c95ad0",
+          "startSec": 949,
+          "via": "chapter",
+          "momentId": "m-b5b64ba4d209"
+        },
+        {
+          "episodeId": "69c8dea9e2c8be3155c95ad0",
+          "startSec": 989,
+          "via": "chapter",
+          "momentId": "m-fc414575c8d2"
+        },
+        {
+          "episodeId": "69c8dea9e2c8be3155c95ad0",
+          "startSec": 1549,
+          "via": "chapter",
+          "momentId": "m-0909e9b9e922"
+        },
+        {
+          "episodeId": "69c8dea9e2c8be3155c95ad0",
+          "startSec": 1632,
+          "via": "chapter",
+          "momentId": "m-41075bf848b9"
+        },
+        {
+          "episodeId": "69c8dea9e2c8be3155c95ad0",
+          "startSec": 1947,
+          "via": "chapter",
+          "momentId": "m-1afd6e58906b"
+        },
+        {
+          "episodeId": "69c8dea9e2c8be3155c95ad0",
+          "startSec": 2369,
+          "via": "chapter",
+          "momentId": "m-d8f62a71272b"
+        },
+        {
+          "episodeId": "69c8dea9e2c8be3155c95ad0",
+          "startSec": 2484,
+          "via": "chapter",
+          "momentId": "m-151d2a5ebb53"
+        },
+        {
+          "episodeId": "69c8dea9e2c8be3155c95ad0",
+          "startSec": 2614,
+          "via": "chapter",
+          "momentId": "m-efc7702649a2"
+        },
+        {
+          "episodeId": "69c8dea9e2c8be3155c95ad0",
+          "startSec": 2670,
+          "via": "chapter",
+          "momentId": "m-ef8abc93545c"
+        },
+        {
+          "episodeId": "69ea54171d989496e75d9429",
+          "startSec": 3668,
+          "via": "chapter",
+          "momentId": "m-38c1f3b78a3c"
+        },
+        {
+          "episodeId": "6a2bcc4a43a22a6955829f3b",
+          "startSec": 1404,
+          "via": "chapter",
+          "momentId": "m-36cb9c5b0812"
+        },
+        {
+          "episodeId": "6a2bcc4a43a22a6955829f3b",
+          "startSec": 2108,
+          "via": "chapter",
+          "momentId": "m-d1de6467a519"
+        },
+        {
+          "episodeId": "6a60a3faa3fec224d5a1a7c7",
+          "startSec": 828,
+          "via": "chapter",
+          "momentId": "m-e5569648b9fb"
+        },
+        {
+          "episodeId": "6a691d6bb581962ce2bd0548",
+          "startSec": 465,
+          "via": "chapter",
+          "momentId": "m-c2dbf855f54c"
+        },
+        {
+          "episodeId": "6ac61a6e195d838e2aee30d0",
+          "startSec": 252,
+          "via": "chapter",
+          "momentId": "m-b96a684439ba"
+        },
+        {
+          "episodeId": "6ac61a6e195d838e2aee30d0",
+          "startSec": 956,
+          "via": "chapter",
+          "momentId": "m-9a6b94f96a01"
+        },
+        {
+          "episodeId": "6afca55ca4a79edf137ae1cb",
+          "startSec": 2566,
+          "via": "chapter",
+          "momentId": "m-904069aa390d"
+        }
+      ]
+    },
+    {
+      "id": "abandonment",
+      "kind": "concept",
+      "name": "被丢下",
+      "note": "害怕重要的人会离开，身体提前拉响警报。",
+      "aliases": [
+        "被丢下",
+        "抛弃",
+        "丢下"
+      ],
+      "topic": "connection",
+      "topicIds": [],
+      "mentions": [
+        {
+          "episodeId": "6991c08766e2c303778a3c65",
+          "startSec": 2128,
+          "via": "chapter",
+          "momentId": "m-fd0f863b23ba"
+        },
+        {
+          "episodeId": "699b2b0dde29766da92d1d5a",
+          "startSec": 1385,
+          "via": "chapter",
+          "momentId": "m-cd5ba569e387"
+        },
+        {
+          "episodeId": "6a569a14ca0de6c44ae72ba1",
+          "startSec": 1865,
+          "via": "chapter",
+          "momentId": "m-48f6120cbc7f"
+        },
+        {
+          "episodeId": "6ad7aa42ef67611cac79a431",
+          "startSec": 2282,
+          "via": "chapter",
+          "momentId": "m-ba07a2f9b53e"
+        }
+      ]
+    },
+    {
+      "id": "presence",
+      "kind": "concept",
+      "name": "在场",
+      "note": "另一个人真的在这里、看见并回应你。",
+      "aliases": [
+        "在场",
+        "陪伴",
+        "回应"
+      ],
+      "topic": "connection",
+      "topicIds": [],
+      "mentions": [
+        {
+          "episodeId": "691c7b14cbba038b422b098b",
+          "startSec": 1054,
+          "via": "chapter",
+          "momentId": "m-dd6dd8d1792c"
+        },
+        {
+          "episodeId": "69402bbe37f52a644e1e05b2",
+          "startSec": 1796,
+          "via": "chapter",
+          "momentId": "m-0df4173fb3c2"
+        },
+        {
+          "episodeId": "696e9f6e109824f9e168a49c",
+          "startSec": 369,
+          "via": "chapter",
+          "momentId": "m-3a52c958c893"
+        },
+        {
+          "episodeId": "6991c08766e2c303778a3c65",
+          "startSec": 1783,
+          "via": "chapter",
+          "momentId": "m-edfb6bead63f"
+        },
+        {
+          "episodeId": "69b02fdb2a2882aae75cea02",
+          "startSec": 1471,
+          "via": "chapter",
+          "momentId": "m-3b60c71feb2e"
+        },
+        {
+          "episodeId": "69cbcf8be2c8be315507ccf8",
+          "startSec": 1234,
+          "via": "chapter",
+          "momentId": "m-116d47881760"
+        },
+        {
+          "episodeId": "69ea54171d989496e75d9429",
+          "startSec": 1823,
+          "via": "chapter",
+          "momentId": "m-05ab9a5ab5b5"
+        },
+        {
+          "episodeId": "6a4d7f733fb7233cbf456488",
+          "startSec": 2083,
+          "via": "chapter",
+          "momentId": "m-43fdc4080908"
+        },
+        {
+          "episodeId": "6a7a4ff017676351c56fdd60",
+          "startSec": 1427,
+          "via": "chapter",
+          "momentId": "m-ac3c7edf969e"
+        },
+        {
+          "episodeId": "6ac61a6e195d838e2aee30d0",
+          "startSec": 1116,
+          "via": "chapter",
+          "momentId": "m-d4c56152e245"
+        },
+        {
+          "episodeId": "6ad7aa42ef67611cac79a431",
+          "startSec": 3279,
+          "via": "chapter",
+          "momentId": "m-9beccd8ce5a9"
+        },
+        {
+          "episodeId": "6ae1f41497726cd467593480",
+          "startSec": 1109,
+          "via": "chapter",
+          "momentId": "m-381214d38fe8"
+        },
+        {
+          "episodeId": "6afca55ca4a79edf137ae1cb",
+          "startSec": 1461,
+          "via": "chapter",
+          "momentId": "m-5e9cbd9a2c5a"
+        }
+      ]
+    },
+    {
+      "id": "authenticity",
+      "kind": "concept",
+      "name": "真实",
+      "note": "不背叛自己，而不是毫无修饰。",
+      "aliases": [
+        "真实",
+        "人设",
+        "面具"
+      ],
+      "topic": "self-trust",
+      "topicIds": [],
+      "mentions": [
+        {
+          "episodeId": "69273c750084e2631de98eeb",
+          "startSec": 376,
+          "via": "chapter",
+          "momentId": "m-200f69287b85"
+        },
+        {
+          "episodeId": "697957c63cf2b0c01cf1687b",
+          "startSec": 840,
+          "via": "chapter",
+          "momentId": "m-a0adf171cf19"
+        },
+        {
+          "episodeId": "6a2bcc4a43a22a6955829f3b",
+          "startSec": 145,
+          "via": "chapter",
+          "momentId": "m-a252141b5c62"
+        },
+        {
+          "episodeId": "6a2bcc4a43a22a6955829f3b",
+          "startSec": 460,
+          "via": "chapter",
+          "momentId": "m-b912489e1bcb"
+        },
+        {
+          "episodeId": "6a2bcc4a43a22a6955829f3b",
+          "startSec": 709,
+          "via": "chapter",
+          "momentId": "m-dc5890a016ac"
+        },
+        {
+          "episodeId": "6a2bcc4a43a22a6955829f3b",
+          "startSec": 1640,
+          "via": "chapter",
+          "momentId": "m-925514a5bf10"
+        },
+        {
+          "episodeId": "6a2bcc4a43a22a6955829f3b",
+          "startSec": 2108,
+          "via": "chapter",
+          "momentId": "m-d1de6467a519"
+        },
+        {
+          "episodeId": "6a3bc0969d2f5743683d380b",
+          "startSec": 1468,
+          "via": "chapter",
+          "momentId": "m-8510dd764304"
+        },
+        {
+          "episodeId": "6a569a14ca0de6c44ae72ba1",
+          "startSec": 1743,
+          "via": "chapter",
+          "momentId": "m-980e82cfa8ac"
+        },
+        {
+          "episodeId": "6a60a3faa3fec224d5a1a7c7",
+          "startSec": 2641,
+          "via": "chapter",
+          "momentId": "m-21bd0f5cd0d7"
+        }
+      ]
+    },
+    {
+      "id": "choosing-or-must",
+      "kind": "concept",
+      "name": "我选择还是我必须",
+      "note": "分辨一件事是出于想要，还是出于不得不。",
+      "aliases": [
+        "我选择",
+        "我必须",
+        "我想要"
+      ],
+      "topic": "self-trust",
+      "topicIds": [],
+      "mentions": [
+        {
+          "episodeId": "6aba1466195d838e2aeb0579",
+          "startSec": 2612,
+          "via": "chapter",
+          "momentId": "m-0823b96c3844"
+        },
+        {
+          "episodeId": "6aba1466195d838e2aeb0579",
+          "startSec": 2849,
+          "via": "chapter",
+          "momentId": "m-2c6f995200af"
+        },
+        {
+          "episodeId": "6af5b5b414d01a26f8a8ecff",
+          "startSec": 1961,
+          "via": "chapter",
+          "momentId": "m-338cf05267f7"
+        }
+      ]
+    },
+    {
+      "id": "intuition",
+      "kind": "concept",
+      "name": "直觉与本能",
+      "note": "身体和经验里比语言更快的判断。",
+      "aliases": [
+        "直觉",
+        "本能"
+      ],
+      "topic": "self-trust",
+      "topicIds": [],
+      "mentions": [
+        {
+          "episodeId": "6aaa8e85051af796b9e936c7",
+          "startSec": 571,
+          "via": "chapter",
+          "momentId": "m-ff8bec086d3e"
+        },
+        {
+          "episodeId": "6aaa8e85051af796b9e936c7",
+          "startSec": 972,
+          "via": "chapter",
+          "momentId": "m-adca4c08d49d"
+        },
+        {
+          "episodeId": "6ae1f41497726cd467593480",
+          "startSec": 1586,
+          "via": "chapter",
+          "momentId": "m-9e7cca1303e2"
+        }
+      ]
+    },
+    {
+      "id": "comparison",
+      "kind": "concept",
+      "name": "比较",
+      "note": "拿别人当尺子，有时会让尺子变成裁判。",
+      "aliases": [
+        "比较",
+        "同龄人",
+        "零和"
+      ],
+      "topic": "self-worth",
+      "topicIds": [],
+      "mentions": [
+        {
+          "episodeId": "68ce380ca56ca3e0c45a69bb",
+          "startSec": 326,
+          "via": "chapter",
+          "momentId": "m-2c28dd61e8a5"
+        },
+        {
+          "episodeId": "6ab158a793d5eb3bdc78ec88",
+          "startSec": 287,
+          "via": "chapter",
+          "momentId": "m-dd6d9b010d00"
+        },
+        {
+          "episodeId": "6ab158a793d5eb3bdc78ec88",
+          "startSec": 761,
+          "via": "chapter",
+          "momentId": "m-cda3d25aa9ed"
+        },
+        {
+          "episodeId": "6ab158a793d5eb3bdc78ec88",
+          "startSec": 893,
+          "via": "chapter",
+          "momentId": "m-b6b6fce6b8b3"
+        }
+      ]
+    },
+    {
+      "id": "money",
+      "kind": "concept",
+      "name": "金钱",
+      "note": "人和钱的关系，常常映出人和自己的关系。",
+      "aliases": [
+        "金钱",
+        "谈钱",
+        "花钱",
+        "赚钱"
+      ],
+      "topic": "self-worth",
+      "topicIds": [],
+      "mentions": [
+        {
+          "episodeId": "68c97fc2a56ca3e0c4c34a0c",
+          "startSec": 1116,
+          "via": "chapter",
+          "momentId": "m-b97cd7119bc5"
+        },
+        {
+          "episodeId": "690bb697af4fc00da7542f56",
+          "startSec": 1110,
+          "via": "chapter",
+          "momentId": "m-039a805704a6"
+        },
+        {
+          "episodeId": "6a1efd267444b5722232567f",
+          "startSec": 2243,
+          "via": "chapter",
+          "momentId": "m-d25d9d03890a"
+        },
+        {
+          "episodeId": "6a60a3faa3fec224d5a1a7c7",
+          "startSec": 159,
+          "via": "chapter",
+          "momentId": "m-6bea0f71fb27"
+        },
+        {
+          "episodeId": "6a60a3faa3fec224d5a1a7c7",
+          "startSec": 484,
+          "via": "chapter",
+          "momentId": "m-1459cfcbe85c"
+        },
+        {
+          "episodeId": "6a60a3faa3fec224d5a1a7c7",
+          "startSec": 615,
+          "via": "chapter",
+          "momentId": "m-5b563ba3a674"
+        },
+        {
+          "episodeId": "6a60a3faa3fec224d5a1a7c7",
+          "startSec": 663,
+          "via": "chapter",
+          "momentId": "m-39b556a46f9b"
+        },
+        {
+          "episodeId": "6a60a3faa3fec224d5a1a7c7",
+          "startSec": 703,
+          "via": "chapter",
+          "momentId": "m-657128d9cee7"
+        },
+        {
+          "episodeId": "6a60a3faa3fec224d5a1a7c7",
+          "startSec": 767,
+          "via": "chapter",
+          "momentId": "m-9a95d66c769c"
+        },
+        {
+          "episodeId": "6a60a3faa3fec224d5a1a7c7",
+          "startSec": 1288,
+          "via": "chapter",
+          "momentId": "m-27f2c2a0abf0"
+        },
+        {
+          "episodeId": "6a60a3faa3fec224d5a1a7c7",
+          "startSec": 1731,
+          "via": "chapter",
+          "momentId": "m-7f64c0489449"
+        },
+        {
+          "episodeId": "6a60a3faa3fec224d5a1a7c7",
+          "startSec": 1967,
+          "via": "chapter",
+          "momentId": "m-fc1324e98aa4"
+        },
+        {
+          "episodeId": "6a60a3faa3fec224d5a1a7c7",
+          "startSec": 2408,
+          "via": "chapter",
+          "momentId": "m-a574ed26e8d8"
+        },
+        {
+          "episodeId": "6a60a3faa3fec224d5a1a7c7",
+          "startSec": 2523,
+          "via": "chapter",
+          "momentId": "m-4401495432bd"
+        }
+      ]
+    },
+    {
+      "id": "trauma",
+      "kind": "concept",
+      "name": "创伤",
+      "note": "过去的伤没有被消化，仍在身体和关系里起作用。",
+      "aliases": [
+        "创伤",
+        "CPTSD",
+        "闪回"
+      ],
+      "topic": "emotion-body",
+      "topicIds": [],
+      "mentions": [
+        {
+          "episodeId": "69402bbe37f52a644e1e05b2",
+          "startSec": 360,
+          "via": "chapter",
+          "momentId": "m-b11a17b4e8d5"
+        },
+        {
+          "episodeId": "69402bbe37f52a644e1e05b2",
+          "startSec": 1289,
+          "via": "chapter",
+          "momentId": "m-01a7574917e2"
+        },
+        {
+          "episodeId": "695ba20abdbeb6a09edd0c6f",
+          "startSec": 69,
+          "via": "chapter",
+          "momentId": "m-76af17ecf5cc"
+        },
+        {
+          "episodeId": "695ba20abdbeb6a09edd0c6f",
+          "startSec": 213,
+          "via": "chapter",
+          "momentId": "m-b63e32e403c2"
+        },
+        {
+          "episodeId": "695ba20abdbeb6a09edd0c6f",
+          "startSec": 444,
+          "via": "chapter",
+          "momentId": "m-b6c804d6fafc"
+        },
+        {
+          "episodeId": "695ba20abdbeb6a09edd0c6f",
+          "startSec": 508,
+          "via": "chapter",
+          "momentId": "m-0cbd97a6e54b"
+        },
+        {
+          "episodeId": "695ba20abdbeb6a09edd0c6f",
+          "startSec": 601,
+          "via": "chapter",
+          "momentId": "m-6dff1bc8a4a1"
+        },
+        {
+          "episodeId": "699b2b0dde29766da92d1d5a",
+          "startSec": 1385,
+          "via": "chapter",
+          "momentId": "m-cd5ba569e387"
+        },
+        {
+          "episodeId": "69b02fdb2a2882aae75cea02",
+          "startSec": 377,
+          "via": "chapter",
+          "momentId": "m-6c9e199c45f6"
+        },
+        {
+          "episodeId": "69b968d4caaea1fb3bc93ec9",
+          "startSec": 1792,
+          "via": "chapter",
+          "momentId": "m-426b3e1d63b2"
+        },
+        {
+          "episodeId": "69b968d4caaea1fb3bc93ec9",
+          "startSec": 1868,
+          "via": "chapter",
+          "momentId": "m-9684225d4adb"
+        },
+        {
+          "episodeId": "69ea54171d989496e75d9429",
+          "startSec": 1300,
+          "via": "chapter",
+          "momentId": "m-e25a608a48f7"
+        },
+        {
+          "episodeId": "6a4d7f733fb7233cbf456488",
+          "startSec": 1689,
+          "via": "chapter",
+          "momentId": "m-a8e99a41c736"
+        },
+        {
+          "episodeId": "6a60a3faa3fec224d5a1a7c7",
+          "startSec": 934,
+          "via": "chapter",
+          "momentId": "m-bd2c88687157"
+        },
+        {
+          "episodeId": "6ae1f41497726cd467593480",
+          "startSec": 1720,
+          "via": "chapter",
+          "momentId": "m-bc7007ae7296"
+        },
+        {
+          "episodeId": "6afca55ca4a79edf137ae1cb",
+          "startSec": 1897,
+          "via": "chapter",
+          "momentId": "m-52f91f23218d"
+        }
+      ]
+    },
+    {
+      "id": "addiction",
+      "kind": "concept",
+      "name": "上瘾",
+      "note": "反复回到一种能暂时止痛的行为。",
+      "aliases": [
+        "上瘾",
+        "成瘾"
+      ],
+      "topic": "emotion-body",
+      "topicIds": [],
+      "mentions": [
+        {
+          "episodeId": "6981e96b73b838887f8cd64d",
+          "startSec": 449,
+          "via": "chapter",
+          "momentId": "m-8de8d48b2615"
+        },
+        {
+          "episodeId": "6991c08766e2c303778a3c65",
+          "startSec": null,
+          "via": "title",
+          "momentId": null
+        },
+        {
+          "episodeId": "69b968d4caaea1fb3bc93ec9",
+          "startSec": 149,
+          "via": "chapter",
+          "momentId": "m-36ce50c85a62"
+        },
+        {
+          "episodeId": "69b968d4caaea1fb3bc93ec9",
+          "startSec": 211,
+          "via": "chapter",
+          "momentId": "m-969da1589723"
+        },
+        {
+          "episodeId": "69b968d4caaea1fb3bc93ec9",
+          "startSec": 285,
+          "via": "chapter",
+          "momentId": "m-d42e60f29a3c"
+        },
+        {
+          "episodeId": "69b968d4caaea1fb3bc93ec9",
+          "startSec": 489,
+          "via": "chapter",
+          "momentId": "m-deb1bda79ad8"
+        },
+        {
+          "episodeId": "69b968d4caaea1fb3bc93ec9",
+          "startSec": 541,
+          "via": "chapter",
+          "momentId": "m-bd66538014e8"
+        },
+        {
+          "episodeId": "69b968d4caaea1fb3bc93ec9",
+          "startSec": 878,
+          "via": "chapter",
+          "momentId": "m-a67bc3997f33"
+        },
+        {
+          "episodeId": "69b968d4caaea1fb3bc93ec9",
+          "startSec": 1792,
+          "via": "chapter",
+          "momentId": "m-426b3e1d63b2"
+        },
+        {
+          "episodeId": "69b968d4caaea1fb3bc93ec9",
+          "startSec": 2075,
+          "via": "chapter",
+          "momentId": "m-bd07de351bdd"
+        },
+        {
+          "episodeId": "69b9818dcaaea1fb3bcd4cc7",
+          "startSec": 1095,
+          "via": "chapter",
+          "momentId": "m-4c6cb2cd77db"
+        },
+        {
+          "episodeId": "69faedbbe62b3c835c1efce4",
+          "startSec": 146,
+          "via": "chapter",
+          "momentId": "m-a9716b26de99"
+        },
+        {
+          "episodeId": "69faedbbe62b3c835c1efce4",
+          "startSec": 1107,
+          "via": "chapter",
+          "momentId": "m-7dd3939fa684"
+        },
+        {
+          "episodeId": "6af5b5b414d01a26f8a8ecff",
+          "startSec": 2176,
+          "via": "chapter",
+          "momentId": "m-a51d63e5a67f"
+        }
+      ]
+    },
+    {
+      "id": "anxiety",
+      "kind": "concept",
+      "name": "焦虑与恐惧",
+      "note": "身体在为可能的危险做准备。",
+      "aliases": [
+        "焦虑",
+        "恐惧"
+      ],
+      "topic": "emotion-body",
+      "topicIds": [],
+      "mentions": [
+        {
+          "episodeId": "68b50a445faf3686596335d9",
+          "startSec": 454,
+          "via": "chapter",
+          "momentId": "m-6c97a85ba320"
+        },
+        {
+          "episodeId": "68c97fc2a56ca3e0c4c34a0c",
+          "startSec": 332,
+          "via": "chapter",
+          "momentId": "m-b4f36b857c1f"
+        },
+        {
+          "episodeId": "690bb697af4fc00da7542f56",
+          "startSec": 400,
+          "via": "chapter",
+          "momentId": "m-bbc403d5399f"
+        },
+        {
+          "episodeId": "691c7b14cbba038b422b098b",
+          "startSec": 910,
+          "via": "chapter",
+          "momentId": "m-bdc13e384c5b"
+        },
+        {
+          "episodeId": "696e9f6e109824f9e168a49c",
+          "startSec": 972,
+          "via": "chapter",
+          "momentId": "m-3cdb1c426acc"
+        },
+        {
+          "episodeId": "6991c08766e2c303778a3c65",
+          "startSec": 819,
+          "via": "chapter",
+          "momentId": "m-af8e90badbad"
+        },
+        {
+          "episodeId": "69a71686a22480add6dc1694",
+          "startSec": 1071,
+          "via": "chapter",
+          "momentId": "m-ce589917bac7"
+        },
+        {
+          "episodeId": "69f32569b39400b493426d21",
+          "startSec": 2572,
+          "via": "chapter",
+          "momentId": "m-82b325a2a9d1"
+        },
+        {
+          "episodeId": "69faedbbe62b3c835c1efce4",
+          "startSec": 920,
+          "via": "chapter",
+          "momentId": "m-b02e3cdf590b"
+        },
+        {
+          "episodeId": "6a043ee91b7bd502951271d3",
+          "startSec": 203,
+          "via": "chapter",
+          "momentId": "m-bd9bd70ab370"
+        },
+        {
+          "episodeId": "6a16d1e3ac7bdb080c319c45",
+          "startSec": 1336,
+          "via": "chapter",
+          "momentId": "m-6e833c98fa57"
+        },
+        {
+          "episodeId": "6a16d1e3ac7bdb080c319c45",
+          "startSec": 1523,
+          "via": "chapter",
+          "momentId": "m-24af9c56dce5"
+        },
+        {
+          "episodeId": "6a1efd267444b5722232567f",
+          "startSec": null,
+          "via": "title",
+          "momentId": null
+        },
+        {
+          "episodeId": "6a282a7b623ad1bf9b344357",
+          "startSec": 268,
+          "via": "chapter",
+          "momentId": "m-19fef7f44903"
+        },
+        {
+          "episodeId": "6a2bcc4a43a22a6955829f3b",
+          "startSec": 283,
+          "via": "chapter",
+          "momentId": "m-1ced83f14335"
+        },
+        {
+          "episodeId": "6a31d63743a22a695584fd85",
+          "startSec": 474,
+          "via": "chapter",
+          "momentId": "m-243355f68b9f"
+        },
+        {
+          "episodeId": "6a31d63743a22a695584fd85",
+          "startSec": 1904,
+          "via": "chapter",
+          "momentId": "m-7ca490cc9583"
+        },
+        {
+          "episodeId": "6a3bc0969d2f5743683d380b",
+          "startSec": 95,
+          "via": "chapter",
+          "momentId": "m-40eb9bc071e0"
+        },
+        {
+          "episodeId": "6a3bc0969d2f5743683d380b",
+          "startSec": 1171,
+          "via": "chapter",
+          "momentId": "m-07698f72fe4d"
+        },
+        {
+          "episodeId": "6a60a3faa3fec224d5a1a7c7",
+          "startSec": 1805,
+          "via": "chapter",
+          "momentId": "m-25052174bbe5"
+        },
+        {
+          "episodeId": "6a7a4ff017676351c56fdd60",
+          "startSec": 742,
+          "via": "chapter",
+          "momentId": "m-81a0290b9bf6"
+        },
+        {
+          "episodeId": "6a7a4ff017676351c56fdd60",
+          "startSec": 816,
+          "via": "chapter",
+          "momentId": "m-6b1be5054141"
+        },
+        {
+          "episodeId": "6a7f48df17676351c5720b85",
+          "startSec": 615,
+          "via": "chapter",
+          "momentId": "m-5f71178c02f1"
+        },
+        {
+          "episodeId": "6a8390b18156bf336219df9f",
+          "startSec": 211,
+          "via": "chapter",
+          "momentId": "m-94317b2e177a"
+        },
+        {
+          "episodeId": "6a8e4456ef65145dfcc56af5",
+          "startSec": null,
+          "via": "title",
+          "momentId": null
+        },
+        {
+          "episodeId": "6aa06097f03e74ee6b0749ce",
+          "startSec": 2482,
+          "via": "chapter",
+          "momentId": "m-0afd4d6f6b85"
+        },
+        {
+          "episodeId": "6aaa8e85051af796b9e936c7",
+          "startSec": 120,
+          "via": "chapter",
+          "momentId": "m-8f635511a3cb"
+        },
+        {
+          "episodeId": "6aaa8e85051af796b9e936c7",
+          "startSec": 338,
+          "via": "chapter",
+          "momentId": "m-40d9af5ac0ad"
+        },
+        {
+          "episodeId": "6aaa8e85051af796b9e936c7",
+          "startSec": 662,
+          "via": "chapter",
+          "momentId": "m-bd430ebff9e7"
+        },
+        {
+          "episodeId": "6aaa8e85051af796b9e936c7",
+          "startSec": 2180,
+          "via": "chapter",
+          "momentId": "m-8007d6158806"
+        },
+        {
+          "episodeId": "6ab158a793d5eb3bdc78ec88",
+          "startSec": 156,
+          "via": "chapter",
+          "momentId": "m-9c136715acb5"
+        },
+        {
+          "episodeId": "6ac61a6e195d838e2aee30d0",
+          "startSec": 1863,
+          "via": "chapter",
+          "momentId": "m-09cd823dde8a"
+        },
+        {
+          "episodeId": "6ae1f41497726cd467593480",
+          "startSec": 866,
+          "via": "chapter",
+          "momentId": "m-b46f86e35d76"
+        }
+      ]
+    },
+    {
+      "id": "eating-disorder",
+      "kind": "concept",
+      "name": "进食障碍",
+      "note": "和食物、身体之间被卡住的关系。",
+      "aliases": [
+        "进食障碍",
+        "暴食"
+      ],
+      "topic": "emotion-body",
+      "topicIds": [],
+      "mentions": [
+        {
+          "episodeId": "68b50a445faf3686596335d9",
+          "startSec": 381,
+          "via": "chapter",
+          "momentId": "m-fd8a0aa26e94"
+        },
+        {
+          "episodeId": "68b50a445faf3686596335d9",
+          "startSec": 983,
+          "via": "chapter",
+          "momentId": "m-4dfdc73c1cc6"
+        },
+        {
+          "episodeId": "69f32569b39400b493426d21",
+          "startSec": 2950,
+          "via": "chapter",
+          "momentId": "m-1c266ff0bb14"
+        },
+        {
+          "episodeId": "6a976588a0210c197dcbf073",
+          "startSec": 2141,
+          "via": "chapter",
+          "momentId": "m-e8555fd9d6a8"
+        },
+        {
+          "episodeId": "6aa06097f03e74ee6b0749ce",
+          "startSec": 928,
+          "via": "chapter",
+          "momentId": "m-15b6c7e8ebd8"
+        }
+      ]
+    },
+    {
+      "id": "pause",
+      "kind": "concept",
+      "name": "暂停",
+      "note": "在自动反应和行动之间留出一点空间。",
+      "aliases": [
+        "暂停",
+        "冥想",
+        "放松"
+      ],
+      "topic": "emotion-body",
+      "topicIds": [],
+      "mentions": [
+        {
+          "episodeId": "697957c63cf2b0c01cf1687b",
+          "startSec": 480,
+          "via": "chapter",
+          "momentId": "m-13f10b88cab2"
+        },
+        {
+          "episodeId": "6981e96b73b838887f8cd64d",
+          "startSec": 674,
+          "via": "chapter",
+          "momentId": "m-1e55552a9916"
+        },
+        {
+          "episodeId": "698b5b2c66e2c30377e2184f",
+          "startSec": 2406,
+          "via": "chapter",
+          "momentId": "m-424ad52d155e"
+        },
+        {
+          "episodeId": "69b968d4caaea1fb3bc93ec9",
+          "startSec": 1680,
+          "via": "chapter",
+          "momentId": "m-a3d330bcdbe2"
+        },
+        {
+          "episodeId": "69b9818dcaaea1fb3bcd4cc7",
+          "startSec": null,
+          "via": "title",
+          "momentId": null
+        },
+        {
+          "episodeId": "6a043ee91b7bd502951271d3",
+          "startSec": 2079,
+          "via": "chapter",
+          "momentId": "m-5dac4c0a64d2"
+        },
+        {
+          "episodeId": "6a8e4456ef65145dfcc56af5",
+          "startSec": null,
+          "via": "title",
+          "momentId": null
+        },
+        {
+          "episodeId": "6aaa8e85051af796b9e936c7",
+          "startSec": 194,
+          "via": "chapter",
+          "momentId": "m-56fbfb298d1d"
+        },
+        {
+          "episodeId": "6aaa8e85051af796b9e936c7",
+          "startSec": 1322,
+          "via": "chapter",
+          "momentId": "m-2ea997a1fd94"
+        },
+        {
+          "episodeId": "6aaa8e85051af796b9e936c7",
+          "startSec": 1550,
+          "via": "chapter",
+          "momentId": "m-067a04bbb531"
+        },
+        {
+          "episodeId": "6acf2047e742e36efcc2c5c5",
+          "startSec": 1593,
+          "via": "chapter",
+          "momentId": "m-3dbe55d53055"
+        },
+        {
+          "episodeId": "6ae1f41497726cd467593480",
+          "startSec": 3171,
+          "via": "chapter",
+          "momentId": "m-946b899c535d"
+        }
+      ]
+    },
+    {
+      "id": "low-energy",
+      "kind": "concept",
+      "name": "低精力",
+      "note": "不是懒，是能量和环境之间的落差。",
+      "aliases": [
+        "低精力",
+        "精力",
+        "回血"
+      ],
+      "topic": "rhythm",
+      "topicIds": [],
+      "mentions": [
+        {
+          "episodeId": "6a7f48df17676351c5720b85",
+          "startSec": 1484,
+          "via": "chapter",
+          "momentId": "m-8318574c64a1"
+        },
+        {
+          "episodeId": "6acf2047e742e36efcc2c5c5",
+          "startSec": 121,
+          "via": "chapter",
+          "momentId": "m-6e93f6a7365a"
+        },
+        {
+          "episodeId": "6acf2047e742e36efcc2c5c5",
+          "startSec": 736,
+          "via": "chapter",
+          "momentId": "m-3b43c136235b"
+        },
+        {
+          "episodeId": "6acf2047e742e36efcc2c5c5",
+          "startSec": 799,
+          "via": "chapter",
+          "momentId": "m-06ed4b3bef84"
+        },
+        {
+          "episodeId": "6acf2047e742e36efcc2c5c5",
+          "startSec": 949,
+          "via": "chapter",
+          "momentId": "m-79dd9b59d4cd"
+        },
+        {
+          "episodeId": "6acf2047e742e36efcc2c5c5",
+          "startSec": 1593,
+          "via": "chapter",
+          "momentId": "m-3dbe55d53055"
+        }
+      ]
+    },
+    {
+      "id": "action",
+      "kind": "concept",
+      "name": "行动力",
+      "note": "从知道到开始做，中间要过好几道关。",
+      "aliases": [
+        "行动力",
+        "停滞"
+      ],
+      "topic": "rhythm",
+      "topicIds": [],
+      "mentions": [
+        {
+          "episodeId": "69402bbe37f52a644e1e05b2",
+          "startSec": 360,
+          "via": "chapter",
+          "momentId": "m-b11a17b4e8d5"
+        },
+        {
+          "episodeId": "6a4439f92e335a35a80c095e",
+          "startSec": 324,
+          "via": "chapter",
+          "momentId": "m-39a5fdcffc11"
+        },
+        {
+          "episodeId": "6a4439f92e335a35a80c095e",
+          "startSec": 1692,
+          "via": "chapter",
+          "momentId": "m-092f7d51f181"
+        },
+        {
+          "episodeId": "6a4439f92e335a35a80c095e",
+          "startSec": 3042,
+          "via": "chapter",
+          "momentId": "m-52fcb2899d21"
+        }
+      ]
+    },
+    {
+      "id": "provisional-life",
+      "kind": "concept",
+      "name": "临时的生活",
+      "note": "总把真正的生活推迟到以后。",
+      "aliases": [
+        "临时的生活",
+        "先苦后甜",
+        "等以后"
+      ],
+      "topic": "rhythm",
+      "topicIds": [],
+      "mentions": [
+        {
+          "episodeId": "6aec68aa5b7c4709bfe19b89",
+          "startSec": 853,
+          "via": "chapter",
+          "momentId": "m-80c53f80e9bd"
+        },
+        {
+          "episodeId": "6aec68aa5b7c4709bfe19b89",
+          "startSec": 1729,
+          "via": "chapter",
+          "momentId": "m-c0f41305f533"
+        },
+        {
+          "episodeId": "6aec68aa5b7c4709bfe19b89",
+          "startSec": 2198,
+          "via": "chapter",
+          "momentId": "m-8095b8590661"
+        }
+      ]
+    },
+    {
+      "id": "no-feedback",
+      "kind": "concept",
+      "name": "无反馈期",
+      "note": "努力了却迟迟看不到结果的阶段。",
+      "aliases": [
+        "无反馈",
+        "负反馈"
+      ],
+      "topic": "rhythm",
+      "topicIds": [],
+      "mentions": [
+        {
+          "episodeId": "6a1efd267444b5722232567f",
+          "startSec": 1394,
+          "via": "chapter",
+          "momentId": "m-e7b3016d1b5f"
+        },
+        {
+          "episodeId": "6a1efd267444b5722232567f",
+          "startSec": 1538,
+          "via": "chapter",
+          "momentId": "m-abcd6c031abb"
+        }
+      ]
+    },
+    {
+      "id": "confusion",
+      "kind": "concept",
+      "name": "迷茫",
+      "note": "不知道要去哪里，常常是太久没有为自己选择。",
+      "aliases": [
+        "迷茫"
+      ],
+      "topic": "meaning",
+      "topicIds": [],
+      "mentions": [
+        {
+          "episodeId": "690bb697af4fc00da7542f56",
+          "startSec": 2460,
+          "via": "chapter",
+          "momentId": "m-0e173845c9ec"
+        },
+        {
+          "episodeId": "696e9f6e109824f9e168a49c",
+          "startSec": 369,
+          "via": "chapter",
+          "momentId": "m-3a52c958c893"
+        },
+        {
+          "episodeId": "696e9f6e109824f9e168a49c",
+          "startSec": 879,
+          "via": "chapter",
+          "momentId": "m-f08b29f70154"
+        },
+        {
+          "episodeId": "696e9f6e109824f9e168a49c",
+          "startSec": 972,
+          "via": "chapter",
+          "momentId": "m-3cdb1c426acc"
+        },
+        {
+          "episodeId": "696e9f6e109824f9e168a49c",
+          "startSec": 1133,
+          "via": "chapter",
+          "momentId": "m-0455b26e039f"
+        },
+        {
+          "episodeId": "696e9f6e109824f9e168a49c",
+          "startSec": 1553,
+          "via": "chapter",
+          "momentId": "m-0ba230fad8fd"
+        }
+      ]
+    },
+    {
+      "id": "freedom-of-choice",
+      "kind": "concept",
+      "name": "选择与自由",
+      "note": "选择带来自由，也带来眩晕和代价。",
+      "aliases": [
+        "选择自由",
+        "错误选择",
+        "二选一",
+        "两难"
+      ],
+      "topic": "meaning",
+      "topicIds": [],
+      "mentions": [
+        {
+          "episodeId": "6a16d1e3ac7bdb080c319c45",
+          "startSec": null,
+          "via": "title",
+          "momentId": null
+        },
+        {
+          "episodeId": "6aa06097f03e74ee6b0749ce",
+          "startSec": 162,
+          "via": "chapter",
+          "momentId": "m-e9ad524338f4"
+        },
+        {
+          "episodeId": "6aa06097f03e74ee6b0749ce",
+          "startSec": 2653,
+          "via": "chapter",
+          "momentId": "m-6043c3b2d3eb"
         }
       ]
     }

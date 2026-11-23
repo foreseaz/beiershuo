@@ -5,7 +5,7 @@ import {
   type Atlas, type Entity, type Episode, type Moment, type Topic,
 } from './domain'
 
-type WordKind = 'topic' | 'person' | 'book' | 'concept' | 'keyword'
+type WordKind = 'topic' | 'person' | 'book' | 'film' | 'concept' | 'keyword'
 type Word = { key: string; text: string; kind: WordKind; weight: number; topic?: Topic; entity?: Entity; terms: string[] }
 
 type Props = {
@@ -188,7 +188,7 @@ export function SearchSpace({ atlas, episodes, onTopic, onEntity, onMoment, onCl
                 <span className="row-meta">{word.topic!.description}</span>
               </button>
             ))}
-            {entityHits.length > 0 && <p className="panel-section">人物 · 书 · 概念</p>}
+            {entityHits.length > 0 && <p className="panel-section">人物 · 书 · 影片 · 概念</p>}
             {entityHits.map(word => (
               <button className="row" type="button" key={word.key} onClick={() => onEntity(word.entity!)}>
                 <span className="row-kind">{ENTITY_LABELS[word.entity!.kind]}</span>

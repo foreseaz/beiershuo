@@ -464,7 +464,7 @@ def serve_review(store, args):
 
 # ---------------------------------------------------------------- people, books and concepts
 
-ENTITY_KINDS = (("person", "people"), ("book", "books"), ("concept", "concepts"))
+ENTITY_KINDS = (("person", "people"), ("book", "books"), ("film", "films"), ("concept", "concepts"))
 
 
 def load_entities(content_dir):
@@ -481,6 +481,10 @@ def load_entities(content_dir):
                 raise ValueError(f"Entity {item['id']} needs a name and at least one alias")
             seen.add(item["id"])
             entities.append({**item, "kind": kind})
+    portraits = Path(content_dir) / "portraits.json"
+    extras = read_json(portraits) if portraits.is_file() else {}
+    for item in entities:
+        item.update({key: value for key, value in extras.get(item["id"], {}).items() if key in ("image", "link")})
     people = {item["id"] for item in entities if item["kind"] == "person"}
     for item in entities:
         linked = [item["author"]] if item.get("author") else item.get("people", [])
@@ -628,6 +632,8 @@ def build_atlas(store, topics, entities=(), overrides=None, keywords=()):
             "aliases": item["aliases"],
             **({"author": item["author"]} if item.get("author") else {}),
             **({"people": item["people"]} if item.get("people") else {}),
+            **({"topic": item["topic"]} if item.get("topic") else {}),
+            **{key: item[key] for key in ("year", "format", "image", "link") if item.get(key)},
             "topicIds": [topic for topic, _ in tally.most_common(3)],
             "mentions": [{**point, "momentId": moment_at.get((point["episodeId"], point["startSec"]))} for point in points],
         })
@@ -681,6 +687,8 @@ def validate_atlas(atlas):
         for point in item["mentions"]:
             if point["episodeId"] not in episode_ids or (point["momentId"] and point["momentId"] not in known_moments):
                 problems.append(f"entity {item['id']} mentions a missing episode or moment")
+        if item.get("topic") and item["topic"] not in topic_ids:
+            problems.append(f"entity {item['id']} sits under an unknown topic")
         if not set([item["author"]] if "author" in item else item.get("people", [])) <= people:
             problems.append(f"entity {item['id']} links to an unknown person")
     if problems:

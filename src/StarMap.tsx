@@ -1,24 +1,37 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import type { AtlasPath, Topic } from './domain'
-import { SkyScene, type Point, type SkyFrame, type SkyNode } from './scene/SkyScene'
+import { ArrowLeft, Minus, Plus } from 'lucide-react'
+import type { Topic } from './domain'
+import { GalaxyScene, type GalaxyFrame, type Nebula, type Point, type SubStar, type Thread, type Travel } from './scene/GalaxyScene'
 
-export type TopicPair = { key: string; from: string; to: string; paths: AtlasPath[] }
+export type GalaxyStar = SubStar & { name: string }
 
 type MapProps = {
   topics: Topic[]
-  pairs: TopicPair[]
-  activeId: string
-  episodeMarks: Map<string, string>
+  stars: GalaxyStar[]
+  threads: Thread[]
+  selected: string | null
+  related: Set<string>
+  current: string | null
+  travel: Travel
   reducedMotion: boolean
-  onSelect: (id: string) => void
-  onPair: (pair: TopicPair) => void
+  threadLabel: (id: string) => string
+  onView: (nebula: string | null) => void
+  onNebula: (id: string) => void
+  onStar: (id: string) => void
+  onThread: (id: string) => void
+  onBack: () => void
+  onOverview: () => void
   card: ReactNode
+  cardFixed: boolean
 }
 
 const NARROW = 680
+// A nebula's labels appear once it is this wide on screen (px radius), and its title steps aside when it fills the view.
+const LABELS_FROM = 150
+const TITLE_UNTIL = 420
 
-/** Topic positions (topics.json) → resting screen layout, tuned against the concept frame. */
-function layoutNodes(topics: Topic[], narrow: boolean): SkyNode[] {
+/** Topic positions (topics.json) → nebula centres in the overview, spread to use the whole sky. */
+function layoutNebulae(topics: Topic[], narrow: boolean): Nebula[] {
   const axis = (i: 0 | 1 | 2) => {
     const values = topics.map(topic => topic.position[i])
     const min = Math.min(...values)
@@ -31,126 +44,111 @@ function layoutNodes(topics: Topic[], narrow: boolean): SkyNode[] {
     const y = 1 - uy(topic.position[1])
     return {
       id: topic.id,
-      x: narrow ? 0.16 + x * 0.66 : 0.155 + x * 0.625,
-      y: narrow ? 0.12 + y * 0.42 : 0.09 + y * 0.59,
-      depth: (uz(topic.position[2]) - 0.5) * 3,
+      x: narrow ? 0.2 + x * 0.6 : 0.16 + x * 0.66,
+      y: narrow ? 0.16 + y * 0.52 : 0.15 + y * 0.64,
+      depth: (uz(topic.position[2]) - 0.5) * 2.5,
       tint: topic.color,
     }
   })
 }
 
 type Rect = { left: number; top: number; right: number; bottom: number }
-const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value))
-const cardSlot = { index: 0, active: '' }
+const overlap = (a: Rect, b: Rect) =>
+  Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left)) * Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top))
 
-/**
- * Put the card beside the focused star without covering any star label: prefer the
- * concept's upper-right slot, then a grid around the star, then beside the star's own
- * label. Only switch when another slot is clearly better, so the card does not jump
- * while the camera drifts. Slots beside the label carry no leader line.
- */
-function placeCard(
-  frame: SkyFrame, star: Point, card: HTMLElement, labels: Map<string, HTMLDivElement>, activeId: string, slot: { index: number; active: string },
-) {
-  const width = card.offsetWidth
-  const height = card.offsetHeight
-  const root = card.parentElement!.getBoundingClientRect()
-  const boxes: Rect[] = []
-  let own: Rect | undefined
-  for (const [id, element] of labels) {
-    const rect = element.querySelector('.star-label')!.getBoundingClientRect()
-    const box = { left: rect.left - root.left - 8, top: rect.top - root.top - 8, right: rect.right - root.left + 8, bottom: rect.bottom - root.top + 8 }
-    boxes.push(box)
-    if (id === activeId) own = box
-  }
-  const lefts = [star.x + 64, star.x + 220, star.x - 64 - width, star.x - 220 - width, star.x - 40, star.x - width / 2]
-  const tops = [star.y - 116 - height, star.y - 40 - height, star.y + 92, star.y + 170]
-  const candidates = tops.flatMap((top, row) =>
-    lefts.map((left, column) => ({ left, top, cost: (row + column * 1.5) * 900, leader: true })))
-  if (own) {
-    const right = Math.max(own.right, star.x + 20) + 12
-    const left = Math.min(own.left, star.x - 20) - 12 - width
-    for (const top of [star.y - height / 2, star.y - 40, star.y - height + 40]) {
-      candidates.push({ left: right, top, cost: 5000, leader: false }, { left, top, cost: 6000, leader: false })
-    }
-  }
-  const bounds = { left: 16, top: 76, right: frame.width - 16, bottom: frame.height - 96 }
-  const score = (c: typeof candidates[number]) => {
+/** Put the card beside the selected star, on the side with the fewest labels under it. */
+function placeCard(frame: GalaxyFrame, star: Point, size: { width: number; height: number }, obstacles: Rect[]) {
+  const { width, height } = size
+  const candidates = [
+    { left: star.x + 40, top: star.y - height * 0.35 },
+    { left: star.x + 40, top: star.y - height + 30 },
+    { left: star.x + 40, top: star.y - 30 },
+    { left: star.x - 40 - width, top: star.y - height * 0.35 },
+    { left: star.x - 40 - width, top: star.y - height + 30 },
+    { left: star.x - 40 - width, top: star.y - 30 },
+  ]
+  const bounds = { left: 16, top: 84, right: frame.width - 16, bottom: frame.height - 96 }
+  const score = (c: { left: number; top: number }, index: number) => {
     const box = { left: c.left, top: c.top, right: c.left + width, bottom: c.top + height }
     const outside = Math.max(0, bounds.left - box.left) + Math.max(0, box.right - bounds.right) +
       Math.max(0, bounds.top - box.top) + Math.max(0, box.bottom - bounds.bottom)
-    const overlap = boxes.reduce((sum, label) => sum +
-      Math.max(0, Math.min(box.right, label.right) - Math.max(box.left, label.left)) *
-      Math.max(0, Math.min(box.bottom, label.bottom) - Math.max(box.top, label.top)), 0)
-    return outside * 400 + overlap * 2 + c.cost
+    return outside * 600 + obstacles.reduce((sum, rect) => sum + overlap(box, rect), 0) + index * 400
   }
   const scores = candidates.map(score)
-  const best = scores.indexOf(Math.min(...scores))
-  // Stick to the current slot while the same star stays focused, unless another is clearly better.
-  if (slot.active !== activeId || scores[best] + 2500 < scores[slot.index]) slot.index = best
-  slot.active = activeId
-  const chosen = candidates[slot.index]
-  // The leader meets the card on the edge facing the star, at the corner nearest to it.
-  const above = chosen.top + height <= star.y
-  const anchor = {
-    x: clamp(star.x, chosen.left + 14, chosen.left + width - 14),
-    y: above ? chosen.top + height - 14 : chosen.top + 14,
+  const chosen = candidates[scores.indexOf(Math.min(...scores))]
+  return {
+    left: chosen.left, top: chosen.top,
+    anchor: { x: chosen.left < star.x ? chosen.left + width : chosen.left, y: Math.min(Math.max(star.y, chosen.top + 18), chosen.top + height - 18) },
   }
-  if (star.x <= chosen.left) anchor.x = chosen.left
-  else if (star.x >= chosen.left + width) anchor.x = chosen.left + width
-  return { left: chosen.left, top: chosen.top, anchor: chosen.leader ? anchor : null }
 }
 
-export function StarMap({ topics, pairs, activeId, episodeMarks, reducedMotion, onSelect, onPair, card }: MapProps) {
-  const rootRef = useRef<HTMLElement>(null)
+export function StarMap(props: MapProps) {
+  const { topics, stars, threads, selected, related, current, travel, reducedMotion, card, cardFixed } = props
   const canvasRef = useRef<HTMLDivElement>(null)
   const cardRef = useRef<HTMLDivElement>(null)
   const leaderRef = useRef<SVGPathElement>(null)
   const dotRef = useRef<SVGCircleElement>(null)
-  const labelRefs = useRef(new Map<string, HTMLDivElement>())
-  const pinRefs = useRef(new Map<string, HTMLButtonElement>())
-  const sceneRef = useRef<SkyScene | null>(null)
-  const latest = useRef({ activeId, onSelect, onPair, pairs })
-  const lastFrame = useRef<SkyFrame | null>(null)
+  const tipRef = useRef<HTMLDivElement>(null)
+  const nebulaRefs = useRef(new Map<string, HTMLButtonElement>())
+  const starRefs = useRef(new Map<string, HTMLButtonElement>())
+  const widths = useRef(new Map<string, number>())
+  const shown = useRef(new Map<string, boolean>())
+  const cardSize = useRef({ width: 340, height: 300 })
+  const sceneRef = useRef<GalaxyScene | null>(null)
+  const latest = useRef(props)
+  const lastFrame = useRef<GalaxyFrame | null>(null)
   const [webgl, setWebgl] = useState(true)
   const [narrow, setNarrow] = useState(() => window.innerWidth < NARROW)
-  const nodes = useMemo(() => layoutNodes(topics, narrow), [topics, narrow])
-  latest.current = { activeId, onSelect, onPair, pairs }
+  const nebulae = useMemo(() => layoutNebulae(topics, narrow), [topics, narrow])
+  const parent = useMemo(() => new Map(stars.map(star => [star.id, star.nebula])), [stars])
+  const parentRef = useRef(parent)
+  latest.current = props
+  parentRef.current = parent
 
-  // Position the DOM overlay (labels, pins, card and its leader line) from projected star positions.
-  const place = useRef((frame: SkyFrame) => {
+  // Positions every overlay element from the projected scene, touching only transforms and, on change, classes.
+  const place = useRef((frame: GalaxyFrame) => {
     lastFrame.current = frame
-    for (const [id, element] of labelRefs.current) {
-      const point = frame.nodes.get(id)
-      if (point) element.style.transform = `translate3d(${point.x.toFixed(1)}px, ${point.y.toFixed(1)}px, 0)`
+    const { selected: chosen, related: near, current: inside, cardFixed: fixed } = latest.current
+    for (const [id, element] of nebulaRefs.current) {
+      const point = frame.nebulae.get(id)
+      if (!point) continue
+      element.style.transform = `translate3d(${point.x.toFixed(1)}px, ${(point.y - Math.min(point.radius * 0.62, 150)).toFixed(1)}px, 0)`
+      const visible = point.radius < TITLE_UNTIL && id !== inside
+      if (shown.current.get(`n:${id}`) !== visible) {
+        shown.current.set(`n:${id}`, visible)
+        element.dataset.hidden = visible ? '' : '1'
+      }
     }
-    for (const [key, element] of pinRefs.current) {
-      const point = frame.links.get(key)
-      if (point) element.style.transform = `translate3d(${point.x.toFixed(1)}px, ${point.y.toFixed(1)}px, 0)`
+    const obstacles: Rect[] = []
+    for (const [id, element] of starRefs.current) {
+      const point = frame.stars.get(id)
+      const nebula = frame.nebulae.get(parentRef.current.get(id) ?? '')
+      const onScreen = point !== undefined && point.x > -80 && point.x < frame.width + 20 && point.y > -30 && point.y < frame.height + 30
+      const visible = onScreen && (id === chosen || near.has(id) || (nebula !== undefined && nebula.radius > LABELS_FROM))
+      if (shown.current.get(id) !== visible) {
+        shown.current.set(id, visible)
+        element.dataset.visible = visible ? '1' : ''
+        element.tabIndex = visible ? 0 : -1
+      }
+      if (!point || !visible) continue
+      element.style.transform = `translate3d(${point.x.toFixed(1)}px, ${point.y.toFixed(1)}px, 0)`
+      obstacles.push({ left: point.x - 8, top: point.y - 12, right: point.x + 14 + (widths.current.get(id) ?? 60), bottom: point.y + 12 })
     }
-    const star = frame.nodes.get(latest.current.activeId)
     const cardElement = cardRef.current
-    if (!star || !cardElement) return
-    if (frame.width < NARROW) {
-      cardElement.style.transform = ''
+    const star = chosen ? frame.stars.get(chosen) : undefined
+    if (!cardElement || fixed || !star || frame.width < NARROW) {
+      if (cardElement) cardElement.style.transform = ''
       leaderRef.current?.setAttribute('d', '')
       dotRef.current?.setAttribute('r', '0')
       return
     }
-    const { left, top, anchor } = placeCard(frame, star, cardElement, labelRefs.current, latest.current.activeId, cardSlot)
+    const { left, top, anchor } = placeCard(frame, star, cardSize.current, obstacles)
     cardElement.style.transform = `translate3d(${left.toFixed(1)}px, ${top.toFixed(1)}px, 0)`
-    if (!anchor) {
-      leaderRef.current?.setAttribute('d', '')
-      dotRef.current?.setAttribute('r', '0')
-      return
-    }
-    const start = { x: star.x, y: star.y + (anchor.y < star.y ? -16 : 16) }
-    const bend = anchor.y < star.y ? -1 : 1
-    leaderRef.current?.setAttribute('d',
-      `M${start.x} ${start.y} C${start.x} ${start.y + bend * 70} ${anchor.x - (anchor.x - start.x) * 0.55} ${anchor.y} ${anchor.x} ${anchor.y}`)
+    const bend = (anchor.x - star.x) * 0.5
+    leaderRef.current?.setAttribute('d', `M${star.x} ${star.y} C${star.x + bend} ${star.y} ${anchor.x - bend} ${anchor.y} ${anchor.x} ${anchor.y}`)
     dotRef.current?.setAttribute('cx', String(anchor.x))
     dotRef.current?.setAttribute('cy', String(anchor.y))
-    dotRef.current?.setAttribute('r', '2.6')
+    dotRef.current?.setAttribute('r', '2.2')
   })
 
   useEffect(() => {
@@ -161,19 +159,27 @@ export function StarMap({ topics, pairs, activeId, episodeMarks, reducedMotion, 
 
   useEffect(() => {
     const container = canvasRef.current
-    if (!container || !SkyScene.supported()) {
+    if (!container || !GalaxyScene.supported()) {
       setWebgl(false)
       return
     }
-    let scene: SkyScene
+    let scene: GalaxyScene
     try {
-      scene = new SkyScene(container, {
+      scene = new GalaxyScene(container, {
         reducedMotion,
         onFrame: frame => place.current(frame),
-        onStar: id => latest.current.onSelect(id),
-        onLink: key => {
-          const pair = latest.current.pairs.find(item => item.key === key)
-          if (pair) latest.current.onPair(pair)
+        onNebula: id => latest.current.onNebula(id),
+        onStar: id => latest.current.onStar(id),
+        onThread: id => latest.current.onThread(id),
+        onView: id => latest.current.onView(id),
+        onEmpty: () => latest.current.onBack(),
+        onHover: hover => {
+          const tip = tipRef.current
+          if (!tip) return
+          if (!hover) { tip.classList.remove('is-visible'); return }
+          tip.textContent = latest.current.threadLabel(hover.thread)
+          tip.style.transform = `translate3d(${hover.x + 14}px, ${hover.y + 14}px, 0)`
+          tip.classList.add('is-visible')
         },
       })
     } catch {
@@ -189,84 +195,96 @@ export function StarMap({ topics, pairs, activeId, episodeMarks, reducedMotion, 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  useEffect(() => { sceneRef.current?.setNodes(nodes) }, [nodes])
-  useEffect(() => { sceneRef.current?.setLinks(pairs.map(pair => ({ id: pair.key, from: pair.from, to: pair.to }))) }, [pairs])
-  useEffect(() => {
-    sceneRef.current?.setActive(activeId, pairs.filter(pair => pair.from === activeId || pair.to === activeId).map(pair => pair.key))
-  }, [activeId, pairs])
+  useEffect(() => { sceneRef.current?.setGalaxy(nebulae, stars, threads) }, [nebulae, stars, threads])
+  useEffect(() => { sceneRef.current?.setSelection(selected, related) }, [selected, related])
+  useEffect(() => { sceneRef.current?.travel(travel) }, [travel, stars])
   useEffect(() => { sceneRef.current?.setReducedMotion(reducedMotion) }, [reducedMotion])
+  useEffect(() => { if (lastFrame.current) place.current(lastFrame.current) }, [selected, related, current, cardFixed])
 
-  // Without WebGL, place the overlay at the resting layout so the map still works.
+  // Measure label widths once (after the web font loads), never inside the frame loop.
   useEffect(() => {
-    if (webgl) return
-    const root = rootRef.current
-    if (!root) return
-    const update = () => {
-      const width = root.clientWidth
-      const height = root.clientHeight
-      place.current({
-        width, height, links: new Map(),
-        nodes: new Map(nodes.map(node => [node.id, { x: node.x * width, y: node.y * height }])),
-      })
+    const measure = () => {
+      for (const [id, element] of starRefs.current) widths.current.set(id, element.offsetWidth)
     }
-    update()
-    const observer = new ResizeObserver(update)
-    observer.observe(root)
-    return () => observer.disconnect()
-  }, [webgl, nodes, activeId])
+    measure()
+    void document.fonts?.ready.then(measure)
+  }, [stars])
 
-  // Re-place the card when its content changes size, between animation frames.
   useEffect(() => {
     const element = cardRef.current
     if (!element) return
-    const observer = new ResizeObserver(() => { if (lastFrame.current) place.current(lastFrame.current) })
+    const observer = new ResizeObserver(() => {
+      cardSize.current = { width: element.offsetWidth, height: element.offsetHeight }
+      if (lastFrame.current) place.current(lastFrame.current)
+    })
     observer.observe(element)
     return () => observer.disconnect()
   }, [])
 
-  const activePairs = pairs.filter(pair => pair.from === activeId || pair.to === activeId)
-  const titles = new Map(topics.map(topic => [topic.id, topic.title]))
+  const focused = topics.find(topic => topic.id === current)
+  const counts = useMemo(() => {
+    const result = new Map<string, number>()
+    for (const star of stars) result.set(star.nebula, (result.get(star.nebula) ?? 0) + 1)
+    return result
+  }, [stars])
+
+  const zoom = (factor: number) => {
+    const canvas = canvasRef.current?.querySelector('canvas')
+    if (!canvas) return
+    const rect = canvas.getBoundingClientRect()
+    canvas.dispatchEvent(new WheelEvent('wheel', {
+      deltaY: Math.log(factor) / 0.0016, clientX: rect.left + rect.width / 2, clientY: rect.top + rect.height / 2, cancelable: true,
+    }))
+  }
 
   return (
-    <section ref={rootRef} className={`star-map${webgl ? '' : ' star-map--flat'}`} aria-label="主题星图">
+    <section className={`galaxy${current ? ' is-focused' : ''}${webgl ? '' : ' galaxy--flat'}`} aria-label="主题星图">
       <div className="star-canvas" ref={canvasRef} aria-hidden="true" />
       <svg className="star-leader" aria-hidden="true">
         <path ref={leaderRef} />
         <circle ref={dotRef} r="0" />
       </svg>
-      {topics.map(topic => {
-        const active = topic.id === activeId
-        const node = nodes.find(item => item.id === topic.id)!
-        return (
-          <div
-            key={topic.id}
-            ref={element => { if (element) labelRefs.current.set(topic.id, element); else labelRefs.current.delete(topic.id) }}
-            className={`star-anchor${active ? ' is-active' : ''}${!narrow && node.x > 0.86 ? ' is-east' : ''}`}
-          >
-            <button className="star-label" type="button" aria-pressed={active} onClick={() => onSelect(topic.id)}>
-              <span className="star-name">{topic.title}</span>
-            </button>
-            {episodeMarks.has(topic.id) && <span className="star-episode" aria-hidden="true">{episodeMarks.get(topic.id)}</span>}
-          </div>
-        )
-      })}
-      {activePairs.map(pair => {
-        const other = titles.get(pair.from === activeId ? pair.to : pair.from)
-        return (
-          <button
-            key={pair.key}
-            className="path-pin"
-            type="button"
-            aria-label={`连到${other}：${pair.paths.length} 段`}
-            ref={element => { if (element) pinRefs.current.set(pair.key, element); else pinRefs.current.delete(pair.key) }}
-            onClick={() => onPair(pair)}
-          >
-            <span className="path-pin-dot" aria-hidden="true" />
-            <span className="path-pin-tip">{pair.paths[0]?.label} · {other}</span>
-          </button>
-        )
-      })}
-      <div className="scene-card" ref={cardRef}>{card}</div>
+      {topics.map(topic => (
+        <button
+          key={topic.id}
+          ref={element => { if (element) nebulaRefs.current.set(topic.id, element); else nebulaRefs.current.delete(topic.id) }}
+          className="nebula-label"
+          style={{ '--tint': topic.color } as React.CSSProperties}
+          type="button"
+          onClick={() => props.onNebula(topic.id)}
+        >
+          <span className="nebula-title">{topic.title}</span>
+          <span className="nebula-meta">{counts.get(topic.id) ?? 0} 个小主题</span>
+        </button>
+      ))}
+      {stars.map(star => (
+        <button
+          key={star.id}
+          ref={element => { if (element) starRefs.current.set(star.id, element); else starRefs.current.delete(star.id) }}
+          className={`star-tag${star.id === selected ? ' is-selected' : ''}${related.has(star.id) ? ' is-related' : ''}${star.nebula === current ? '' : ' is-away'}`}
+          style={{ '--tint': topics.find(topic => topic.id === star.nebula)?.color } as React.CSSProperties}
+          type="button"
+          tabIndex={-1}
+          onClick={() => props.onStar(star.id)}
+        >
+          {star.name}
+        </button>
+      ))}
+      <div className="thread-tip" ref={tipRef} aria-hidden="true" />
+      {focused && (
+        <div className="galaxy-crumb">
+          <button type="button" onClick={props.onOverview}><ArrowLeft size={14} aria-hidden="true" /> 全部主题</button>
+          <p className="galaxy-crumb-title" style={{ '--tint': focused.color } as React.CSSProperties}>{focused.title}</p>
+          <p className="galaxy-crumb-note">{focused.description}</p>
+        </div>
+      )}
+      {webgl && (
+        <div className="zoom-controls" aria-label="缩放">
+          <button type="button" aria-label="放大" onClick={() => zoom(0.7)}><Plus size={15} aria-hidden="true" /></button>
+          <button type="button" aria-label="缩小" onClick={() => zoom(1.4)}><Minus size={15} aria-hidden="true" /></button>
+        </div>
+      )}
+      <div className={`scene-card${cardFixed ? ' is-fixed' : ''}${card ? '' : ' is-empty'}`} ref={cardRef}>{card}</div>
     </section>
   )
 }

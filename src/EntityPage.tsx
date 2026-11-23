@@ -1,5 +1,6 @@
 import { useEffect, useMemo } from 'react'
 import { ArrowLeft, ArrowUpRight, Play } from 'lucide-react'
+import { Cover, Portrait, entityLink } from './Visual'
 import {
   ENTITY_LABELS, episodeLabel, timeLabel,
   type Atlas, type Entity, type Episode, type Moment, type Topic,
@@ -23,6 +24,7 @@ export function EntityPage({ atlas, entity, episodes, onBack, onEntity, onTopic,
   const entities = atlas.entities ?? []
   const byId = useMemo(() => new Map(entities.map(item => [item.id, item])), [entities])
   const moments = useMemo(() => new Map(atlas.moments.map(moment => [moment.id, moment])), [atlas])
+  const link = entityLink(entity, entity.author ? byId.get(entity.author) : undefined)
   const topics = entity.topicIds.map(id => atlas.topics.find(topic => topic.id === id)).filter((topic): topic is Topic => Boolean(topic))
 
   useEffect(() => {
@@ -40,10 +42,15 @@ export function EntityPage({ atlas, entity, episodes, onBack, onEntity, onTopic,
   // Related pages: a book's author, a person's books and concepts, a concept's people.
   const related: { label: string; items: Entity[] }[] = []
   if (entity.kind === 'book' && entity.author && byId.get(entity.author)) related.push({ label: '作者', items: [byId.get(entity.author)!] })
+  if (entity.kind === 'film' && entity.people?.length) {
+    related.push({ label: '主创', items: entity.people.map(id => byId.get(id)).filter((item): item is Entity => Boolean(item)) })
+  }
   if (entity.kind === 'person') {
     const books = entities.filter(item => item.author === entity.id)
-    const concepts = entities.filter(item => item.people?.includes(entity.id))
+    const films = entities.filter(item => item.kind === 'film' && item.people?.includes(entity.id))
+    const concepts = entities.filter(item => item.kind === 'concept' && item.people?.includes(entity.id))
     if (books.length) related.push({ label: '著作', items: books })
+    if (films.length) related.push({ label: '作品', items: films })
     if (concepts.length) related.push({ label: '相关概念', items: concepts })
   }
   if (entity.kind === 'concept' && entity.people?.length) {
@@ -68,9 +75,16 @@ export function EntityPage({ atlas, entity, episodes, onBack, onEntity, onTopic,
       <div className="entity-scroll">
         <button className="entity-back" type="button" onClick={onBack}><ArrowLeft size={16} aria-hidden="true" /> 星图</button>
         <header className="entity-head">
-          <p className="entity-kind">{ENTITY_LABELS[entity.kind]}</p>
-          <h1 className="entity-name">{entity.kind === 'book' ? `《${entity.name}》` : entity.name}</h1>
+          {entity.kind !== 'concept' && (
+            <div className="entity-visual">
+              {entity.kind === 'person' ? <Portrait entity={entity} size={112} />
+                : <Cover entity={entity} maker={byId.get(entity.author ?? entity.people?.[0] ?? '')?.name} width={132} />}
+            </div>
+          )}
+          <p className="entity-kind">{ENTITY_LABELS[entity.kind]}{entity.kind === 'film' && entity.format ? ` · ${entity.format}${entity.year ? ` · ${entity.year}` : ''}` : ''}</p>
+          <h1 className="entity-name">{entity.kind === 'book' || entity.kind === 'film' ? `《${entity.name}》` : entity.name}</h1>
           {entity.note && <p className="entity-note">{entity.note}</p>}
+          {link && <a className="entity-link" href={link.href} target="_blank" rel="noreferrer">{link.label} <ArrowUpRight size={13} aria-hidden="true" /></a>}
           {topics.length > 0 && (
             <div className="entity-topics">
               {topics.map(topic => (
@@ -89,7 +103,7 @@ export function EntityPage({ atlas, entity, episodes, onBack, onEntity, onTopic,
             <div className="entity-chips">
               {group.items.map(item => (
                 <button key={item.id} className="search-chip" type="button" onClick={() => onEntity(item)}>
-                  {item.kind === 'book' ? `《${item.name}》` : item.name}
+                  {item.kind === 'book' || item.kind === 'film' ? `《${item.name}》` : item.name}
                 </button>
               ))}
             </div>
@@ -141,13 +155,13 @@ export function EntityPage({ atlas, entity, episodes, onBack, onEntity, onTopic,
             <div className="entity-chips">
               {nearby.map(({ item }) => (
                 <button key={item.id} className={`search-chip search-chip--${item.kind}`} type="button" onClick={() => onEntity(item)}>
-                  {item.kind === 'book' ? `《${item.name}》` : item.name}
+                  {item.kind === 'book' || item.kind === 'film' ? `《${item.name}》` : item.name}
                 </button>
               ))}
             </div>
           </section>
         )}
-        <p className="entity-source">名字是从节目标题、章节和简介里找到的；点「▶」从那一段原声开始听。</p>
+        <p className="entity-source">名字是从节目标题、章节和简介里找到的；点「▶」从那一段原声开始听。{entity.image && <> 照片：{entity.image.credit}，<a href={entity.image.source} target="_blank" rel="noreferrer">来源</a>。</>}</p>
       </div>
     </div>
   )
