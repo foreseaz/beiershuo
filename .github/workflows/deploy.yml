@@ -32,12 +32,4 @@ jobs:
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          WRANGLER_AUTH: ${{ secrets.WRANGLER_AUTH }}
-        run: |
-          if [ -z "$CLOUDFLARE_API_TOKEN" ] && [ -n "$WRANGLER_AUTH" ]; then
-            auth_dir="${XDG_CONFIG_HOME:-$HOME/.config}/.wrangler/config"
-            mkdir -p "$auth_dir"
-            printf '%s\n' "$WRANGLER_AUTH" > "$auth_dir/default.toml"
-            chmod 600 "$auth_dir/default.toml"
-          fi
-          npm run deploy
+        run: npm run deploy
