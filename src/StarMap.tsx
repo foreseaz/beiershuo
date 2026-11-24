@@ -27,6 +27,9 @@ type MapProps = {
 }
 
 const NARROW = 680
+/** A screen noticeably taller than wide (a phone, a tablet held upright) gets the ring turned top to bottom. */
+const isPortrait = () => window.innerHeight > window.innerWidth * 1.05
+const isTouch = () => window.matchMedia('(pointer: coarse)').matches
 const DEPTH_KEY = 'beiershuo:depth'
 
 /** The 2D/3D choice is a per-browser convenience; storage can be missing or blocked, so every access is guarded. */
@@ -65,7 +68,7 @@ function labelMetrics(w: number, z: number) {
  * Topic positions (topics.json) → nebula centres in the overview, spread to use the whole sky. The most connected
  * topic sits in the middle with the rest in a ring; a portrait screen turns the ring a quarter so it runs top to bottom.
  */
-function layoutNebulae(topics: Topic[], narrow: boolean): Nebula[] {
+function layoutNebulae(topics: Topic[], portrait: boolean): Nebula[] {
   const axis = (i: 0 | 1 | 2) => {
     const values = topics.map(topic => topic.position[i])
     const min = Math.min(...values)
@@ -78,8 +81,8 @@ function layoutNebulae(topics: Topic[], narrow: boolean): Nebula[] {
     const up = uy(topic.position[1])
     return {
       id: topic.id,
-      x: narrow ? 0.24 + up * 0.52 : 0.2 + across * 0.6,
-      y: narrow ? 0.18 + across * 0.6 : 0.2 + (1 - up) * 0.62,
+      x: portrait ? 0.24 + up * 0.52 : 0.2 + across * 0.6,
+      y: portrait ? 0.25 + across * 0.55 : 0.2 + (1 - up) * 0.62,
       depth: (uz(topic.position[2]) - 0.5) * 2.5,
       tint: topic.color,
     }
@@ -113,8 +116,10 @@ export function StarMap(props: MapProps) {
   const latest = useRef(props)
   const lastFrame = useRef<GalaxyFrame | null>(null)
   const [webgl, setWebgl] = useState(true)
-  const [narrow, setNarrow] = useState(() => window.innerWidth < NARROW)
-  const nebulae = useMemo(() => layoutNebulae(topics, narrow), [topics, narrow])
+  const [portrait, setPortrait] = useState(isPortrait)
+  const portraitRef = useRef(portrait)
+  portraitRef.current = portrait
+  const nebulae = useMemo(() => layoutNebulae(topics, portrait), [topics, portrait])
   const parent = useMemo(() => new Map(stars.map(star => [star.id, star.nebula])), [stars])
   const parentRef = useRef(parent)
   // Each star's rank inside its nebula by connections: the label budget is spent strongest first.
@@ -172,7 +177,8 @@ export function StarMap(props: MapProps) {
         }
         continue
       }
-      const top = point.y - Math.min(point.radius * 0.95, 190)
+      // On an upright screen the ring is tighter, so a title sits nearer its own nebula's heart.
+      const top = point.y - Math.min(point.radius * (portraitRef.current ? 0.6 : 0.95), 190)
       element.style.transform = `translate3d(${point.x.toFixed(1)}px, ${top.toFixed(1)}px, 0)`
       const visible = point.radius < TITLE_UNTIL && id !== inside
       if (shown.current.get(`n:${id}`) !== visible) {
@@ -181,14 +187,17 @@ export function StarMap(props: MapProps) {
       }
       if (visible) taken.push({ left: point.x - 60, top: top - 22, right: point.x + 60, bottom: top + 22 })
     }
-    const boxOf = (id: string, point: { x: number; y: number }): Box => {
+    const boxOf = (id: string, point: { x: number; y: number }): Box & { side: '' | 'l' } => {
       const { size, gap } = labelMetrics(weightRef.current.get(id) ?? 0.5, z)
-      const left = point.x + gap
+      const width = (perPx.current.get(id) ?? 4) * size + 6
       const top = point.y - size * 0.65
-      return { left, top, right: left + (perPx.current.get(id) ?? 4) * size + 6, bottom: top + size * 1.2 + 2 }
+      const bottom = top + size * 1.2 + 2
+      // A label that would run off the right edge turns to its star's left instead.
+      if (point.x + gap + width > frame.width - 4 && point.x - gap - width >= 4) return { left: point.x - gap - width, top, right: point.x - gap, bottom, side: 'l' }
+      return { left: point.x + gap, top, right: point.x + gap + width, bottom, side: '' }
     }
-    const decided = new Map<string, { show: '' | '1' | 'dim'; tone: '' | 'lit' | 'near'; point?: { x: number; y: number } }>()
-    const candidates: { id: string; point: { x: number; y: number }; box: Box }[] = []
+    const decided = new Map<string, { show: '' | '1' | 'dim'; tone: '' | 'lit' | 'near'; point?: { x: number; y: number }; side?: '' | 'l' }>()
+    const candidates: { id: string; point: { x: number; y: number }; box: ReturnType<typeof boxOf> }[] = []
     boxes.current.clear()
     for (const id of starRefs.current.keys()) {
       const point = frame.stars.get(id)
@@ -206,7 +215,9 @@ export function StarMap(props: MapProps) {
         const nebula = frame.nebulae.get(parentRef.current.get(id) ?? '')
         const budget = nebula ? labelBudget(nebula.radius * scale) : 0
         decided.set(id, { show: '', tone: '', point })
-        if ((rankRef.current.get(id) ?? Infinity) < budget) candidates.push({ id, point, box: boxOf(id, point) })
+        // Resting labels only show whole: one cut by the screen edge reads as noise.
+        const box = boxOf(id, point)
+        if ((rankRef.current.get(id) ?? Infinity) < budget && box.left >= 0 && box.right <= frame.width) candidates.push({ id, point, box })
       }
     }
     // Labels that must show claim their space first; resting labels fill what is left. Those already showing go
@@ -214,6 +225,7 @@ export function StarMap(props: MapProps) {
     for (const [id, state] of decided) {
       if (!state.show || !state.point) continue
       const box = boxOf(id, state.point)
+      state.side = box.side
       taken.push(box)
       boxes.current.set(id, box)
     }
@@ -228,13 +240,14 @@ export function StarMap(props: MapProps) {
         taken.push(box)
         boxes.current.set(id, box)
         kept.add(id)
-        decided.set(id, { show: chosen ? 'dim' : '1', tone: '', point })
+        decided.set(id, { show: chosen ? 'dim' : '1', tone: '', point, side: box.side })
       }
       resting.current = kept
     }
-    for (const [id, { show, tone, point }] of decided) {
+    for (const [id, { show, tone, point, side }] of decided) {
       const element = starRefs.current.get(id)
       if (!element) continue
+      if (show && element.dataset.side !== side) element.dataset.side = side ?? ''
       const key = `${show}|${tone}`
       const before = labelState.current.get(id)
       // Keep a label tracking its star while it fades out, then stop touching it.
@@ -264,7 +277,7 @@ export function StarMap(props: MapProps) {
   })
 
   useEffect(() => {
-    const onResize = () => setNarrow(window.innerWidth < NARROW)
+    const onResize = () => setPortrait(isPortrait())
     window.addEventListener('resize', onResize)
     return () => window.removeEventListener('resize', onResize)
   }, [])
@@ -442,7 +455,7 @@ export function StarMap(props: MapProps) {
       )}
       {webgl && (
         <p className={`depth-hint${hint ? ' is-visible' : ''}`} aria-live="polite">
-          {hint ? (narrow ? '单指旋转 · 双指缩放和移动' : '拖动旋转 · Shift + 拖动平移 · 滚轮缩放') : ''}
+          {hint ? (isTouch() ? '单指旋转 · 双指缩放和移动' : '拖动旋转 · Shift + 拖动平移 · 滚轮缩放') : ''}
         </p>
       )}
       <aside className={`info-drawer${card ? '' : ' is-empty'}${collapsed ? ' is-collapsed' : ''}`} ref={cardRef} aria-label="详情">

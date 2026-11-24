@@ -211,6 +211,11 @@ export class GalaxyScene {
   private readonly observer: ResizeObserver
   private readonly projectVector = new THREE.Vector3()
   private readonly world = new THREE.Vector3()
+  private readonly focus = new THREE.Vector3()
+  // How far the last trip moved the look point off its subject to make room for the card: along `right` in world
+  // units, and down by this share of the half-height. The subject itself is what counts as "where you are".
+  private frameRight = 0
+  private frameLift = 0
 
   constructor(private readonly container: HTMLElement, private readonly options: GalaxyOptions) {
     this.reducedMotion = options.reducedMotion
@@ -305,14 +310,21 @@ export class GalaxyScene {
     if (!nebula) {
       this.lookGoal.set(0, 0, 0)
       this.distanceGoal = this.mixGoal ? OVERVIEW_DEEP : OVERVIEW
+      this.frameRight = this.frameLift = 0
     } else {
       const wide = this.width > 680
-      // Leave room on the right for the card on wide screens, and at the bottom on phones.
-      const target = star ? this.world.copy(star.offset).lerp(star.deepOffset, this.mixGoal).add(this.goalCenter(nebula)).lerp(this.goalCenter(nebula), 0.55) : this.goalCenter(nebula)
+      const distance = wide ? CLOSE : CLOSE + 3
+      // Leave room on the right for the card on wide screens. On phones the card is a sheet over the lower half,
+      // so a chosen star is framed in the upper part (about 27% down) and stays nearer the star than the nebula.
+      const target = star
+        ? this.world.copy(star.offset).lerp(star.deepOffset, this.mixGoal).add(this.goalCenter(nebula)).lerp(this.goalCenter(nebula), wide ? 0.55 : 0.3)
+        : this.goalCenter(nebula)
+      this.frameRight = wide && star ? 1.1 : wide ? 0.5 : 0
+      this.frameLift = wide ? 0 : star ? 0.46 : 0.06
       this.lookGoal.copy(target)
-        .addScaledVector(this.right, wide && star ? 1.1 : wide ? 0.5 : 0)
-        .addScaledVector(this.up, wide ? 0 : -1)
-      this.distanceGoal = wide ? CLOSE : CLOSE + 3
+        .addScaledVector(this.right, this.frameRight)
+        .addScaledVector(this.up, -this.frameLift * distance * TAN)
+      this.distanceGoal = distance
     }
     this.touch()
   }
@@ -751,8 +763,9 @@ export class GalaxyScene {
     if (this.distance > 13) return null
     let best: string | null = null
     let closest = 3.4
+    const focus = this.focus.copy(this.look).addScaledVector(this.right, -this.frameRight).addScaledVector(this.up, this.frameLift * this.distance * TAN)
     for (const [id, object] of this.nebulae) {
-      const distance = Math.hypot(object.center.x - this.look.x, object.center.y - this.look.y, (object.center.z - this.look.z) * this.mix)
+      const distance = Math.hypot(object.center.x - focus.x, object.center.y - focus.y, (object.center.z - focus.z) * this.mix)
       if (distance < closest) { closest = distance; best = id }
     }
     return best

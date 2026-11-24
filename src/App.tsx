@@ -365,7 +365,8 @@ export function App() {
         </button>
       </nav>
       {panel === 'search' && (
-        <SearchSpace atlas={atlas} episodes={episodes} onTopic={focusNebula} onEntity={openEntity} onMoment={selectMoment} onClose={() => setPanel(null)} />
+        <SearchSpace atlas={atlas} episodes={episodes} onTopic={focusNebula} onStar={selectStar} onEntity={openEntity} onIndex={openIndex}
+          onMoment={selectMoment} onClose={() => setPanel(null)} />
       )}
       {panel === 'list' && (
         <ListPanel atlas={atlas} episodes={episodes} activeMoment={momentId} onMoment={selectMoment}
