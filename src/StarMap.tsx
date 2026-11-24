@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { ArrowLeft, Minus, Plus } from 'lucide-react'
+import { ArrowLeft, ChevronDown, ChevronUp, Minus, Plus } from 'lucide-react'
 import type { Topic } from './domain'
-import { GalaxyScene, type GalaxyFrame, type Nebula, type Point, type SubStar, type Thread, type Travel } from './scene/GalaxyScene'
+import { GalaxyScene, type GalaxyFrame, type Nebula, type SubStar, type Thread, type Travel } from './scene/GalaxyScene'
 
 export type GalaxyStar = SubStar & { name: string }
 
@@ -22,15 +22,39 @@ type MapProps = {
   onBack: () => void
   onOverview: () => void
   card: ReactNode
-  cardFixed: boolean
+  /** Changes whenever a different card opens, so a collapsed drawer opens again for new content. */
+  cardKey: string
 }
 
 const NARROW = 680
-// A nebula's labels appear once it is this wide on screen (px radius), and its title steps aside when it fills the view.
-const LABELS_FROM = 150
+// Sub-topic labels come in as their nebula grows on screen (radius in px at a 900px-tall view): its strongest
+// few in the overview, more as the camera nears, all of them from LABELS_FROM. The title steps aside at TITLE_UNTIL.
+const OVERVIEW_RADIUS = 140
+const OVERVIEW_LABELS = 4
+const LABELS_FROM = 240
 const TITLE_UNTIL = 420
 
-/** Topic positions (topics.json) → nebula centres in the overview, spread to use the whole sky. */
+type Box = { left: number; top: number; right: number; bottom: number }
+const overlaps = (a: Box, b: Box) => !(a.right < b.left || a.left > b.right || a.bottom < b.top || a.top > b.bottom)
+
+/** How many of a nebula's labels show while nothing is hovered, strongest first. */
+function labelBudget(radius: number) {
+  if (radius >= LABELS_FROM) return Infinity
+  return OVERVIEW_LABELS + Math.max(0, radius - OVERVIEW_RADIUS) * ((18 - OVERVIEW_LABELS) / (LABELS_FROM - OVERVIEW_RADIUS))
+}
+
+/**
+ * A label's font size and its gap from the star, in px. Mirrors the .star-tag rule in styles.css: it depends on how
+ * connected the sub-topic is (w) and how close the camera is (z), never on hover, so a label never jumps.
+ */
+function labelMetrics(w: number, z: number) {
+  return { size: 9.5 + 3 * w + z * (1.5 + 3 * w), gap: 5 + 4 * w + z * (3 + 5 * w) }
+}
+
+/**
+ * Topic positions (topics.json) → nebula centres in the overview, spread to use the whole sky. The most connected
+ * topic sits in the middle with the rest in a ring; a portrait screen turns the ring a quarter so it runs top to bottom.
+ */
 function layoutNebulae(topics: Topic[], narrow: boolean): Nebula[] {
   const axis = (i: 0 | 1 | 2) => {
     const values = topics.map(topic => topic.position[i])
@@ -40,50 +64,20 @@ function layoutNebulae(topics: Topic[], narrow: boolean): Nebula[] {
   }
   const [ux, uy, uz] = [axis(0), axis(1), axis(2)]
   return topics.map(topic => {
-    const x = ux(topic.position[0])
-    const y = 1 - uy(topic.position[1])
+    const across = ux(topic.position[0])
+    const up = uy(topic.position[1])
     return {
       id: topic.id,
-      x: narrow ? 0.2 + x * 0.6 : 0.16 + x * 0.66,
-      y: narrow ? 0.16 + y * 0.52 : 0.15 + y * 0.64,
+      x: narrow ? 0.24 + up * 0.52 : 0.2 + across * 0.6,
+      y: narrow ? 0.18 + across * 0.6 : 0.2 + (1 - up) * 0.62,
       depth: (uz(topic.position[2]) - 0.5) * 2.5,
       tint: topic.color,
     }
   })
 }
 
-type Rect = { left: number; top: number; right: number; bottom: number }
-const overlap = (a: Rect, b: Rect) =>
-  Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left)) * Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top))
-
-/** Put the card beside the selected star, on the side with the fewest labels under it. */
-function placeCard(frame: GalaxyFrame, star: Point, size: { width: number; height: number }, obstacles: Rect[]) {
-  const { width, height } = size
-  const candidates = [
-    { left: star.x + 40, top: star.y - height * 0.35 },
-    { left: star.x + 40, top: star.y - height + 30 },
-    { left: star.x + 40, top: star.y - 30 },
-    { left: star.x - 40 - width, top: star.y - height * 0.35 },
-    { left: star.x - 40 - width, top: star.y - height + 30 },
-    { left: star.x - 40 - width, top: star.y - 30 },
-  ]
-  const bounds = { left: 16, top: 84, right: frame.width - 16, bottom: frame.height - 96 }
-  const score = (c: { left: number; top: number }, index: number) => {
-    const box = { left: c.left, top: c.top, right: c.left + width, bottom: c.top + height }
-    const outside = Math.max(0, bounds.left - box.left) + Math.max(0, box.right - bounds.right) +
-      Math.max(0, bounds.top - box.top) + Math.max(0, box.bottom - bounds.bottom)
-    return outside * 600 + obstacles.reduce((sum, rect) => sum + overlap(box, rect), 0) + index * 400
-  }
-  const scores = candidates.map(score)
-  const chosen = candidates[scores.indexOf(Math.min(...scores))]
-  return {
-    left: chosen.left, top: chosen.top,
-    anchor: { x: chosen.left < star.x ? chosen.left + width : chosen.left, y: Math.min(Math.max(star.y, chosen.top + 18), chosen.top + height - 18) },
-  }
-}
-
 export function StarMap(props: MapProps) {
-  const { topics, stars, threads, selected, related, current, travel, reducedMotion, card, cardFixed } = props
+  const { topics, stars, threads, selected, related, current, travel, reducedMotion, card, cardKey } = props
   const canvasRef = useRef<HTMLDivElement>(null)
   const cardRef = useRef<HTMLDivElement>(null)
   const leaderRef = useRef<SVGPathElement>(null)
@@ -91,9 +85,16 @@ export function StarMap(props: MapProps) {
   const tipRef = useRef<HTMLDivElement>(null)
   const nebulaRefs = useRef(new Map<string, HTMLButtonElement>())
   const starRefs = useRef(new Map<string, HTMLButtonElement>())
-  const widths = useRef(new Map<string, number>())
+  const sectionRef = useRef<HTMLElement>(null)
+  // Label width per px of font size, measured once; with labelMetrics it gives every label's box without layout reads.
+  const perPx = useRef(new Map<string, number>())
   const shown = useRef(new Map<string, boolean>())
-  const cardSize = useRef({ width: 340, height: 300 })
+  const labelState = useRef(new Map<string, string>())
+  const boxes = useRef(new Map<string, Box>())
+  const zoomStep = useRef(-1)
+  const hoverStar = useRef<string | null>(null)
+  const drawerBox = useRef<{ left: number; top: number } | null>(null)
+  const [collapsed, setCollapsed] = useState(false)
   const sceneRef = useRef<GalaxyScene | null>(null)
   const latest = useRef(props)
   const lastFrame = useRef<GalaxyFrame | null>(null)
@@ -102,48 +103,129 @@ export function StarMap(props: MapProps) {
   const nebulae = useMemo(() => layoutNebulae(topics, narrow), [topics, narrow])
   const parent = useMemo(() => new Map(stars.map(star => [star.id, star.nebula])), [stars])
   const parentRef = useRef(parent)
+  // Each star's rank inside its nebula by connections: the label budget is spent strongest first.
+  const rank = useMemo(() => {
+    const byNebula = new Map<string, GalaxyStar[]>()
+    for (const star of stars) byNebula.set(star.nebula, [...(byNebula.get(star.nebula) ?? []), star])
+    return new Map([...byNebula.values()].flatMap(list => [...list].sort((a, b) => b.weight - a.weight).map((star, index) => [star.id, index] as const)))
+  }, [stars])
+  const rankRef = useRef(rank)
+  rankRef.current = rank
+  const weightRef = useRef(new Map<string, number>())
+  weightRef.current = new Map(stars.map(star => [star.id, star.weight]))
+  // Which sub-topics each star's lines reach, for labelling them while it is hovered.
+  const partnersOf = useMemo(() => {
+    const result = new Map<string, Set<string>>()
+    for (const thread of threads) {
+      result.set(thread.from, (result.get(thread.from) ?? new Set()).add(thread.to))
+      result.set(thread.to, (result.get(thread.to) ?? new Set()).add(thread.from))
+    }
+    return result
+  }, [threads])
+  const partnersRef = useRef(partnersOf)
   latest.current = props
   parentRef.current = parent
+  partnersRef.current = partnersOf
 
-  // Positions every overlay element from the projected scene, touching only transforms and, on change, classes.
+  /*
+   * Which labels show, by one rule:
+   *  - Hovering a star (or its label) shows that star and the sub-topics its lines reach, and nothing else.
+   *  - Otherwise a selected star shows with the sub-topics it reaches; the rest stay faint.
+   *  - At rest each nebula shows its best-connected labels, more as the camera nears, never two overlapping.
+   * Size depends only on connections and zoom, so showing, hovering or selecting never moves a label.
+   */
   const place = useRef((frame: GalaxyFrame) => {
     lastFrame.current = frame
-    const { selected: chosen, related: near, current: inside, cardFixed: fixed } = latest.current
+    const { selected: chosen, related: linked, current: inside } = latest.current
+    const hovered = hoverStar.current
+    const reach = hovered ? partnersRef.current.get(hovered) : undefined
+    const section = sectionRef.current
+    const z = Math.round(frame.zoom * 20) / 20
+    if (z !== zoomStep.current) {
+      zoomStep.current = z
+      section?.style.setProperty('--z', String(z))
+    }
+    if (section && section.dataset.hovering !== (hovered ? '1' : '')) section.dataset.hovering = hovered ? '1' : ''
+    const scale = 900 / Math.max(frame.height, 1)
+    const taken: Box[] = []
     for (const [id, element] of nebulaRefs.current) {
       const point = frame.nebulae.get(id)
       if (!point) continue
-      element.style.transform = `translate3d(${point.x.toFixed(1)}px, ${(point.y - Math.min(point.radius * 0.62, 150)).toFixed(1)}px, 0)`
+      const top = point.y - Math.min(point.radius * 0.95, 190)
+      element.style.transform = `translate3d(${point.x.toFixed(1)}px, ${top.toFixed(1)}px, 0)`
       const visible = point.radius < TITLE_UNTIL && id !== inside
       if (shown.current.get(`n:${id}`) !== visible) {
         shown.current.set(`n:${id}`, visible)
         element.dataset.hidden = visible ? '' : '1'
       }
+      if (visible) taken.push({ left: point.x - 60, top: top - 22, right: point.x + 60, bottom: top + 22 })
     }
-    const obstacles: Rect[] = []
-    for (const [id, element] of starRefs.current) {
+    const boxOf = (id: string, point: { x: number; y: number }): Box => {
+      const { size, gap } = labelMetrics(weightRef.current.get(id) ?? 0.5, z)
+      const left = point.x + gap
+      const top = point.y - size * 0.65
+      return { left, top, right: left + (perPx.current.get(id) ?? 4) * size + 6, bottom: top + size * 1.2 + 2 }
+    }
+    const decided = new Map<string, { show: '' | '1' | 'dim'; tone: '' | 'lit' | 'near'; point?: { x: number; y: number } }>()
+    const resting: { id: string; point: { x: number; y: number }; box: Box }[] = []
+    boxes.current.clear()
+    for (const id of starRefs.current.keys()) {
       const point = frame.stars.get(id)
-      const nebula = frame.nebulae.get(parentRef.current.get(id) ?? '')
       const onScreen = point !== undefined && point.x > -80 && point.x < frame.width + 20 && point.y > -30 && point.y < frame.height + 30
-      const visible = onScreen && (id === chosen || near.has(id) || (nebula !== undefined && nebula.radius > LABELS_FROM))
-      if (shown.current.get(id) !== visible) {
-        shown.current.set(id, visible)
-        element.dataset.visible = visible ? '1' : ''
-        element.tabIndex = visible ? 0 : -1
+      if (!point || !onScreen) { decided.set(id, { show: '', tone: '' }); continue }
+      if (hovered) {
+        if (id === hovered || id === chosen) decided.set(id, { show: '1', tone: 'lit', point })
+        else if (reach?.has(id)) decided.set(id, { show: '1', tone: 'near', point })
+        else decided.set(id, { show: '', tone: '', point })
+      } else if (id === chosen) {
+        decided.set(id, { show: '1', tone: 'lit', point })
+      } else if (linked.has(id)) {
+        decided.set(id, { show: '1', tone: 'near', point })
+      } else {
+        const nebula = frame.nebulae.get(parentRef.current.get(id) ?? '')
+        const budget = nebula ? labelBudget(nebula.radius * scale) : 0
+        decided.set(id, { show: '', tone: '', point })
+        if ((rankRef.current.get(id) ?? Infinity) < budget) resting.push({ id, point, box: boxOf(id, point) })
       }
-      if (!point || !visible) continue
-      element.style.transform = `translate3d(${point.x.toFixed(1)}px, ${point.y.toFixed(1)}px, 0)`
-      obstacles.push({ left: point.x - 8, top: point.y - 12, right: point.x + 14 + (widths.current.get(id) ?? 60), bottom: point.y + 12 })
     }
-    const cardElement = cardRef.current
+    // Labels that must show claim their space first; resting labels fill what is left, strongest first.
+    for (const [id, state] of decided) {
+      if (!state.show || !state.point) continue
+      const box = boxOf(id, state.point)
+      taken.push(box)
+      boxes.current.set(id, box)
+    }
+    resting.sort((a, b) => (weightRef.current.get(b.id) ?? 0) - (weightRef.current.get(a.id) ?? 0))
+    for (const { id, point, box } of resting) {
+      if (taken.some(other => overlaps(box, other))) continue
+      taken.push(box)
+      boxes.current.set(id, box)
+      decided.set(id, { show: chosen ? 'dim' : '1', tone: '', point })
+    }
+    for (const [id, { show, tone, point }] of decided) {
+      const element = starRefs.current.get(id)
+      if (!element) continue
+      const key = `${show}|${tone}`
+      const before = labelState.current.get(id)
+      // Keep a label tracking its star while it fades out, then stop touching it.
+      if (point && (show || (before && !before.startsWith('|')))) {
+        element.style.transform = `translate3d(${point.x.toFixed(1)}px, ${point.y.toFixed(1)}px, 0)`
+      }
+      if (before === key) continue
+      labelState.current.set(id, key)
+      element.dataset.show = show
+      element.dataset.tone = tone
+      element.tabIndex = show ? 0 : -1
+    }
+    // A thin leader from the selected star to the docked drawer keeps the two connected.
     const star = chosen ? frame.stars.get(chosen) : undefined
-    if (!cardElement || fixed || !star || frame.width < NARROW) {
-      if (cardElement) cardElement.style.transform = ''
+    const box = drawerBox.current
+    if (!star || !box || frame.width < NARROW || star.x > box.left - 24) {
       leaderRef.current?.setAttribute('d', '')
       dotRef.current?.setAttribute('r', '0')
       return
     }
-    const { left, top, anchor } = placeCard(frame, star, cardSize.current, obstacles)
-    cardElement.style.transform = `translate3d(${left.toFixed(1)}px, ${top.toFixed(1)}px, 0)`
+    const anchor = { x: box.left, y: box.top + 34 }
     const bend = (anchor.x - star.x) * 0.5
     leaderRef.current?.setAttribute('d', `M${star.x} ${star.y} C${star.x + bend} ${star.y} ${anchor.x - bend} ${anchor.y} ${anchor.x} ${anchor.y}`)
     dotRef.current?.setAttribute('cx', String(anchor.x))
@@ -173,6 +255,17 @@ export function StarMap(props: MapProps) {
         onThread: id => latest.current.onThread(id),
         onView: id => latest.current.onView(id),
         onEmpty: () => latest.current.onBack(),
+        labelAt: (x, y) => {
+          for (const [id, box] of boxes.current) {
+            if (x >= box.left - 2 && x <= box.right + 2 && y >= box.top - 2 && y <= box.bottom + 2) return id
+          }
+          return null
+        },
+        onHoverStar: id => {
+          hoverStar.current = id
+          if (lastFrame.current) place.current(lastFrame.current)
+        },
+        onGesture: active => { if (cardRef.current) cardRef.current.dataset.gesture = active ? '1' : '' },
         onHover: hover => {
           const tip = tipRef.current
           if (!tip) return
@@ -199,26 +292,38 @@ export function StarMap(props: MapProps) {
   useEffect(() => { sceneRef.current?.setSelection(selected, related) }, [selected, related])
   useEffect(() => { sceneRef.current?.travel(travel) }, [travel, stars])
   useEffect(() => { sceneRef.current?.setReducedMotion(reducedMotion) }, [reducedMotion])
-  useEffect(() => { if (lastFrame.current) place.current(lastFrame.current) }, [selected, related, current, cardFixed])
+  useEffect(() => { if (lastFrame.current) place.current(lastFrame.current) }, [selected, related, current, card])
+  useEffect(() => setCollapsed(false), [cardKey])
 
-  // Measure label widths once (after the web font loads), never inside the frame loop.
+  // Measure label widths once (after the web font loads), never inside the frame loop. Width scales with font
+  // size (letter spacing is in em), so one measurement per label covers every zoom.
   useEffect(() => {
     const measure = () => {
-      for (const [id, element] of starRefs.current) widths.current.set(id, element.offsetWidth)
+      for (const [id, element] of starRefs.current) {
+        const size = parseFloat(getComputedStyle(element).fontSize) || 12
+        perPx.current.set(id, Math.max(0, element.offsetWidth - 6) / size)
+      }
     }
     measure()
     void document.fonts?.ready.then(measure)
   }, [stars])
 
+  // The drawer's position is read when it resizes, not in the frame loop.
   useEffect(() => {
     const element = cardRef.current
     if (!element) return
-    const observer = new ResizeObserver(() => {
-      cardSize.current = { width: element.offsetWidth, height: element.offsetHeight }
+    const read = () => {
+      const rect = element.getBoundingClientRect()
+      drawerBox.current = rect.width ? { left: rect.left, top: rect.top } : null
       if (lastFrame.current) place.current(lastFrame.current)
-    })
+    }
+    const observer = new ResizeObserver(read)
     observer.observe(element)
-    return () => observer.disconnect()
+    window.addEventListener('resize', read)
+    return () => {
+      observer.disconnect()
+      window.removeEventListener('resize', read)
+    }
   }, [])
 
   const focused = topics.find(topic => topic.id === current)
@@ -238,7 +343,7 @@ export function StarMap(props: MapProps) {
   }
 
   return (
-    <section className={`galaxy${current ? ' is-focused' : ''}${webgl ? '' : ' galaxy--flat'}`} aria-label="主题星图">
+    <section ref={sectionRef} className={`galaxy${current ? ' is-focused' : ''}${webgl ? '' : ' galaxy--flat'}`} aria-label="主题星图">
       <div className="star-canvas" ref={canvasRef} aria-hidden="true" />
       <svg className="star-leader" aria-hidden="true">
         <path ref={leaderRef} />
@@ -261,11 +366,13 @@ export function StarMap(props: MapProps) {
         <button
           key={star.id}
           ref={element => { if (element) starRefs.current.set(star.id, element); else starRefs.current.delete(star.id) }}
-          className={`star-tag${star.id === selected ? ' is-selected' : ''}${related.has(star.id) ? ' is-related' : ''}${star.nebula === current ? '' : ' is-away'}`}
-          style={{ '--tint': topics.find(topic => topic.id === star.nebula)?.color } as React.CSSProperties}
+          className="star-tag"
+          style={{ '--tint': topics.find(topic => topic.id === star.nebula)?.color, '--w': star.weight.toFixed(2) } as React.CSSProperties}
           type="button"
           tabIndex={-1}
           onClick={() => props.onStar(star.id)}
+          onFocus={() => sceneRef.current?.setHoverStar(star.id)}
+          onBlur={() => sceneRef.current?.setHoverStar(null)}
         >
           {star.name}
         </button>
@@ -284,7 +391,15 @@ export function StarMap(props: MapProps) {
           <button type="button" aria-label="缩小" onClick={() => zoom(1.4)}><Minus size={15} aria-hidden="true" /></button>
         </div>
       )}
-      <div className={`scene-card${cardFixed ? ' is-fixed' : ''}${card ? '' : ' is-empty'}`} ref={cardRef}>{card}</div>
+      <aside className={`info-drawer${card ? '' : ' is-empty'}${collapsed ? ' is-collapsed' : ''}`} ref={cardRef} aria-label="详情">
+        {card && (
+          <button className="drawer-toggle icon-button" type="button" onClick={() => setCollapsed(value => !value)}
+            aria-expanded={!collapsed} aria-label={collapsed ? '展开' : '收起'}>
+            {collapsed ? <ChevronDown size={15} aria-hidden="true" /> : <ChevronUp size={15} aria-hidden="true" />}
+          </button>
+        )}
+        {card}
+      </aside>
     </section>
   )
 }

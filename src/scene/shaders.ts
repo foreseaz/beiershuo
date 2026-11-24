@@ -134,20 +134,6 @@ void main() {
 `
 
 // Out-of-focus foreground light: a soft disc with a faint brighter rim.
-export const bokehFragment = /* glsl */ `
-uniform vec3 uColor;
-uniform float uOpacity;
-uniform float uTime;
-uniform float uPhase;
-varying vec2 vUv;
-void main() {
-  float r = length(vUv);
-  float disc = smoothstep(1.0, 0.55, r);
-  float rim = smoothstep(0.55, 0.9, r) * smoothstep(1.0, 0.85, r) * 0.25;
-  float breathe = 0.85 + 0.15 * sin(uTime * 0.35 + uPhase);
-  gl_FragColor = vec4(uColor * (disc * 0.55 + rim) * uOpacity * breathe, 1.0);
-}
-`
 
 // Screen-space ribbon: constant pixel width regardless of depth, soft edges,
 // a white-to-blue gradient along the link and an optional travelling pulse.

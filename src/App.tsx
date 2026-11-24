@@ -1,10 +1,12 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
-import { ArrowUpRight, BookOpen, List, Pause, Play, Search, Users, VolumeX, X } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { ArrowUpRight, BookOpen, ChevronRight, List, Pause, Play, Search, Share2, Users, VolumeX, X } from 'lucide-react'
 import {
-  SHOW_XIAOYUZHOU, entityPath, episodeLabel, indexPath, loadAtlas, momentSource, parseRoute, timeLabel, topicMoments,
+  ENTITY_LABELS, SHOW_XIAOYUZHOU, entityPath, episodeLabel, indexPath, loadAtlas, momentSource, parseRoute, timeLabel, topicMoments,
   type Atlas, type Entity, type EntityKind, type Episode, type Moment, type Topic,
 } from './domain'
 import { EntityPage } from './EntityPage'
+import { Overlay } from './Overlay'
+import { ShareDialog } from './ShareDialog'
 import { IndexPage } from './IndexPage'
 import { SearchSpace } from './SearchSpace'
 import { useAmbient } from './ambient'
@@ -50,10 +52,6 @@ function buildGalaxy(atlas: Atlas | null) {
   const concepts = (atlas?.entities ?? []).filter(item => item.kind === 'concept' && item.topic)
   const order = new Map((atlas?.episodes ?? []).map((episode, index) => [episode.id, index]))
   const episodesOf = new Map(concepts.map(item => [item.id, new Set(item.mentions.map(point => point.episodeId))]))
-  const most = Math.max(1, ...[...episodesOf.values()].map(set => set.size))
-  const stars: GalaxyStar[] = concepts.map(item => ({
-    id: item.id, name: item.name, nebula: item.topic!, weight: Math.log2(1 + episodesOf.get(item.id)!.size) / Math.log2(1 + most),
-  }))
   const byId = new Map(concepts.map(item => [item.id, item]))
   const partners = new Map<string, Partner[]>(concepts.map(item => [item.id, []]))
   for (let i = 0; i < concepts.length; i += 1) {
@@ -69,6 +67,11 @@ function buildGalaxy(atlas: Atlas | null) {
     const home = byId.get(id)!.topic
     list.sort((x, y) => y.shared - x.shared || Number(byId.get(y.id)!.topic !== home) - Number(byId.get(x.id)!.topic !== home))
   }
+  // A star's size follows how connected it is: how many other sub-topics share episodes with it.
+  const most = Math.max(1, ...[...partners.values()].map(list => list.length))
+  const stars: GalaxyStar[] = concepts.map(item => ({
+    id: item.id, name: item.name, nebula: item.topic!, weight: Math.log2(1 + partners.get(item.id)!.length) / Math.log2(1 + most),
+  }))
   const pairs = new Set<string>()
   for (const [id, list] of partners) for (const partner of list.slice(0, 3)) pairs.add([id, partner.id].sort().join('|'))
   const threads: Thread[] = []
@@ -99,6 +102,7 @@ export function App() {
   const [viewNebula, setViewNebula] = useState<string | null>(null)
   const [starId, setStarId] = useState(() => readUrl().star)
   const [threadId, setThreadId] = useState('')
+  const [shareId, setShareId] = useState('')
   const [momentId, setMomentId] = useState(() => readUrl().moment)
   const [panel, setPanel] = useState<Panel>(null)
   const [route, setRoute] = useState(() => parseRoute(window.location.pathname))
@@ -107,16 +111,54 @@ export function App() {
   // Site music sits low under an episode, and goes silent under episodes with their own music bed.
   const music = useAmbient(player.playing ? (player.cue?.episode.musicBed ? 'mute' : 'low') : 'none')
 
+  // Overlay pages record in history.state how many pages deep they are, and whether the chain began at a
+  // deep link (`base`: no map underneath). ✕ then returns to the map in one step, whatever the depth.
+  type Entry = { depth?: number; base?: boolean } | null
+  const entry = () => window.history.state as Entry
+  const depth = () => entry()?.depth ?? 0
+  const closing = useRef(false)
+
   useEffect(() => {
-    const onPop = () => setRoute(parseRoute(window.location.pathname))
+    if (parseRoute(window.location.pathname) && !depth()) window.history.replaceState({ depth: 1, base: true }, '', window.location.href)
+    const onPop = () => {
+      if (closing.current && entry()?.base) {
+        closing.current = false
+        window.history.replaceState({ depth: 0 }, '', '/')
+      }
+      setRoute(parseRoute(window.location.pathname))
+    }
     window.addEventListener('popstate', onPop)
     return () => window.removeEventListener('popstate', onPop)
   }, [])
 
   const go = useCallback((path: string) => {
-    window.history.pushState(null, '', path)
-    setRoute(parseRoute(new URL(path, window.location.origin).pathname))
+    const next = parseRoute(new URL(path, window.location.origin).pathname)
+    window.history.pushState(next ? { depth: depth() + 1, base: Boolean(entry()?.base) } : { depth: 0 }, '', path)
+    setRoute(next)
   }, [])
+
+  const closeOverlay = useCallback(() => {
+    const steps = depth()
+    if (entry()?.base) {
+      if (steps > 1) {
+        // Walk back to the deep-linked first page, then swap it for the map.
+        closing.current = true
+        window.history.go(-(steps - 1))
+        return
+      }
+    } else if (steps > 0) {
+      window.history.go(-steps)
+      return
+    }
+    window.history.replaceState({ depth: 0 }, '', '/')
+    setRoute(null)
+  }, [])
+
+  const overlayBack = useCallback(() => {
+    const state = window.history.state as { depth?: number; base?: boolean } | null
+    if ((state?.depth ?? 0) > 1) window.history.back()
+    else closeOverlay()
+  }, [closeOverlay])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -153,7 +195,7 @@ export function App() {
 
   const fly = useCallback((trip: Omit<Travel, 'seq'>) => setTravel(previous => ({ seq: previous.seq + 1, ...trip })), [])
 
-  const leavePage = useCallback(() => { if (parseRoute(window.location.pathname)) go('/') }, [go])
+  const leavePage = useCallback(() => { if (parseRoute(window.location.pathname)) closeOverlay() }, [closeOverlay])
 
   const focusNebula = useCallback((id: string) => {
     setStarId('')
@@ -267,6 +309,7 @@ export function App() {
   } else if (star) {
     card = <StarCard star={star} topics={topics} entities={entities} episodes={episodes} moments={moments}
       partners={galaxy.partners.get(star.id) ?? []} onStar={selectStar} onOpen={() => openEntity(star)} onClose={() => setStarId('')}
+      onShare={() => setShareId(star.id)}
       onPlay={(episode, startSec, title) => player.play(cueFor(episode, startSec, title))} />
   }
 
@@ -289,14 +332,22 @@ export function App() {
         onBack={stepBack}
         onOverview={overview}
         card={card}
-        cardFixed={Boolean(moment || thread)}
+        cardKey={momentId || threadId || starId}
       />
-      {entity && (
-        <EntityPage atlas={atlas} entity={entity} episodes={episodes} onBack={() => window.history.length > 1 ? window.history.back() : go('/')}
-          onEntity={openEntity} onTopic={focusNebula} onMoment={selectMoment}
-          onPlay={(episode, startSec, title) => player.play(cueFor(episode, startSec, title))} />
+      {(entity || index) && (
+        <Overlay
+          label={entity ? `${ENTITY_LABELS[entity.kind]} · ${entity.name}` : ENTITY_LABELS[index!]}
+          page={entity ? `${entity.kind}/${entity.id}` : `index/${index}`}
+          canBack={depth() > 1}
+          onBack={overlayBack}
+          onClose={closeOverlay}
+        >
+          {entity
+            ? <EntityPage atlas={atlas} entity={entity} episodes={episodes} onEntity={openEntity} onTopic={focusNebula} onMoment={selectMoment}
+                onPlay={(episode, startSec, title) => player.play(cueFor(episode, startSec, title))} onShare={() => setShareId(entity.id)} />
+            : <IndexPage atlas={atlas} kind={index!} onEntity={openEntity} />}
+        </Overlay>
       )}
-      {index && !entity && <IndexPage atlas={atlas} kind={index} onEntity={openEntity} onBack={() => go('/')} />}
       <nav className="corner-library" aria-label="索引">
         <button type="button" className={index === 'person' ? 'is-active' : ''} onClick={() => openIndex('person')} title="人物">
           <Users size={18} strokeWidth={1.5} aria-hidden="true" /> <span>人物</span>
@@ -317,9 +368,17 @@ export function App() {
         <SearchSpace atlas={atlas} episodes={episodes} onTopic={focusNebula} onEntity={openEntity} onMoment={selectMoment} onClose={() => setPanel(null)} />
       )}
       {panel === 'list' && (
-        <ListPanel atlas={atlas} topic={focusedTopic} episodes={episodes} activeMoment={momentId} onMoment={selectMoment}
-          onPlay={item => player.play(cueFor(episodes.get(item.episodeId)!, item.startSec, item.title))} onClose={() => setPanel(null)} />
+        <ListPanel atlas={atlas} episodes={episodes} activeMoment={momentId} onMoment={selectMoment}
+          onPlay={item => player.play(cueFor(episodes.get(item.episodeId)!, item.startSec, item.title))}
+          onPlayEpisode={episode => player.play(cueFor(episode, 0, shortTitle(episode)))} onClose={() => setPanel(null)} />
       )}
+      {shareId && entities.get(shareId) && (() => {
+        const target = entities.get(shareId)!
+        const maker = entities.get(target.author ?? target.people?.[0] ?? '')
+        const tint = topics.find(item => item.id === (target.topic ?? target.topicIds[0]))?.color ?? '#9fb0ff'
+        return <ShareDialog entity={target} tint={tint} maker={target.kind === 'concept' ? undefined : maker?.name}
+          episodes={episodes} moments={moments} onClose={() => setShareId('')} />
+      })()}
       <Brand />
       <MusicPlayer music={music} />
       {player.cue && <PlayerBar player={player} />}
@@ -427,10 +486,11 @@ function ThreadCard({ thread, topics, entities, episodes, moments, onStar, onClo
 }
 
 /** A sub-topic star: where the show talks about it, and which sub-topics come up alongside it. */
-function StarCard({ star, topics, entities, episodes, moments, partners, onStar, onOpen, onClose, onPlay }: {
+function StarCard({ star, topics, entities, episodes, moments, partners, onStar, onOpen, onClose, onPlay, onShare }: {
   star: Entity; topics: Topic[]; entities: Map<string, Entity>; episodes: Map<string, Episode>; moments: Map<string, Moment>
   partners: Partner[]; onStar: (id: string) => void; onOpen: () => void; onClose: () => void
   onPlay: (episode: Episode, startSec: number, title: string) => void
+  onShare: () => void
 }) {
   const topic = topics.find(item => item.id === star.topic)
   const rows = [...star.mentions]
@@ -475,45 +535,79 @@ function StarCard({ star, topics, entities, episodes, moments, partners, onStar,
           </div>
         </>
       )}
-      <button className="star-card-page" type="button" onClick={onOpen}>打开「{star.name}」页面</button>
+      <div className="star-card-foot">
+        <button className="star-card-page" type="button" onClick={onOpen}>打开「{star.name}」页面</button>
+        <button className="star-card-share" type="button" onClick={onShare}><Share2 size={13} aria-hidden="true" /> 分享</button>
+      </div>
     </article>
   )
 }
 
-function ListPanel({ atlas, topic, episodes, activeMoment, onMoment, onPlay, onClose }: {
-  atlas: Atlas; topic: Topic | null; episodes: Map<string, Episode>; activeMoment: string
-  onMoment: (moment: Moment) => void; onPlay: (moment: Moment) => void; onClose: () => void
+/** Every episode, newest first; each folds open to its chapters. */
+function ListPanel({ atlas, episodes, activeMoment, onMoment, onPlay, onPlayEpisode, onClose }: {
+  atlas: Atlas; episodes: Map<string, Episode>; activeMoment: string
+  onMoment: (moment: Moment) => void; onPlay: (moment: Moment) => void; onPlayEpisode: (episode: Episode) => void; onClose: () => void
 }) {
-  const inTopic = topic ? topicMoments(atlas, topic.id) : []
-  const showAll = inTopic.length === 0
-  const source = showAll ? atlas.moments : inTopic
-  const groups = new Map<string, Moment[]>()
-  for (const moment of [...source].sort(byRecency(episodes))) {
-    groups.set(moment.episodeId, [...(groups.get(moment.episodeId) ?? []), moment])
-  }
+  const [open, setOpen] = useState<Set<string>>(() => new Set())
+  const [filter, setFilter] = useState('')
+  const chapters = useMemo(() => {
+    const result = new Map<string, Moment[]>()
+    for (const moment of atlas.moments) result.set(moment.episodeId, [...(result.get(moment.episodeId) ?? []), moment])
+    return result
+  }, [atlas])
+  const needle = filter.trim().toLowerCase()
+  const list = [...episodes.values()]
+    .sort((a, b) => b.publishedAt.localeCompare(a.publishedAt))
+    .filter(episode => !needle || [episode.title, episode.officialTopic ?? '', episodeLabel(episode),
+      ...(chapters.get(episode.id) ?? []).map(moment => moment.title)].some(text => text.toLowerCase().includes(needle)))
+  const toggle = (id: string) => setOpen(previous => {
+    const next = new Set(previous)
+    if (next.has(id)) next.delete(id)
+    else next.add(id)
+    return next
+  })
   return (
-    <aside className="panel panel--list" aria-label={showAll || !topic ? '全部单集' : `${topic.title}的片段`}>
+    <aside className="panel panel--list" aria-label="全部单集">
       <div className="panel-head">
-        <p className="panel-title">{showAll || !topic ? '全部单集' : topic.title}</p>
+        <p className="panel-title">全部单集 <span className="panel-count">{list.length}</span></p>
         <button className="icon-button" type="button" aria-label="关闭" onClick={onClose}><X size={16} aria-hidden="true" /></button>
       </div>
+      <label className="panel-filter">
+        <Search size={14} strokeWidth={1.6} aria-hidden="true" />
+        <input value={filter} onChange={event => setFilter(event.target.value)} placeholder="按标题或章节筛选" aria-label="筛选单集" />
+      </label>
       <div className="panel-scroll">
-        {[...groups].map(([episodeId, items]) => {
-          const episode = episodes.get(episodeId)!
+        {list.map(episode => {
+          const items = chapters.get(episode.id) ?? []
+          const expanded = open.has(episode.id) || (needle !== '' && items.some(moment => moment.title.toLowerCase().includes(needle)))
           return (
-            <section className="episode" key={episodeId}>
-              <p className="episode-title"><span>{episodeLabel(episode)}</span> {episode.title.replace(/^EP\s*\d+\s*[|｜:：]?\s*/i, '')}</p>
-              {items.map(moment => (
-                <div className={`row row--moment${moment.id === activeMoment ? ' is-active' : ''}`} key={moment.id}>
-                  <button className="row-play" type="button" aria-label={`从 ${timeLabel(moment.startSec)} 开始听`} onClick={() => onPlay(moment)}>
-                    <Play size={12} aria-hidden="true" />
-                  </button>
-                  <button className="row-main" type="button" onClick={() => onMoment(moment)}>
-                    <span className="row-when">{timeLabel(moment.startSec)}</span>
-                    <span className="row-title">{moment.title}</span>
-                  </button>
+            <section className={`episode-fold${expanded ? ' is-open' : ''}`} key={episode.id}>
+              <div className="episode-head">
+                <button className="episode-toggle" type="button" aria-expanded={expanded} onClick={() => toggle(episode.id)} disabled={!items.length}>
+                  <ChevronRight size={14} aria-hidden="true" className="episode-chevron" />
+                  <span className="episode-number">{episodeLabel(episode)}</span>
+                  <span className="episode-name">{shortTitle(episode)}</span>
+                  {items.length > 0 && <span className="episode-count">{items.length}</span>}
+                </button>
+                <button className="row-play" type="button" aria-label={`从头播放 ${episodeLabel(episode)}`} onClick={() => onPlayEpisode(episode)}>
+                  <Play size={12} aria-hidden="true" />
+                </button>
+              </div>
+              {expanded && (
+                <div className="episode-chapters">
+                  {items.map(moment => (
+                    <div className={`row row--moment${moment.id === activeMoment ? ' is-active' : ''}`} key={moment.id}>
+                      <button className="row-play" type="button" aria-label={`从 ${timeLabel(moment.startSec)} 开始听`} onClick={() => onPlay(moment)}>
+                        <Play size={11} aria-hidden="true" />
+                      </button>
+                      <button className="row-main" type="button" onClick={() => onMoment(moment)}>
+                        <span className="row-when">{timeLabel(moment.startSec)}</span>
+                        <span className="row-title">{moment.title}</span>
+                      </button>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              )}
             </section>
           )
         })}

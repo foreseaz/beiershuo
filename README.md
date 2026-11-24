@@ -4,6 +4,10 @@
 
 转录、主题判断和审核都在 Mac 上完成。Cloudflare 只托管网页和审核通过的数据快照。
 
+[![贝儿说首页：七团星云，情绪与身体居中，其余六团围成一圈](docs/landing.jpg)](https://beiershuo.chenxi.dev/)
+
+在线访问：<https://beiershuo.chenxi.dev/>
+
 ## Architecture
 
 ```mermaid

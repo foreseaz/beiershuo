@@ -1,8 +1,8 @@
 import { useEffect, useMemo } from 'react'
-import { ArrowLeft, ArrowUpRight, Play } from 'lucide-react'
+import { ArrowUpRight, Play, Share2 } from 'lucide-react'
 import { Cover, Portrait, entityLink } from './Visual'
 import {
-  ENTITY_LABELS, episodeLabel, timeLabel,
+  ENTITY_LABELS, SHOW_XIAOYUZHOU, episodeLabel, timeLabel,
   type Atlas, type Entity, type Episode, type Moment, type Topic,
 } from './domain'
 
@@ -10,17 +10,17 @@ type Props = {
   atlas: Atlas
   entity: Entity
   episodes: Map<string, Episode>
-  onBack: () => void
   onEntity: (entity: Entity) => void
   onTopic: (id: string) => void
   onMoment: (moment: Moment) => void
   onPlay: (episode: Episode, startSec: number, title: string) => void
+  onShare: () => void
 }
 
 const shortTitle = (episode: Episode) => episode.title.replace(/^(EP\s*\d+\s*[.．:：|｜]?\s*)/i, '')
 
 /** One page shape for people, books and concepts, over the same starfield as the map. */
-export function EntityPage({ atlas, entity, episodes, onBack, onEntity, onTopic, onMoment, onPlay }: Props) {
+export function EntityPage({ atlas, entity, episodes, onEntity, onTopic, onMoment, onPlay, onShare }: Props) {
   const entities = atlas.entities ?? []
   const byId = useMemo(() => new Map(entities.map(item => [item.id, item])), [entities])
   const moments = useMemo(() => new Map(atlas.moments.map(moment => [moment.id, moment])), [atlas])
@@ -29,15 +29,9 @@ export function EntityPage({ atlas, entity, episodes, onBack, onEntity, onTopic,
 
   useEffect(() => {
     document.title = `${entity.name} · 贝儿说`
-    window.scrollTo(0, 0)
     return () => { document.title = '贝儿说 · 次要人生主题星图' }
   }, [entity])
 
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') onBack() }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [onBack])
 
   // Related pages: a book's author, a person's books and concepts, a concept's people.
   const related: { label: string; items: Entity[] }[] = []
@@ -71,9 +65,7 @@ export function EntityPage({ atlas, entity, episodes, onBack, onEntity, onTopic,
   const ordered = [...groups].sort(([a], [b]) => episodes.get(b)!.publishedAt.localeCompare(episodes.get(a)!.publishedAt))
 
   return (
-    <div className="entity-page" role="dialog" aria-label={`${ENTITY_LABELS[entity.kind]}：${entity.name}`}>
-      <div className="entity-scroll">
-        <button className="entity-back" type="button" onClick={onBack}><ArrowLeft size={16} aria-hidden="true" /> 星图</button>
+    <div className="entity-content">
         <header className="entity-head">
           {entity.kind !== 'concept' && (
             <div className="entity-visual">
@@ -84,7 +76,10 @@ export function EntityPage({ atlas, entity, episodes, onBack, onEntity, onTopic,
           <p className="entity-kind">{ENTITY_LABELS[entity.kind]}{entity.kind === 'film' && entity.format ? ` · ${entity.format}${entity.year ? ` · ${entity.year}` : ''}` : ''}</p>
           <h1 className="entity-name">{entity.kind === 'book' || entity.kind === 'film' ? `《${entity.name}》` : entity.name}</h1>
           {entity.note && <p className="entity-note">{entity.note}</p>}
-          {link && <a className="entity-link" href={link.href} target="_blank" rel="noreferrer">{link.label} <ArrowUpRight size={13} aria-hidden="true" /></a>}
+          <div className="entity-actions">
+            <button className="entity-link" type="button" onClick={onShare}><Share2 size={13} aria-hidden="true" /> 分享卡片</button>
+            {link && <a className="entity-link" href={link.href} target="_blank" rel="noreferrer">{link.label} <ArrowUpRight size={13} aria-hidden="true" /></a>}
+          </div>
           {topics.length > 0 && (
             <div className="entity-topics">
               {topics.map(topic => (
@@ -161,8 +156,12 @@ export function EntityPage({ atlas, entity, episodes, onBack, onEntity, onTopic,
             </div>
           </section>
         )}
+        <a className="subscribe-cta" href={SHOW_XIAOYUZHOU} target="_blank" rel="noreferrer">
+          <img src="/brand/show-cover.png" alt="" width="36" height="36" />
+          <span><strong>在小宇宙订阅《次要人生》</strong><small>倪贝儿的心理播客 · 也可在 Apple Podcasts 搜索「次要人生」</small></span>
+          <ArrowUpRight size={15} aria-hidden="true" />
+        </a>
         <p className="entity-source">名字是从节目标题、章节和简介里找到的；点「▶」从那一段原声开始听。{entity.image && <> 照片：{entity.image.credit}，<a href={entity.image.source} target="_blank" rel="noreferrer">来源</a>。</>}</p>
-      </div>
     </div>
   )
 }

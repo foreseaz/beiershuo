@@ -19,6 +19,8 @@ export type GalaxyFrame = {
   height: number
   nebulae: Map<string, Point & { radius: number }>
   stars: Map<string, Point>
+  /** 0 in the overview, 1 once the camera is as close as a focused nebula. */
+  zoom: number
 }
 export type GalaxyOptions = {
   onFrame: (frame: GalaxyFrame) => void
@@ -26,8 +28,14 @@ export type GalaxyOptions = {
   onStar: (id: string) => void
   onThread: (id: string) => void
   onHover: (hover: { thread: string; x: number; y: number } | null) => void
+  /** A sub-topic star under the pointer (its lines are showing), or null once the pointer has moved on. */
+  onHoverStar: (star: string | null) => void
+  /** True while the sky is being dragged, pinched or wheeled. */
+  onGesture: (active: boolean) => void
   onView: (nebula: string | null) => void
   onEmpty: () => void
+  /** The sub-topic whose label is under (x, y), if any: a label counts as part of its star. */
+  labelAt?: (x: number, y: number) => string | null
   reducedMotion: boolean
 }
 
@@ -36,7 +44,7 @@ const CLOSE = 8.5
 const MIN_DISTANCE = 3.2
 const MAX_DISTANCE = 30
 const FOV = 40
-const NEBULA_RADIUS = 2.1
+const NEBULA_RADIUS = 2.3
 const BAKE_SIZE = 320
 const TAN = Math.tan(THREE.MathUtils.degToRad(FOV) / 2)
 const color = (hex: string, scale = 1) => new THREE.Color(hex).multiplyScalar(scale)
@@ -48,11 +56,6 @@ const PALETTE = {
 }
 const NO_DRIFT = new THREE.Vector3()
 
-const BOKEH: [number, number, number, number][] = [
-  [0.595, 0.825, 24, 1.2], [0.658, 0.874, 15, 1], [0.93, 0.643, 28, 0.55], [0.85, 0.888, 36, 0.38],
-  [0.256, 0.958, 22, 0.55], [0.354, 0.642, 9, 0.8], [0.822, 0.758, 11, 0.6], [0.975, 0.83, 46, 0.22],
-  [0.47, 0.985, 16, 0.5], [0.63, 0.07, 12, 0.35], [0.06, 0.55, 8, 0.5],
-]
 
 function seeded(seed: number) {
   return () => {
@@ -144,7 +147,6 @@ export class GalaxyScene {
   private readonly nebulae = new Map<string, NebulaObject>()
   private readonly stars = new Map<string, StarObject>()
   private readonly threads = new Map<string, ThreadObject>()
-  private readonly bokeh: { mesh: THREE.Mesh; material: THREE.ShaderMaterial; spec: number[] }[] = []
   private readonly dust: THREE.Points[] = []
   private readonly low: boolean
   private nebulaList: Nebula[] = []
@@ -153,6 +155,9 @@ export class GalaxyScene {
   private selected: string | null = null
   private related = new Set<string>()
   private hovered: string | null = null
+  private hoverStar: string | null = null
+  private hoverStarTimer = 0
+  private wheelTimer = 0
   private current: string | null = null
   private travelSeq = -1
   private width = 1
@@ -218,7 +223,6 @@ export class GalaxyScene {
       uniforms: { uTime: { value: 0 }, uPixelRatio: { value: this.renderer.getPixelRatio() }, uTwinkle: { value: 0.22 } },
     })
     this.buildDust()
-    this.buildBokeh()
 
     const canvas = this.renderer.domElement
     canvas.addEventListener('pointerdown', this.onPointerDown)
@@ -271,6 +275,33 @@ export class GalaxyScene {
     this.touch()
   }
 
+  /**
+   * Show a sub-topic's lines while the pointer is on it (label or star). Leaving clears them after a
+   * blink, just long enough for the pointer to step onto one of the lines to hover or click it.
+   */
+  setHoverStar(star: string | null) {
+    window.clearTimeout(this.hoverStarTimer)
+    if (star) {
+      if (star !== this.hoverStar) {
+        this.hoverStar = star
+        this.options.onHoverStar(star)
+        this.touch()
+      }
+      return
+    }
+    this.hoverStarTimer = window.setTimeout(() => {
+      if (!this.hoverStar) return
+      this.hoverStar = null
+      this.options.onHoverStar(null)
+      this.touch()
+    }, 120)
+  }
+
+  private touchesHoverStar(threadId: string | null) {
+    const thread = threadId ? this.threads.get(threadId)?.thread : undefined
+    return Boolean(thread && this.hoverStar && (thread.from === this.hoverStar || thread.to === this.hoverStar))
+  }
+
   setReducedMotion(value: boolean) {
     this.reducedMotion = value
     this.touch()
@@ -280,6 +311,8 @@ export class GalaxyScene {
     this.running = false
     cancelAnimationFrame(this.frame)
     cancelAnimationFrame(this.hoverFrame)
+    window.clearTimeout(this.hoverStarTimer)
+    window.clearTimeout(this.wheelTimer)
     this.observer.disconnect()
     const canvas = this.renderer.domElement
     canvas.removeEventListener('pointerdown', this.onPointerDown)
@@ -314,10 +347,6 @@ export class GalaxyScene {
     return target.set((x * 2 - 1) * half * this.camera.aspect, (1 - y * 2) * half, z)
   }
 
-  private pixelsToWorld(pixels: number, z: number) {
-    return (pixels / this.height) * (OVERVIEW - z) * TAN * 2
-  }
-
   /** Nebula gas is computed once per layer into a texture; each frame only reads it back. */
   private buildNebulae() {
     for (const object of this.nebulae.values()) {
@@ -345,7 +374,7 @@ export class GalaxyScene {
       const tint = new THREE.Color().setHSL(hsl.h, Math.min(1, hsl.s * 1.25 + 0.15), Math.min(0.62, hsl.l * 0.85))
       const random = seeded(hash(nebula.id) + 17)
       const object: NebulaObject = { nebula, center: new THREE.Vector3(), layers: [], materials: [], targets: [], turns: [] }
-      for (const [scale, offset] of [[6.6, 0], [4.4, 2.7]]) {
+      for (const [scale, offset] of [[7.4, 0], [5, 2.7]]) {
         const target = new THREE.WebGLRenderTarget(BAKE_SIZE, BAKE_SIZE, { type: THREE.HalfFloatType, depthBuffer: false })
         bakeMaterial.uniforms.uTint.value.copy(tint)
         bakeMaterial.uniforms.uCoreTint.value.copy(color(nebula.tint))
@@ -391,14 +420,17 @@ export class GalaxyScene {
       // Heavier sub-topics sit nearer the core; keep neighbours apart so labels have room.
       for (const star of [...members].sort((a, b) => b.weight - a.weight)) {
         let offset = new THREE.Vector3()
-        for (let attempt = 0; attempt < 40; attempt += 1) {
+        for (let attempt = 0; attempt < 80; attempt += 1) {
           const angle = random() * Math.PI * 2
-          const radius = NEBULA_RADIUS * (0.12 + 0.88 * Math.pow(random(), 0.9) * (1 - star.weight * 0.5))
-          offset = new THREE.Vector3(Math.cos(angle) * radius * 1.25, Math.sin(angle) * radius * 0.8, (random() - 0.5) * 1.6)
-          if (placed.every(other => Math.hypot(other.x - offset.x, (other.y - offset.y) * 1.6) > 0.62)) break
+          const radius = NEBULA_RADIUS * (0.15 + 0.95 * Math.pow(random(), 0.8) * (1 - star.weight * 0.4))
+          offset = new THREE.Vector3(Math.cos(angle) * radius * 1.3, Math.sin(angle) * radius * 0.9, (random() - 0.5) * 1.4)
+          if (placed.every(other => Math.hypot(other.x - offset.x, (other.y - offset.y) * 1.5) > 0.82)) break
         }
         placed.push(offset)
-        const tint = color('#ffb366').lerp(color(nebula.tint), 0.45)
+        // Stars carry their nebula's hue, so each topic's constellation reads as its own colour.
+        const hsl = { h: 0, s: 0, l: 0 }
+        color(nebula.tint).getHSL(hsl)
+        const tint = new THREE.Color().setHSL(hsl.h, Math.min(1, hsl.s * 1.3 + 0.35), 0.6)
         const material = additive({
           vertexShader: glsl.billboardVertex, fragmentShader: glsl.starFragment,
           uniforms: {
@@ -454,23 +486,6 @@ export class GalaxyScene {
     }
   }
 
-  private buildBokeh() {
-    BOKEH.forEach((spec, index) => {
-      const material = additive({
-        vertexShader: glsl.billboardVertex, fragmentShader: glsl.bokehFragment,
-        uniforms: {
-          uScale: { value: 1 }, uColor: { value: color(index % 4 === 3 ? '#ffd9a8' : '#ffb466', 1.3) },
-          uOpacity: { value: spec[3] * 0.8 }, uTime: { value: 0 }, uPhase: { value: index * 2.3 },
-        },
-      })
-      const mesh = new THREE.Mesh(this.billboard, material)
-      mesh.frustumCulled = false
-      mesh.renderOrder = 8
-      this.scene.add(mesh)
-      this.bokeh.push({ mesh, material, spec })
-    })
-  }
-
   private points(count: number, place: (random: () => number) => [THREE.Vector3, number, THREE.Color], seed: number) {
     const random = seeded(seed)
     const position = new Float32Array(count * 3)
@@ -504,8 +519,8 @@ export class GalaxyScene {
     ], 7)
     const mid = this.points(this.low ? 60 : 140, random => [
       new THREE.Vector3((random() - 0.5) * 60, (random() - 0.5) * 40, -16 + random() * 10),
-      1.4 + random() * 2.2,
-      (random() > 0.35 ? blue : warm).clone().multiplyScalar(0.45 + Math.pow(random(), 3) * 1.6),
+      0.9 + random() * 1.2,
+      (random() > 0.35 ? blue : warm).clone().multiplyScalar(0.18 + Math.pow(random(), 3) * 0.35),
     ], 11)
     this.dust.push(far, mid)
     this.scene.add(far, mid)
@@ -565,10 +580,6 @@ export class GalaxyScene {
       if (nebula) object.mesh.position.copy(nebula.center).add(object.offset)
     }
     this.layoutThreads()
-    for (const { mesh, material, spec } of this.bokeh) {
-      this.worldAt(spec[0], spec[1], 7, mesh.position)
-      material.uniforms.uScale.value = this.pixelsToWorld(spec[2] * (this.height / 1058), 7)
-    }
     this.layoutBand()
     this.touch()
   }
@@ -616,7 +627,6 @@ export class GalaxyScene {
     this.camera.position.set(this.look.x + drift.x, this.look.y + drift.y, this.look.z + this.distance)
     this.camera.lookAt(this.look)
     this.camera.updateMatrixWorld()
-    const zoom = THREE.MathUtils.clamp((OVERVIEW - this.distance) / (OVERVIEW - CLOSE), 0, 1)
     this.skyCopy.uniforms.uShift.value.set(-this.look.x * 0.004, -this.look.y * 0.004)
 
     const moving = this.look.distanceToSquared(this.lookGoal) > 1e-5 || Math.abs(this.distance - this.distanceGoal) > 1e-3
@@ -639,9 +649,11 @@ export class GalaxyScene {
       const inside = object.star.nebula === current
       const isSelected = id === this.selected
       const isRelated = this.related.has(id)
-      const base = 0.36 + object.star.weight * 0.34
+      // Better-connected sub-topics are larger and brighter, so the most discussed stand out.
+      const base = 0.26 + object.star.weight * 0.7
       const scale = isSelected ? 1.15 : isRelated ? base * 1.35 : current && !inside ? base * 0.8 : base
-      const intensity = isSelected ? 1.9 : isRelated ? 1.3 : !current ? 0.75 : inside ? (this.selected ? 0.8 : 1.05) : 0.4
+      const glow = 0.7 + object.star.weight * 0.6
+      const intensity = isSelected ? 1.9 : isRelated ? 1.3 : (!current ? 0.75 : inside ? (this.selected ? 0.8 : 1.05) : 0.4) * glow
       const u = object.material.uniforms
       u.uScale.value += (scale - u.uScale.value) * rate
       u.uIntensity.value += (intensity - u.uIntensity.value) * rate
@@ -651,37 +663,27 @@ export class GalaxyScene {
       u.uTime.value = this.time
       settling ||= Math.abs(scale - u.uScale.value) > 0.003
     }
+    // Lines stay hidden until they mean something: the hovered or selected sub-topic's episodes.
     for (const [id, object] of this.threads) {
-      const { from, to, primary } = object.thread
-      const fromStar = this.stars.get(from)!.star
-      const toStar = this.stars.get(to)!.star
-      const strong = id === this.hovered || (this.selected !== null && (from === this.selected || to === this.selected))
-      const fromInside = fromStar.nebula === current
-      const toInside = toStar.nebula === current
-      const level = strong ? 2 : this.selected ? (fromInside || toInside ? 0.35 : 0)
-        : current ? (fromInside || toInside ? 1 : 0) : primary ? 0.7 : 0
+      const { from, to } = object.thread
+      const pointed = id === this.hovered
+      const lit = pointed || [this.selected, this.hoverStar].some(star => star !== null && (from === star || to === star))
       const u = object.material.uniforms
-      if (level === 0 && u.uOpacity.value < 0.005) {
+      if (!lit && u.uOpacity.value < 0.005) {
         object.mesh.visible = false
         continue
       }
-      u.uWidth.value += ((strong ? 2.4 : level >= 1 ? 1.5 : 1.1) - u.uWidth.value) * rate
-      u.uIntensity.value += ((strong ? 1.9 : level >= 1 ? 0.7 : 0.34) - u.uIntensity.value) * rate
-      u.uOpacity.value += (Math.min(1, level) - u.uOpacity.value) * rate
-      u.uPulse.value += ((animate && level >= 1 ? (strong ? 1 : 0.5) : 0) - u.uPulse.value) * rate
-      u.uMid.value.lerp(strong ? PALETTE.threadMidLit : PALETTE.threadMid, rate)
-      u.uEnd.value.lerp(strong ? PALETTE.threadEndLit : PALETTE.threadEnd, rate)
-      // Threads leaving the open nebula dissolve on their way out unless they are lit.
-      u.uFade.value = !current || strong || fromInside === toInside ? 0 : fromInside ? 1 : -1
+      u.uWidth.value += ((pointed ? 3 : 2) - u.uWidth.value) * rate
+      u.uIntensity.value += ((pointed ? 2.4 : 1.5) - u.uIntensity.value) * rate
+      u.uOpacity.value += ((lit ? 1 : 0) - u.uOpacity.value) * rate
+      u.uPulse.value += ((animate && lit ? 1 : 0) - u.uPulse.value) * rate
+      u.uMid.value.lerp(PALETTE.threadMidLit, rate)
+      u.uEnd.value.lerp(PALETTE.threadEndLit, rate)
+      u.uFade.value = 0
+      settling ||= Math.abs((lit ? 1 : 0) - u.uOpacity.value) > 0.01
       u.uTime.value = this.time
       u.uResolution.value.set(this.width, this.height)
       object.mesh.visible = u.uOpacity.value > 0.01
-    }
-    // Foreground light would loom huge once the camera flies in, so it fades away with zoom.
-    for (const { mesh, material, spec } of this.bokeh) {
-      material.uniforms.uTime.value = this.time
-      material.uniforms.uOpacity.value = spec[3] * 0.8 * Math.pow(1 - zoom, 2)
-      mesh.visible = zoom < 0.95
     }
     this.dustMaterial.uniforms.uTime.value = this.time
     this.dustMaterial.uniforms.uPixelRatio.value = this.renderer.getPixelRatio()
@@ -719,14 +721,16 @@ export class GalaxyScene {
       const point = this.project(object.mesh.position)
       if (!point.behind) stars.set(id, point)
     }
-    this.options.onFrame({ width: this.width, height: this.height, nebulae, stars })
+    const zoom = THREE.MathUtils.clamp((OVERVIEW - this.distance) / (OVERVIEW - CLOSE), 0, 1)
+    this.options.onFrame({ width: this.width, height: this.height, nebulae, stars, zoom })
   }
 
   // ---------------------------------------------------------------- input
 
   private pick(x: number, y: number): { star?: string; nebula?: string; thread?: string } {
     const point = { x, y }
-    let best = 18
+    const zoom = THREE.MathUtils.clamp((OVERVIEW - this.distance) / (OVERVIEW - CLOSE), 0, 1)
+    let best = 12 + zoom * 8
     let star: string | undefined
     for (const [id, object] of this.stars) {
       const at = this.project(object.mesh.position)
@@ -734,8 +738,8 @@ export class GalaxyScene {
       const distance = Math.hypot(at.x - x, at.y - y)
       if (distance < best) { best = distance; star = id }
     }
-    // Small stars are only targets once they are big enough on screen to aim at.
-    if (star && (this.distance < 14 || this.related.has(star) || star === this.selected)) return { star }
+    star ??= this.options.labelAt?.(x, y) ?? undefined
+    if (star) return { star }
     for (const [id, object] of this.threads) {
       if (!object.mesh.visible || object.material.uniforms.uOpacity.value < 0.3) continue
       const projected = object.samples.filter((_, i) => i % 2 === 0).map(sample => this.project(sample))
@@ -775,6 +779,12 @@ export class GalaxyScene {
     // Trackpad pinches arrive as wheel events with ctrlKey set and small deltas.
     const delta = event.deltaMode === 1 ? event.deltaY * 16 : event.deltaY
     this.zoomAt(x, y, Math.exp(delta * (event.ctrlKey ? 0.012 : 0.0016)))
+    if (!this.wheelTimer) this.options.onGesture(true)
+    window.clearTimeout(this.wheelTimer)
+    this.wheelTimer = window.setTimeout(() => {
+      this.wheelTimer = 0
+      this.options.onGesture(false)
+    }, 280)
   }
 
   private readonly onPointerDown = (event: PointerEvent) => {
@@ -806,6 +816,9 @@ export class GalaxyScene {
             this.hovered = thread
             this.touch()
           }
+          if (hit.star) this.setHoverStar(hit.star)
+          else if (!this.touchesHoverStar(thread)) this.setHoverStar(null)
+          else window.clearTimeout(this.hoverStarTimer)
           this.options.onHover(thread ? { thread, x: point.x, y: point.y } : null)
           canvas.style.cursor = hit.star || hit.nebula || hit.thread ? 'pointer' : 'grab'
         })
@@ -820,12 +833,14 @@ export class GalaxyScene {
         this.zoomAt((a.x + b.x) / 2, (a.y + b.y) / 2, this.gesture.spread / spread)
       }
       this.gesture.spread = spread
+      if (!this.gesture.moved) this.options.onGesture(true)
       this.gesture.moved = true
       return
     }
     const dx = point.x - previous.x
     const dy = point.y - previous.y
     if (!this.gesture.moved && Math.hypot(dx, dy) < 3) return
+    if (!this.gesture.moved) this.options.onGesture(true)
     this.gesture.moved = true
     canvas.style.cursor = 'grabbing'
     const perPixel = (2 * this.distanceGoal * TAN) / this.height
@@ -843,6 +858,7 @@ export class GalaxyScene {
     if (this.pointers.size > 0) return
     this.gesture = null
     canvas.style.cursor = 'grab'
+    if (gesture?.moved) this.options.onGesture(false)
     if (!gesture || gesture.moved || event.type === 'pointercancel') return
     const { x, y } = this.local(event)
     const hit = this.pick(x, y)
@@ -857,6 +873,7 @@ export class GalaxyScene {
       this.hovered = null
       this.touch()
     }
+    this.setHoverStar(null)
     this.options.onHover(null)
   }
 
