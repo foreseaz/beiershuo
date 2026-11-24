@@ -139,6 +139,16 @@ npx wrangler login     # 第一次部署前
 npm run deploy
 ```
 
-发布前检查：`export` 会校验所有主题、单集、片段和连线引用；`dist/` 里只应有网页、`data/v1/atlas.json` 和 `fonts/`。
+发布前检查：`export` 会校验所有主题、单集、片段和连线引用；`dist/` 里只应有网页、`data/v1/atlas.json`、`fonts/` 和公开图片，不应有 `var/` 或逐字稿。
+
+截图：README 顶部的 `docs/landing.jpg`（1440×900）和链接预览图 `public/og.jpg`（1200×630，`index.html` 的 og/twitter 标签指向它）都是开着 `npm run dev` 时用无头 Chrome 截的，星图改版后重截：
+
+```bash
+CH="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+"$CH" --headless=new --hide-scrollbars --window-size=1200,630 --force-device-scale-factor=2 --virtual-time-budget=8000 --screenshot="$TMPDIR/og.png" http://localhost:5173/
+sips -s format jpeg -s formatOptions 86 --resampleWidth 1200 "$TMPDIR/og.png" --out public/og.jpg
+"$CH" --headless=new --hide-scrollbars --window-size=1440,900 --force-device-scale-factor=2 --virtual-time-budget=8000 --screenshot="$TMPDIR/landing.png" http://localhost:5173/
+sips -s format jpeg -s formatOptions 84 --resampleWidth 2160 "$TMPDIR/landing.png" --out docs/landing.jpg
+```
 
 字体：`public/fonts/beier-serif-*.woff2` 是思源宋体的子集，按 SIL Open Font License 1.1 分发，见 `public/fonts/NOTICE.txt`。

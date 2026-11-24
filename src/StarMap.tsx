@@ -36,6 +36,7 @@ const TITLE_UNTIL = 420
 
 type Box = { left: number; top: number; right: number; bottom: number }
 const overlaps = (a: Box, b: Box) => !(a.right < b.left || a.left > b.right || a.bottom < b.top || a.top > b.bottom)
+const grow = (box: Box, by: number): Box => ({ left: box.left - by, top: box.top - by, right: box.right + by, bottom: box.bottom + by })
 
 /** How many of a nebula's labels show while nothing is hovered, strongest first. */
 function labelBudget(radius: number) {
@@ -91,6 +92,8 @@ export function StarMap(props: MapProps) {
   const shown = useRef(new Map<string, boolean>())
   const labelState = useRef(new Map<string, string>())
   const boxes = useRef(new Map<string, Box>())
+  // The resting labels last shown; they keep their places so the slow camera drift never makes labels blink.
+  const resting = useRef(new Set<string>())
   const zoomStep = useRef(-1)
   const hoverStar = useRef<string | null>(null)
   const drawerBox = useRef<{ left: number; top: number } | null>(null)
@@ -167,7 +170,7 @@ export function StarMap(props: MapProps) {
       return { left, top, right: left + (perPx.current.get(id) ?? 4) * size + 6, bottom: top + size * 1.2 + 2 }
     }
     const decided = new Map<string, { show: '' | '1' | 'dim'; tone: '' | 'lit' | 'near'; point?: { x: number; y: number } }>()
-    const resting: { id: string; point: { x: number; y: number }; box: Box }[] = []
+    const candidates: { id: string; point: { x: number; y: number }; box: Box }[] = []
     boxes.current.clear()
     for (const id of starRefs.current.keys()) {
       const point = frame.stars.get(id)
@@ -185,22 +188,31 @@ export function StarMap(props: MapProps) {
         const nebula = frame.nebulae.get(parentRef.current.get(id) ?? '')
         const budget = nebula ? labelBudget(nebula.radius * scale) : 0
         decided.set(id, { show: '', tone: '', point })
-        if ((rankRef.current.get(id) ?? Infinity) < budget) resting.push({ id, point, box: boxOf(id, point) })
+        if ((rankRef.current.get(id) ?? Infinity) < budget) candidates.push({ id, point, box: boxOf(id, point) })
       }
     }
-    // Labels that must show claim their space first; resting labels fill what is left, strongest first.
+    // Labels that must show claim their space first; resting labels fill what is left. Those already showing go
+    // first and tolerate a slight overlap, new ones need a little clearance: together that stops labels blinking.
     for (const [id, state] of decided) {
       if (!state.show || !state.point) continue
       const box = boxOf(id, state.point)
       taken.push(box)
       boxes.current.set(id, box)
     }
-    resting.sort((a, b) => (weightRef.current.get(b.id) ?? 0) - (weightRef.current.get(a.id) ?? 0))
-    for (const { id, point, box } of resting) {
-      if (taken.some(other => overlaps(box, other))) continue
-      taken.push(box)
-      boxes.current.set(id, box)
-      decided.set(id, { show: chosen ? 'dim' : '1', tone: '', point })
+    if (!hovered) {
+      const before = resting.current
+      candidates.sort((a, b) => Number(before.has(b.id)) - Number(before.has(a.id))
+        || (weightRef.current.get(b.id) ?? 0) - (weightRef.current.get(a.id) ?? 0))
+      const kept = new Set<string>()
+      for (const { id, point, box } of candidates) {
+        const test = grow(box, before.has(id) ? -4 : 4)
+        if (taken.some(other => overlaps(test, other))) continue
+        taken.push(box)
+        boxes.current.set(id, box)
+        kept.add(id)
+        decided.set(id, { show: chosen ? 'dim' : '1', tone: '', point })
+      }
+      resting.current = kept
     }
     for (const [id, { show, tone, point }] of decided) {
       const element = starRefs.current.get(id)
