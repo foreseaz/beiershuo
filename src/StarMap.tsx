@@ -27,6 +27,15 @@ type MapProps = {
 }
 
 const NARROW = 680
+const DEPTH_KEY = 'beiershuo:depth'
+
+/** The 2D/3D choice is a per-browser convenience; storage can be missing or blocked, so every access is guarded. */
+function readDepth() {
+  try { return window.localStorage.getItem(DEPTH_KEY) === '1' } catch { return false }
+}
+function saveDepth(deep: boolean) {
+  try { window.localStorage.setItem(DEPTH_KEY, deep ? '1' : '0') } catch { /* nothing to keep it in */ }
+}
 // Sub-topic labels come in as their nebula grows on screen (radius in px at a 900px-tall view): its strongest
 // few in the overview, more as the camera nears, all of them from LABELS_FROM. The title steps aside at TITLE_UNTIL.
 const OVERVIEW_RADIUS = 140
@@ -98,6 +107,8 @@ export function StarMap(props: MapProps) {
   const hoverStar = useRef<string | null>(null)
   const drawerBox = useRef<{ left: number; top: number } | null>(null)
   const [collapsed, setCollapsed] = useState(false)
+  const [deep, setDeep] = useState(readDepth)
+  const [hint, setHint] = useState(false)
   const sceneRef = useRef<GalaxyScene | null>(null)
   const latest = useRef(props)
   const lastFrame = useRef<GalaxyFrame | null>(null)
@@ -153,7 +164,14 @@ export function StarMap(props: MapProps) {
     const taken: Box[] = []
     for (const [id, element] of nebulaRefs.current) {
       const point = frame.nebulae.get(id)
-      if (!point) continue
+      if (!point) {
+        // Behind the camera in 3D.
+        if (shown.current.get(`n:${id}`) !== false) {
+          shown.current.set(`n:${id}`, false)
+          element.dataset.hidden = '1'
+        }
+        continue
+      }
       const top = point.y - Math.min(point.radius * 0.95, 190)
       element.style.transform = `translate3d(${point.x.toFixed(1)}px, ${top.toFixed(1)}px, 0)`
       const visible = point.radius < TITLE_UNTIL && id !== inside
@@ -261,6 +279,7 @@ export function StarMap(props: MapProps) {
     try {
       scene = new GalaxyScene(container, {
         reducedMotion,
+        deep,
         onFrame: frame => place.current(frame),
         onNebula: id => latest.current.onNebula(id),
         onStar: id => latest.current.onStar(id),
@@ -304,6 +323,20 @@ export function StarMap(props: MapProps) {
   useEffect(() => { sceneRef.current?.setSelection(selected, related) }, [selected, related])
   useEffect(() => { sceneRef.current?.travel(travel) }, [travel, stars])
   useEffect(() => { sceneRef.current?.setReducedMotion(reducedMotion) }, [reducedMotion])
+
+  const toggleDepth = () => {
+    const next = !deep
+    setDeep(next)
+    saveDepth(next)
+    sceneRef.current?.setDepth(next)
+    setHint(next)
+  }
+  // The controls hint shows for a few seconds after switching to 3D.
+  useEffect(() => {
+    if (!hint) return
+    const timer = window.setTimeout(() => setHint(false), 4500)
+    return () => window.clearTimeout(timer)
+  }, [hint])
   useEffect(() => { if (lastFrame.current) place.current(lastFrame.current) }, [selected, related, current, card])
   useEffect(() => setCollapsed(false), [cardKey])
 
@@ -398,10 +431,19 @@ export function StarMap(props: MapProps) {
         </div>
       )}
       {webgl && (
-        <div className="zoom-controls" aria-label="缩放">
-          <button type="button" aria-label="放大" onClick={() => zoom(0.7)}><Plus size={15} aria-hidden="true" /></button>
-          <button type="button" aria-label="缩小" onClick={() => zoom(1.4)}><Minus size={15} aria-hidden="true" /></button>
+        <div className="zoom-controls" aria-label="视图">
+          <button className="depth-toggle" type="button" aria-pressed={deep} onClick={toggleDepth}
+            title={deep ? '回到平面星图' : '立体星图：拖动旋转'} aria-label={deep ? '切换到平面视图' : '切换到立体视图'}>
+            3D
+          </button>
+          <button className="zoom-step" type="button" aria-label="放大" onClick={() => zoom(0.7)}><Plus size={15} aria-hidden="true" /></button>
+          <button className="zoom-step" type="button" aria-label="缩小" onClick={() => zoom(1.4)}><Minus size={15} aria-hidden="true" /></button>
         </div>
+      )}
+      {webgl && (
+        <p className={`depth-hint${hint ? ' is-visible' : ''}`} aria-live="polite">
+          {hint ? (narrow ? '单指旋转 · 双指缩放和移动' : '拖动旋转 · Shift + 拖动平移 · 滚轮缩放') : ''}
+        </p>
       )}
       <aside className={`info-drawer${card ? '' : ' is-empty'}${collapsed ? ' is-collapsed' : ''}`} ref={cardRef} aria-label="详情">
         {card && (

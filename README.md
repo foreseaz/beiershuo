@@ -1,147 +1,141 @@
 # 贝儿说
 
-《次要人生｜Flip Your Mind》的主题星图。七颗主星是节目反复谈到的主题，每颗星连着往期的具体片段，点一下就从那一段原声开始听。
+《次要人生｜Flip Your Mind》的主题星图。7 个大主题是星云，84 个小主题是星星，两颗星之间的线是同时谈到它们的某一期节目。点开一颗星，能看到它在哪几期、哪一章出现，并从那一章开头直接播放原节目。
 
-转录、主题判断和审核都在 Mac 上完成。Cloudflare 只托管网页和审核通过的数据快照。
+内容只来自节目公开的目录：单集标题、简介、章节时间戳和延伸书目。**没有转录，也没有逐字稿。** 主题、人物、书、影片和概念都由 Claude Code 会话整理成 `content/` 里的 JSON 文件，导出时程序再到目录里找出它们出现的位置。
 
 [![贝儿说首页：七团星云，情绪与身体居中，其余六团围成一圈](docs/landing.jpg)](https://beiershuo.chenxi.dev/)
 
 在线访问：<https://beiershuo.chenxi.dev/>
 
-## Architecture
+## 网站上能做什么
+
+- **星图。** 每团星云一个主题，颜色各不相同。「情绪与身体」和其他主题的连线最多，所以放在中间，其余六个围成一圈，连线多的主题彼此相邻。小主题和其他小主题的连线越多，星星越大，文字也越大。
+- **悬停和点选。**
+  - 鼠标停在一颗星或它的文字上，只显示这颗星和它连线连到的词，其他文字隐藏。
+  - 点选一颗星后，显示它连到的词，其他文字变淡。
+  - 没有悬停也没有点选时，每团星云只显示连接最多的几个词。放大后显示的词越来越多，两个词不会重叠。
+  - 线只在悬停或点选时出现。
+- **3D 视图。** 右下角的「3D」开关会把平面星图展开成立体的：外圈的星云在中心前后交错，星星在每团星云里也前后散开，连线从中心向外拱成穹顶。拖动旋转，Shift + 拖动平移，滚轮或双指缩放；不操作时整片星空缓慢转动。选择记在本机浏览器里。
+- **详情卡片。** 停靠在右侧，可以收起。卡片上列出这个小主题出现的单集和章节，点一下从章节开头播放；还列出常和它一起出现的小主题。
+- **列表。** 按单集排列，每一集默认收起，可以筛选，也可以从头播放。
+- **搜索。** 按 `⌘K` 打开全屏搜索：主题、人物、书、影片、概念和日常关键词在一个慢慢转动的球面上，输入时命中的词飘到前面。
+- **人物、书、影片和概念页。** 左上角进入索引页，每一项都有自己的页面：人物配 Wikimedia Commons 上自由授权的照片和维基百科链接，书和影片配本站设计的封面和豆瓣搜索链接。页面以面板形式盖在星图上，✕、Esc 或点空白处直接回到星图。
+- **分享卡片。** 在人物、书、影片和概念页上生成一张 3:4 的图，列出它在哪几期出现，并附上通往这一页的二维码；这一页上有在小宇宙订阅的入口。
+- **背景音乐。** 右下角开关；播放单集时自动压低。
+
+## 架构
 
 ```mermaid
-flowchart TD
-  A[Apple 目录 · 小宇宙出处<br/>sync] --> B[留声本机转录与声纹<br/>transcribe]
-  A --> C1[目录级主题提议<br/>propose --catalog]
-  T[(七颗主星<br/>content/topics.json)] --> C1
-  T --> C2
-  B --> C2[切分原声片段 · 提议主题<br/>propose]
-  C1 --> R[本地审核页<br/>review serve]
-  C2 --> R
-  R -->|已确认主题| S[按主题整理观点与方法<br/>summarize]
-  R -->|已确认片段| L[往期连线提议<br/>relate]
-  S --> R
-  L --> R
-  R -->|只含已通过的内容| E[导出星图快照<br/>export → public/data/v1/atlas.json]
-  E --> W[Cloudflare Workers Static Assets]
+flowchart LR
+  A[Apple 播客目录<br/>标题 · 简介 · 章节 · 延伸书目] -->|sync| D[(var/content.sqlite3)]
+  C[Claude Code 会话] -->|直接编写| J[content/*.json<br/>主题 · 人物 · 书 · 影片 · 概念 · 关键词]
+  W[Wikimedia Commons] -->|portraits| P[content/portraits.json<br/>public/people/]
+  D --> E[export<br/>按别名找出每一项出现的单集和章节]
+  J --> E
+  P --> E
+  E --> S[public/data/v1/atlas.json<br/>+ 字体子集]
+  S --> F[React + Three.js 前端<br/>星图连线在浏览器里计算]
+  F -->|push main → GitHub Actions| CF[Cloudflare Workers<br/>Static Assets]
+  X[小宇宙音源] -. 浏览器直接请求 .-> F
 ```
 
-关键规则：
+- **数据源只有公开目录。** `sync` 读取 Apple 播客的节目目录（54 集、892 个章节），存进本地 SQLite。小宇宙链接和音源地址也来自这里。
+- **由 Claude Code 会话整理内容，不用 API key。** 会话直接编写 `content/` 下的文件，内容都留在 git 里，可以追溯。
+- **出现位置靠别名匹配。** `export` 在单集标题、官方主题、章节标题和延伸书目里查找每一项的别名，重叠时以较长的别名为准，比如《笛卡尔的错误》算作这本书，不再单独算作「笛卡尔」。新单集同步后重新导出就会更新，不用手工补。
+- **星图上的线在浏览器里计算**（`src/App.tsx` 的 `buildGalaxy`）：两个小主题在同一期都出现过，就算一次连接。每个小主题保留 3 个连接最强的伙伴，每对最多画最近的 3 期，一期一条线。星星的大小按连接的伙伴数取对数。
+- **网站是纯静态的。** Cloudflare 只托管网页、`atlas.json`、字体子集和图片，没有服务端代码。播放时浏览器直接请求小宇宙的原节目音源，从章节时间戳开始。
 
-- **先确认主题，再总结。** 未确认主题的片段不会进入总结，调用 `summarize` 只会得到「待确认」。
-- **片段 ID 和时间戳无关。** 修正起播点后，分享出去的链接仍然有效。连线引用两个片段的 ID。
-- **只发布审核过的内容。** 模型的提议、逐字稿和音频都只留在本机（`var/`）。快照里只有主题、单集目录、已通过的片段和连线。
-- **重新提议只退回受影响的那一项。** 被重新提议的单集或连线回到「待审」，公开快照继续用它上一版通过的内容，直到新版本通过。驳回则会把它从快照里撤下。
+## 内容文件
 
-### 阶段
-
-| 阶段 | 数据来源 | 产出 |
+| 文件 | 内容 | 谁维护 |
 | --- | --- | --- |
-| M1 目录版 | 单集标题、官方主题、892 个章节标题 | 单集和章节的主题、章节之间的「节目导读」连线 |
-| M2 试点 | EP45（独白）+ 一集对谈的原声 | 按说话人分段的逐字稿、原声片段、观点和方法、往期连线 |
-| M3 首批 | EP45–51 | 第一次部署到 Cloudflare |
-| M4 全档 | 54 集 | 后台续跑转录，批量提议后进入审核 |
+| `content/topics.json` | 7 个主题：`id`、标题、说明、搜索别名、颜色、位置（中心加一圈，见上文） | Claude Code 会话 |
+| `content/entities.json` | 84 个概念（每个带所属主题 `topic`，就是星图上的小主题）、45 位人物、28 本书、3 部影片或节目：名字、别名、一句话说明、作者或相关人物 | Claude Code 会话 |
+| `content/keywords.json` | 听众可能搜的日常词（内耗、安全感、迷茫……），没在目录里出现过的不会进快照 | Claude Code 会话 |
+| `content/episodes.json` | 单集的附加设置，`musicBed: true` 表示这一集自带背景音乐（EP50、EP51） | 手动 |
+| `content/portraits.json` | 人物照片的来源、作者、授权和维基百科链接（目前 37 位有照片） | `pipeline portraits` 生成 |
+| `content/proposals/*.json` | 单集主题和章节连线的提议（见「审核队列」） | Claude Code 会话 |
 
-## 本地和 Cloudflare 各用什么
+## 本地开发
 
-| 位置 | 技术栈 | 职责 |
-| --- | --- | --- |
-| Mac 内容流水线 | Python 3.12、SQLite、留声适配层、Claude Code 会话（Claude Opus 5.5） | `sync → transcribe → propose → review → summarize → relate → export` |
-| 本地 Web 开发 | React 19、TypeScript、Three.js + postprocessing、Vite、Cloudflare Vite 插件、Wrangler | `npm run dev` 读取当前快照，`npm run preview` 在本地 Workers runtime 里跑生产构建 |
-| Cloudflare | Workers Static Assets | 托管网页、`/data/v1/atlas.json` 和字体子集。音频由浏览器直接请求原节目音源 |
+需要 Node 22.12+。只有刷新数据时才需要 Python 3.12。
 
-**谁来判断主题和连线。** 在 Claude Code 会话里由 Claude Opus 5.5 直接读目录，把提议写成 `content/proposals/*.json`，再用 `propose --catalog --from-file` 导入审核队列，不需要 API key。提议文件留在 git 里，可以追溯每一条来自哪次会话。整档节目的目录不大，可以整份读完再判断连线，所以不另外搭向量检索。
+```bash
+npm install
+npm run dev            # http://localhost:5173/，读取仓库里现有的 atlas.json
+```
 
-（`pipeline/llm.py` 保留了直接调用 Anthropic API 的路径，供以后批量处理逐字稿时选用；默认流程不用它。）
-
-## 本地依赖
-
-- Python 3.12（3.13 删掉了 `audioop`，留声的转录模块还在用）
-- Node 22.12+
-- [留声 / Daily Recall](~/Projects/daily-recall) 源码，以及它用到的 Voxt（Qwen3-ASR、Silero VAD）、`campplus.onnx`、`pyannote-segmentation-3-0.onnx`
-- `ffmpeg`、`curl`
-- 可选：Source Han Serif（思源宋体）可变字体，导出时会按快照里用到的字生成网页字体子集
+刷新数据：
 
 ```bash
 /opt/homebrew/bin/python3.12 -m venv .venv
 .venv/bin/pip install -r requirements.txt
-npm install
+
+.venv/bin/python -m pipeline sync        # 重新拉取 Apple 目录
+.venv/bin/python -m pipeline portraits   # 补人物照片和维基百科链接（有节流，会慢）
+.venv/bin/python -m pipeline export      # 校验引用，写 public/data/v1/atlas.json 和字体子集
+.venv/bin/python -m pipeline status
 ```
 
-可调的环境变量：`BEIERSHUO_RECALL_ROOT`（留声源码，默认 `~/Projects/daily-recall`）、`BEIERSHUO_CAM_MODEL`、`BEIERSHUO_DIARIZATION_MODEL`、`BEIERSHUO_WORK_DIR`（默认 `var/`）、`BEIERSHUO_MODEL`。
+加新的人物、书或概念：在 `content/entities.json` 里加一项（概念要写所属主题 `topic`），然后运行 `export`。字体子集是按快照里实际用到的字从思源宋体生成的，所以加了新字也要重新导出；本机没有思源宋体时不会生成子集，新加的字会用系统宋体显示。
 
-## 运行
+## 审核队列（还没用上）
+
+`content/proposals/` 里有 54 条单集主题提议和 37 条章节之间的连线提议，可以导入本地审核页逐条通过或驳回：
 
 ```bash
-.venv/bin/python -m pipeline sync                  # 拉取 Apple 目录（54 集）
-.venv/bin/python -m pipeline propose --catalog --from-file content/proposals/catalog-1.json   # 导入会话写好的提议
+.venv/bin/python -m pipeline propose --catalog --from-file content/proposals/catalog-1.json
 .venv/bin/python -m pipeline propose --catalog --from-file content/proposals/catalog-2.json
 .venv/bin/python -m pipeline propose --catalog --from-file content/proposals/links.json
-.venv/bin/python -m pipeline review serve          # 打开 http://127.0.0.1:8787 审核
-.venv/bin/python -m pipeline export                # 写 public/data/v1/atlas.json 和字体子集
-.venv/bin/python -m pipeline status
-npm run dev
+.venv/bin/python -m pipeline review serve   # http://127.0.0.1:8787
 ```
 
-覆盖报告在 `var/reports/catalog-coverage.md`，列出每颗星挂了多少单集和章节，以及七颗星都放不进去的主题。如果某个主题反复出现，先改 `content/topics.json`，再在会话里重写提议文件，用 `--redo` 重新导入。
+目前一条都还没通过，所以快照里单集的 `topicIds` 和 `chapterPaths` 都是空的，网站也没用到它们。通过的条目会在下一次 `export` 时进入快照。
 
-转录（M2）：
+## 没有启用的部分
 
-```bash
-# 至少三段 2–20 秒、只有贝儿在说话的干净原声
-.venv/bin/python -m pipeline enroll ep45.m4a@01:02-01:14 ep45.m4a@12:30-12:41 ep46.m4a@03:05-03:17
-.venv/bin/python -m pipeline transcribe EP45 EP44
-```
+代码里留着一条按原声做的流程，但从来没有运行过，网站也不依赖它：
 
-转录结果按集保存在 SQLite 里，可以续跑。说话人标签分为 `beier`、`other` 和 `unsure`。
-
-## 人物、书、概念和搜索
-
-- `content/entities.json`：人物、书和概念的清单（名字、别名、一句话说明、书的作者、概念相关的人）。导出时自动在单集标题、章节标题和节目简介的延伸书目里找出它们出现的位置，新单集不用手动补。每一项有自己的页面：`/people/winnicott`、`/books/body-keeps-the-score`、`/concepts/false-self`。
-- `content/keywords.json`：听众可能搜的日常词（内耗、安全感、迷茫……）。导出时统计每个词在标题里出现的次数，没出现过的不会进快照。
-- 搜索是全屏的：人物、书、概念、主题和关键词在一个缓慢转动的球面上漂浮，输入时命中的词飘到前面，下方按主题、人物·书·概念、片段分组列出结果。`⌘K` 打开，`Esc` 关闭。
-- `content/episodes.json`：单集的附加设置。`musicBed: true` 表示这一集自带背景音乐。
-
-## 背景音乐
-
-网站循环播放 `public/audio/bgm.mp3`（《Iki》Hideyuki Hashimoto）。打开页面就自动播放。个别浏览器会拦住带声音的自动播放，这时第一次点击页面后开始。右下角的小按钮可以开关，偏好记在本机。播放时按钮旁边显示署名：`《Iki》Hideyuki Hashimoto`（`src/ambient.ts` 里的 `TRACK_CREDIT`）。
-
-播放单集时背景音乐自动压低；如果这一集在 `content/episodes.json` 里标了 `musicBed`（目前是 EP50、EP51），背景音乐完全静音。
-
-没有这个文件时，退回浏览器里实时生成的原创音乐（D 大调五声音阶上的稀疏钢琴音和柔和的铺底，加长混响）。节目里的音乐不从单集音频里分离出来使用。
+- `transcribe` 和 `enroll`：用留声（本机项目 `~/Projects/daily-recall`）的转录与声纹分段处理单集音频（需要 Voxt、`campplus.onnx` 和 pyannote 模型，`requirements.txt` 里的 `numpy` 和 `sherpa-onnx` 只给它们用）。
+- `summarize` 和 `relate`：转录之后的阶段，目前只是占位。
+- `pipeline/llm.py`：直接调用 Anthropic API 的路径，默认流程不用。
 
 ## 数据结构
 
-`public/data/v1/atlas.json`（类型定义见 `src/domain.ts`）：
+`public/data/v1/atlas.json`，类型定义见 `src/domain.ts`：
 
 | 字段 | 内容 |
 | --- | --- |
-| `topics` | 七颗主星：稳定 `id`、标题、说明、搜索别名、颜色、3D 位置 |
-| `episodes` | Apple GUID 作主键，含小宇宙和 Apple 链接、音源、章节、已确认的 `topicIds` |
-| `moments` | 片段：`id`（与时间戳无关）、所属单集、`topicIds`、起止时间、来源（`show_notes` 或 `audio_verified`）、说话人 |
-| `relations` | 原声片段之间的连线：两个片段 ID、审核过的理由、类型 |
-| `chapterPaths` | 目录阶段的章节连线（「节目导读」）：两端的单集和章节起点、主题、理由、类型 |
-| `entities` | 人物、书和概念：说明、别名、作者或相关人物、主题，以及每一处出现的单集、章节和起播点 |
-| `keywords` | 搜索建议词和它们在标题里出现的次数 |
+| `show` | 节目名、主播、小宇宙和 Apple 链接 |
+| `topics` | 7 个主题 |
+| `episodes` | 54 集：Apple GUID、标题、期号、发布时间、时长、音源、小宇宙和 Apple 链接、官方主题、章节（延伸书目只在导出时用来找出现位置，不进快照） |
+| `moments` | 892 个片段，目前全部来自章节时间戳（`source: "show_notes"`）：所属单集、起止时间、标题、摘要 |
+| `entities` | 160 项人物、书、影片和概念，以及每一处出现的单集、章节和起播点 |
+| `keywords` | 搜索建议词和它们在目录里出现的次数 |
+| `relations`、`chapterPaths` | 留给审核通过的连线，目前为空 |
 
-本地 SQLite（`var/content.sqlite3`）：`episodes`、`transcripts`、`proposals`（模型提议和审核决定）、`summaries`、`jobs`。
+链接：
 
-深链：`/?topic=boundaries&moment=m-…` 会恢复焦点星和片段，点「听这一段」从起播点开始播放。
+- `/?topic=emotion-body` 打开一团星云，`/?star=<概念 id>` 选中一颗星。
+- `/people/winnicott`、`/books/<id>`、`/films/<id>`、`/concepts/<id>` 是各自的页面。
+- `/people`、`/books`、`/films`、`/concepts` 是索引页。
 
 ## 发布
 
+推送到 `main` 后，GitHub Actions（`.github/workflows/deploy.yml`）会安装依赖、构建，并用 `wrangler deploy` 发布到 Cloudflare，大约 40 秒。仓库需要两个 secret：`CLOUDFLARE_API_TOKEN`（用「Edit Cloudflare Workers」模板创建，包含 `chenxi.dev` 这个 zone）和 `CLOUDFLARE_ACCOUNT_ID`。不要把本机 `wrangler login` 的登录信息复制给 CI：它的刷新令牌只能用一次，CI 用掉后本机和 CI 会一起掉线。
+
 ```bash
-.venv/bin/python -m pipeline export
 npm run build          # tsc + vite build，输出到 dist/
-npm run preview        # 本地 Workers runtime 验证深链和起播
-npx wrangler login     # 第一次部署前
-npm run deploy
+npm run preview        # 本地预览生产构建
+npm run deploy         # 本机直接发布，需要先 npx wrangler login
 ```
 
-发布前检查：`export` 会校验所有主题、单集、片段和连线引用；`dist/` 里只应有网页、`data/v1/atlas.json`、`fonts/` 和公开图片，不应有 `var/` 或逐字稿。
+站点同时挂在 `beiershuo.chenxi.dev` 和 workers.dev 地址上。`chenxi.dev` 这个 zone 的安全设置偶尔会把第一次请求 `atlas.json` 拦成 403，前端会自动重试两次；要彻底解决，可以在 Cloudflare 的 Security → Events 里找到对应规则，为这个子域放行。
 
-截图：README 顶部的 `docs/landing.jpg`（1440×900）和链接预览图 `public/og.jpg`（1200×630，`index.html` 的 og/twitter 标签指向它）都是开着 `npm run dev` 时用无头 Chrome 截的，星图改版后重截：
+### 截图
+
+README 顶部的 `docs/landing.jpg`（1440×900）和链接预览图 `public/og.jpg`（1200×630，`index.html` 里的 og/twitter 标签指向它）都是开着 `npm run dev` 时用无头 Chrome 截的。星图改版后重截：
 
 ```bash
 CH="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
@@ -151,4 +145,12 @@ sips -s format jpeg -s formatOptions 86 --resampleWidth 1200 "$TMPDIR/og.png" --
 sips -s format jpeg -s formatOptions 84 --resampleWidth 2160 "$TMPDIR/landing.png" --out docs/landing.jpg
 ```
 
-字体：`public/fonts/beier-serif-*.woff2` 是思源宋体的子集，按 SIL Open Font License 1.1 分发，见 `public/fonts/NOTICE.txt`。
+截图前把本机浏览器里的视图切回平面：无头 Chrome 用的是独立的配置目录，默认就是平面。
+
+## 背景音乐
+
+网站循环播放 `public/audio/bgm.mp3`（《Iki》Hideyuki Hashimoto），文件由站长提供，播放时按钮旁显示署名（`src/ambient.ts` 的 `TRACK_CREDIT`）。打开页面就自动播放；浏览器拦截有声自动播放时，第一次点击页面后开始。播放单集时背景音乐压低，标了 `musicBed` 的单集则完全静音。没有这个文件时，退回浏览器里实时生成的原创音乐。
+
+## 字体
+
+`public/fonts/beier-serif-*.woff2` 是思源宋体的子集，按 SIL Open Font License 1.1 分发，见 `public/fonts/NOTICE.txt`。

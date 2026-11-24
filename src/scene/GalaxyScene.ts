@@ -37,6 +37,8 @@ export type GalaxyOptions = {
   /** The sub-topic whose label is under (x, y), if any: a label counts as part of its star. */
   labelAt?: (x: number, y: number) => string | null
   reducedMotion: boolean
+  /** Start in the 3D view (see setDepth). */
+  deep?: boolean
 }
 
 const OVERVIEW = 20
@@ -45,6 +47,15 @@ const MIN_DISTANCE = 3.2
 const MAX_DISTANCE = 30
 const FOV = 40
 const NEBULA_RADIUS = 2.3
+// 3D view: the ring of nebulae alternates this far in front of and behind the hub, and the camera starts from this
+// angle, turning slowly (radians per second) while nobody is touching the sky.
+const CROWN = 3.6
+const DEEP_YAW = -0.32
+const DEEP_PITCH = 0.48
+// The 3D overview stands further back: the near side of the ring would otherwise spill off the screen.
+const OVERVIEW_DEEP = 25
+const SPIN = 0.035
+const MAX_PITCH = 1.25
 const BAKE_SIZE = 320
 const TAN = Math.tan(THREE.MathUtils.degToRad(FOV) / 2)
 const color = (hex: string, scale = 1) => new THREE.Color(hex).multiplyScalar(scale)
@@ -120,8 +131,13 @@ function distanceToSegment(point: Point, a: Point, b: Point) {
   return Math.hypot(point.x - a.x - t * x, point.y - a.y - t * y)
 }
 
-type NebulaObject = { nebula: Nebula; center: THREE.Vector3; layers: THREE.Mesh[]; materials: THREE.ShaderMaterial[]; targets: THREE.WebGLRenderTarget[]; turns: number[] }
-type StarObject = { star: SubStar; mesh: THREE.Mesh; material: THREE.ShaderMaterial; offset: THREE.Vector3; tint: THREE.Color }
+/** flat is where a nebula sits on the map; deep is where it sits in the 3D view. center eases between them. */
+type NebulaObject = {
+  nebula: Nebula; center: THREE.Vector3; flat: THREE.Vector3; deep: THREE.Vector3
+  layers: THREE.Mesh[]; materials: THREE.ShaderMaterial[]; targets: THREE.WebGLRenderTarget[]; turns: number[]
+}
+/** offset is the star's place in its nebula on the map; deepOffset adds real depth for the 3D view. */
+type StarObject = { star: SubStar; mesh: THREE.Mesh; material: THREE.ShaderMaterial; offset: THREE.Vector3; deepOffset: THREE.Vector3; tint: THREE.Color }
 type ThreadObject = { thread: Thread; mesh: THREE.Mesh; material: THREE.ShaderMaterial; samples: THREE.Vector3[] }
 
 export class GalaxyScene {
@@ -148,6 +164,10 @@ export class GalaxyScene {
   private readonly stars = new Map<string, StarObject>()
   private readonly threads = new Map<string, ThreadObject>()
   private readonly dust: THREE.Points[] = []
+  // A sphere of stars around the whole galaxy, only seen in the 3D view.
+  private readonly shellMaterial: THREE.ShaderMaterial
+  private readonly shell: THREE.Points[] = []
+  private readonly hub = new THREE.Vector3()
   private readonly low: boolean
   private nebulaList: Nebula[] = []
   private starList: SubStar[] = []
@@ -174,8 +194,19 @@ export class GalaxyScene {
   private readonly lookGoal = new THREE.Vector3()
   private distance = OVERVIEW
   private distanceGoal = OVERVIEW
+  // 2D ↔ 3D: mix eases from 0 (flat map) to 1 (3D); yaw and pitch orbit the camera around the look point.
+  private mix = 0
+  private mixGoal = 0
+  private yaw = 0
+  private yawGoal = 0
+  private pitch = 0
+  private pitchGoal = 0
+  private spinPause = 0
+  private threadsStale = false
+  private readonly right = new THREE.Vector3(1, 0, 0)
+  private readonly up = new THREE.Vector3(0, 1, 0)
   private readonly pointers = new Map<number, Point>()
-  private gesture: { moved: boolean; spread: number } | null = null
+  private gesture: { moved: boolean; spread: number; mid: Point | null } | null = null
   private hoverFrame = 0
   private readonly observer: ResizeObserver
   private readonly projectVector = new THREE.Vector3()
@@ -183,6 +214,12 @@ export class GalaxyScene {
 
   constructor(private readonly container: HTMLElement, private readonly options: GalaxyOptions) {
     this.reducedMotion = options.reducedMotion
+    if (options.deep) {
+      this.mix = this.mixGoal = 1
+      this.yaw = this.yawGoal = DEEP_YAW
+      this.pitch = this.pitchGoal = DEEP_PITCH
+      this.distance = this.distanceGoal = OVERVIEW_DEEP
+    }
     this.low = window.matchMedia('(max-width: 680px), (pointer: coarse)').matches
     this.renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: 'high-performance', stencil: false, depth: false })
     // The look is soft light, so a modest pixel ratio costs nothing visible and saves a lot of fill rate.
@@ -220,9 +257,11 @@ export class GalaxyScene {
 
     this.dustMaterial = additive({
       vertexShader: glsl.dustVertex, fragmentShader: glsl.dustFragment,
-      uniforms: { uTime: { value: 0 }, uPixelRatio: { value: this.renderer.getPixelRatio() }, uTwinkle: { value: 0.22 } },
+      uniforms: { uTime: { value: 0 }, uPixelRatio: { value: this.renderer.getPixelRatio() }, uTwinkle: { value: 0.22 }, uFade: { value: 1 } },
     })
+    this.shellMaterial = this.dustMaterial.clone()
     this.buildDust()
+    this.buildShell()
 
     const canvas = this.renderer.domElement
     canvas.addEventListener('pointerdown', this.onPointerDown)
@@ -262,14 +301,17 @@ export class GalaxyScene {
     this.travelSeq = trip.seq
     const star = trip.star ? this.stars.get(trip.star) : undefined
     const nebula = this.nebulae.get(star?.star.nebula ?? trip.nebula ?? '')
+    this.spinPause = performance.now() + 4000
     if (!nebula) {
       this.lookGoal.set(0, 0, 0)
-      this.distanceGoal = OVERVIEW
+      this.distanceGoal = this.mixGoal ? OVERVIEW_DEEP : OVERVIEW
     } else {
       const wide = this.width > 680
       // Leave room on the right for the card on wide screens, and at the bottom on phones.
-      this.lookGoal.copy(star ? star.mesh.position.clone().lerp(nebula.center, 0.55) : nebula.center)
-        .add(new THREE.Vector3(wide && star ? 1.1 : wide ? 0.5 : 0, wide ? 0 : -1, 0))
+      const target = star ? this.world.copy(star.offset).lerp(star.deepOffset, this.mixGoal).add(this.goalCenter(nebula)).lerp(this.goalCenter(nebula), 0.55) : this.goalCenter(nebula)
+      this.lookGoal.copy(target)
+        .addScaledVector(this.right, wide && star ? 1.1 : wide ? 0.5 : 0)
+        .addScaledVector(this.up, wide ? 0 : -1)
       this.distanceGoal = wide ? CLOSE : CLOSE + 3
     }
     this.touch()
@@ -300,6 +342,30 @@ export class GalaxyScene {
   private touchesHoverStar(threadId: string | null) {
     const thread = threadId ? this.threads.get(threadId)?.thread : undefined
     return Boolean(thread && this.hoverStar && (thread.from === this.hoverStar || thread.to === this.hoverStar))
+  }
+
+  /**
+   * Switch between the flat map and the 3D view. Every nebula and star eases between its two places while the
+   * camera swings round to a three-quarter view (or back to face-on), so the change reads as the map unfolding.
+   */
+  setDepth(deep: boolean) {
+    this.mixGoal = deep ? 1 : 0
+    // Unwind any slow spin so the way back to face-on is the short way round.
+    this.yaw = Math.atan2(Math.sin(this.yaw), Math.cos(this.yaw))
+    this.yawGoal = deep ? DEEP_YAW : 0
+    this.pitchGoal = deep ? DEEP_PITCH : 0
+    if (!deep) this.lookGoal.z = 0
+    if (!this.current && Math.abs(this.distanceGoal - (deep ? OVERVIEW : OVERVIEW_DEEP)) < 1) this.distanceGoal = deep ? OVERVIEW_DEEP : OVERVIEW
+    if (this.reducedMotion) {
+      this.mix = this.mixGoal
+      this.yaw = this.yawGoal
+      this.pitch = this.pitchGoal
+      this.place()
+      this.layoutThreads()
+    }
+    this.spinPause = performance.now() + 2500
+    this.threadsStale = true
+    this.touch()
   }
 
   setReducedMotion(value: boolean) {
@@ -373,7 +439,9 @@ export class GalaxyScene {
       color(nebula.tint).getHSL(hsl)
       const tint = new THREE.Color().setHSL(hsl.h, Math.min(1, hsl.s * 1.25 + 0.15), Math.min(0.62, hsl.l * 0.85))
       const random = seeded(hash(nebula.id) + 17)
-      const object: NebulaObject = { nebula, center: new THREE.Vector3(), layers: [], materials: [], targets: [], turns: [] }
+      const object: NebulaObject = {
+        nebula, center: new THREE.Vector3(), flat: new THREE.Vector3(), deep: new THREE.Vector3(), layers: [], materials: [], targets: [], turns: [],
+      }
       for (const [scale, offset] of [[7.4, 0], [5, 2.7]]) {
         const target = new THREE.WebGLRenderTarget(BAKE_SIZE, BAKE_SIZE, { type: THREE.HalfFloatType, depthBuffer: false })
         bakeMaterial.uniforms.uTint.value.copy(tint)
@@ -427,6 +495,9 @@ export class GalaxyScene {
           if (placed.every(other => Math.hypot(other.x - offset.x, (other.y - offset.y) * 1.5) > 0.82)) break
         }
         placed.push(offset)
+        // In 3D the constellation also spreads forwards and backwards (a rough bell curve, steady per star).
+        const depth = seeded(hash(star.id))
+        const deepOffset = new THREE.Vector3(offset.x, offset.y, (depth() + depth() + depth() - 1.5) * 2.4)
         // Stars carry their nebula's hue, so each topic's constellation reads as its own colour.
         const hsl = { h: 0, s: 0, l: 0 }
         color(nebula.tint).getHSL(hsl)
@@ -442,7 +513,7 @@ export class GalaxyScene {
         mesh.frustumCulled = false
         mesh.renderOrder = 5
         this.scene.add(mesh)
-        this.stars.set(star.id, { star, mesh, material, offset, tint })
+        this.stars.set(star.id, { star, mesh, material, offset, deepOffset, tint })
       }
     }
   }
@@ -461,11 +532,23 @@ export class GalaxyScene {
       const start = from.mesh.position
       const end = to.mesh.position
       const delta = end.clone().sub(start)
-      const normal = new THREE.Vector3(-delta.y, delta.x, 0).normalize()
       const sag = Math.min(delta.length() * 0.1, 0.9) * thread.bend
-      const curve = new THREE.QuadraticBezierCurve3(
-        start.clone(), start.clone().addScaledVector(delta, 0.5).addScaledVector(normal, sag).add(new THREE.Vector3(0, 0, 0.5)), end.clone(),
-      )
+      const middle = start.clone().addScaledVector(delta, 0.5)
+      if (this.mixGoal > 0.5) {
+        // 3D: every line bows away from the hub, so the links between topics read as domes over the galaxy;
+        // lines between the same two stars fan out around that bow.
+        const along = delta.clone().normalize()
+        const outward = middle.clone().sub(this.hub)
+        outward.addScaledVector(along, -outward.dot(along))
+        if (outward.lengthSq() < 1e-4) outward.set(0, 0, 1)
+        outward.normalize()
+        const across = along.clone().cross(outward)
+        middle.addScaledVector(outward, Math.min(delta.length() * 0.22, 2.2)).addScaledVector(across, sag)
+      } else {
+        const normal = new THREE.Vector3(-delta.y, delta.x, 0).normalize()
+        middle.addScaledVector(normal, sag).add(new THREE.Vector3(0, 0, 0.5))
+      }
+      const curve = new THREE.QuadraticBezierCurve3(start.clone(), middle, end.clone())
       const samples = curve.getSpacedPoints(28)
       const material = additive({
         vertexShader: glsl.ribbonVertex, fragmentShader: glsl.ribbonFragment,
@@ -526,6 +609,38 @@ export class GalaxyScene {
     this.scene.add(far, mid)
   }
 
+  /** 3D only: stars on a sphere round the galaxy, thickest along one tilted band, so turning never finds an edge. */
+  private buildShell() {
+    const pole = new THREE.Vector3(0.35, 0.88, 0.32).normalize()
+    const blue = color('#c8d2ff')
+    const warm = color('#ffd2a6')
+    const onSphere = (random: () => number) => {
+      const z = random() * 2 - 1
+      const angle = random() * Math.PI * 2
+      const ring = Math.sqrt(1 - z * z)
+      return new THREE.Vector3(Math.cos(angle) * ring, Math.sin(angle) * ring, z)
+    }
+    const scattered = new THREE.Points(this.points(this.low ? 700 : 1600, random => [
+      onSphere(random).multiplyScalar(62 + random() * 20),
+      0.8 + random() * 1.3,
+      (random() > 0.22 ? blue : warm).clone().multiplyScalar(0.08 + Math.pow(random(), 2.5) * 0.55),
+    ], 41).geometry, this.shellMaterial)
+    const band = new THREE.Points(this.points(this.low ? 1400 : 3600, random => {
+      // Pull a random direction towards the band's plane: most of these stars sit close to it.
+      const point = onSphere(random)
+      point.addScaledVector(pole, -point.dot(pole) * (1 - Math.pow(random(), 3) * 0.35)).normalize()
+      const bright = Math.pow(random(), 4)
+      return [point.multiplyScalar(66 + random() * 10), 0.7 + bright * 2.2,
+        color(random() > 0.15 ? '#b9c6ff' : '#ffd9b5').multiplyScalar(0.08 + bright * 0.7)]
+    }, 43).geometry, this.shellMaterial)
+    for (const points of [scattered, band]) {
+      points.frustumCulled = false
+      points.visible = false
+      this.shell.push(points)
+      this.scene.add(points)
+    }
+  }
+
   private layoutBand() {
     const old = this.dust[2]
     if (old) {
@@ -571,23 +686,55 @@ export class GalaxyScene {
   }
 
   private layout() {
-    for (const object of this.nebulae.values()) {
-      this.worldAt(object.nebula.x, object.nebula.y, object.nebula.depth, object.center)
-      object.layers.forEach((mesh, index) => mesh.position.copy(object.center).add(new THREE.Vector3(index * 0.3, -index * 0.2, -0.6 - index * 0.4)))
-    }
-    for (const object of this.stars.values()) {
-      const nebula = this.nebulae.get(object.star.nebula)
-      if (nebula) object.mesh.position.copy(nebula.center).add(object.offset)
-    }
+    const objects = [...this.nebulae.values()]
+    for (const object of objects) this.worldAt(object.nebula.x, object.nebula.y, object.nebula.depth, object.flat)
+    // 3D: the nebula nearest the middle of the map is the hub; the rest alternate in front of and behind it
+    // around the ring, so neighbours separate in depth.
+    const middle = objects.reduce((sum, object) => sum.add(object.flat), new THREE.Vector3()).divideScalar(Math.max(objects.length, 1))
+    const hub = objects.reduce<NebulaObject | undefined>((best, object) =>
+      !best || object.flat.distanceTo(middle) < best.flat.distanceTo(middle) ? object : best, undefined)
+    this.hub.copy(hub?.flat ?? middle)
+    const ring = objects.filter(object => object !== hub)
+      .sort((a, b) => Math.atan2(a.flat.y - this.hub.y, a.flat.x - this.hub.x) - Math.atan2(b.flat.y - this.hub.y, b.flat.x - this.hub.x))
+    hub?.deep.copy(hub.flat)
+    ring.forEach((object, index) => object.deep.copy(object.flat).setZ((index % 2 ? -1 : 1) * CROWN + object.nebula.depth * 0.6))
+    this.place()
     this.layoutThreads()
     this.layoutBand()
     this.touch()
+  }
+
+  /** Put every nebula, gas layer and star where the current 2D/3D mix says. */
+  private place() {
+    const t = this.mix
+    for (const object of this.nebulae.values()) {
+      object.center.lerpVectors(object.flat, object.deep, t)
+      // In 3D the two gas layers part in depth, so turning the sky shows the nebula has thickness.
+      object.layers.forEach((mesh, index) => mesh.position.copy(object.center)
+        .add(this.world.set(index * 0.3, -index * 0.2, THREE.MathUtils.lerp(-0.6 - index * 0.4, index ? 1.3 : -1.3, t))))
+    }
+    for (const object of this.stars.values()) {
+      const nebula = this.nebulae.get(object.star.nebula)
+      if (nebula) object.mesh.position.copy(nebula.center).add(this.world.lerpVectors(object.offset, object.deepOffset, t))
+    }
+  }
+
+  /** Where a nebula will be once the current 2D/3D change finishes. */
+  private goalCenter(object: NebulaObject) {
+    return new THREE.Vector3().lerpVectors(object.flat, object.deep, this.mixGoal)
+  }
+
+  /** A nebula's radius on screen, in px. */
+  private screenRadius(center: THREE.Vector3) {
+    this.projectVector.copy(center).applyMatrix4(this.camera.matrixWorldInverse)
+    return (NEBULA_RADIUS * this.height) / (2 * Math.max(-this.projectVector.z, 0.1) * TAN)
   }
 
   private clampGoal() {
     const reach = this.worldAt(1, 1, 0)
     this.lookGoal.x = THREE.MathUtils.clamp(this.lookGoal.x, -Math.abs(reach.x) * 1.1, Math.abs(reach.x) * 1.1)
     this.lookGoal.y = THREE.MathUtils.clamp(this.lookGoal.y, -Math.abs(reach.y) * 1.1, Math.abs(reach.y) * 1.1)
+    this.lookGoal.z = THREE.MathUtils.clamp(this.lookGoal.z, -CROWN * 2, CROWN * 2)
     this.distanceGoal = THREE.MathUtils.clamp(this.distanceGoal, MIN_DISTANCE, MAX_DISTANCE)
   }
 
@@ -605,7 +752,7 @@ export class GalaxyScene {
     let best: string | null = null
     let closest = 3.4
     for (const [id, object] of this.nebulae) {
-      const distance = Math.hypot(object.center.x - this.look.x, object.center.y - this.look.y)
+      const distance = Math.hypot(object.center.x - this.look.x, object.center.y - this.look.y, (object.center.z - this.look.z) * this.mix)
       if (distance < closest) { closest = distance; best = id }
     }
     return best
@@ -621,15 +768,43 @@ export class GalaxyScene {
     if (animate) this.time += delta
     const rate = animate ? 1 - Math.pow(0.0025, elapsed) : 1
     const fly = animate ? 1 - Math.pow(0.02, elapsed) : 1
+    // 3D, overview, nobody touching: the sky turns slowly, so depth shows even when you just look.
+    if (animate && this.mixGoal === 1 && !this.current && !this.selected && !this.hoverStar && !this.gesture && performance.now() > this.spinPause) {
+      this.yaw += delta * SPIN
+      this.yawGoal += delta * SPIN
+    }
+    const morph = animate ? 1 - Math.pow(0.08, elapsed) : 1
+    const morphing = Math.abs(this.mixGoal - this.mix) > 1e-3
+    this.mix = morphing ? this.mix + (this.mixGoal - this.mix) * morph : this.mixGoal
+    if (morphing || this.threadsStale) this.place()
+    if (!morphing && this.threadsStale) {
+      this.threadsStale = false
+      this.layoutThreads()
+    }
     this.look.lerp(this.lookGoal, fly)
     this.distance += (this.distanceGoal - this.distance) * fly
+    this.yaw += (this.yawGoal - this.yaw) * morph
+    this.pitch += (this.pitchGoal - this.pitch) * morph
     const drift = animate ? this.world.set(Math.sin(this.time * 0.07) * 0.15, Math.cos(this.time * 0.053) * 0.09, 0) : NO_DRIFT
-    this.camera.position.set(this.look.x + drift.x, this.look.y + drift.y, this.look.z + this.distance)
+    const level = Math.cos(this.pitch)
+    this.camera.position.set(
+      this.look.x + drift.x + this.distance * Math.sin(this.yaw) * level,
+      this.look.y + drift.y + this.distance * Math.sin(this.pitch),
+      this.look.z + this.distance * Math.cos(this.yaw) * level,
+    )
     this.camera.lookAt(this.look)
     this.camera.updateMatrixWorld()
-    this.skyCopy.uniforms.uShift.value.set(-this.look.x * 0.004, -this.look.y * 0.004)
+    // The camera's own right and up, for panning and zooming: exactly x and y when the map faces you.
+    this.right.set(Math.cos(this.yaw), 0, -Math.sin(this.yaw))
+    this.up.set(-Math.sin(this.pitch) * Math.sin(this.yaw), level, -Math.sin(this.pitch) * Math.cos(this.yaw))
+    this.skyCopy.uniforms.uShift.value.set(-this.look.x * 0.004 - Math.sin(this.yaw) * 0.025, -this.look.y * 0.004 + this.pitch * 0.025)
+    // The flat backdrop gives way to the sphere of stars as the map becomes 3D.
+    this.dustMaterial.uniforms.uFade.value = 1 - this.mix * 0.85
+    this.shellMaterial.uniforms.uFade.value = this.mix
+    for (const points of this.shell) points.visible = this.mix > 0.01
 
     const moving = this.look.distanceToSquared(this.lookGoal) > 1e-5 || Math.abs(this.distance - this.distanceGoal) > 1e-3
+      || morphing || Math.abs(this.yawGoal - this.yaw) > 1e-3 || Math.abs(this.pitchGoal - this.pitch) > 1e-3
     const current = this.nearestNebula()
     if (current !== this.current) {
       this.current = current
@@ -667,7 +842,8 @@ export class GalaxyScene {
     for (const [id, object] of this.threads) {
       const { from, to } = object.thread
       const pointed = id === this.hovered
-      const lit = pointed || [this.selected, this.hoverStar].some(star => star !== null && (from === star || to === star))
+      const lit = !morphing && !this.threadsStale
+        && (pointed || [this.selected, this.hoverStar].some(star => star !== null && (from === star || to === star)))
       const u = object.material.uniforms
       if (!lit && u.uOpacity.value < 0.005) {
         object.mesh.visible = false
@@ -687,6 +863,8 @@ export class GalaxyScene {
     }
     this.dustMaterial.uniforms.uTime.value = this.time
     this.dustMaterial.uniforms.uPixelRatio.value = this.renderer.getPixelRatio()
+    this.shellMaterial.uniforms.uTime.value = this.time
+    this.shellMaterial.uniforms.uPixelRatio.value = this.renderer.getPixelRatio()
 
     if (settling) this.active = performance.now()
     // Idle: twinkling still runs, at half the frame rate.
@@ -713,8 +891,7 @@ export class GalaxyScene {
     const nebulae = new Map<string, Point & { radius: number }>()
     for (const [id, object] of this.nebulae) {
       const center = this.project(object.center)
-      const edge = this.project(this.world.copy(object.center).add(new THREE.Vector3(NEBULA_RADIUS, 0, 0)))
-      nebulae.set(id, { x: center.x, y: center.y, radius: Math.abs(edge.x - center.x) })
+      if (!center.behind) nebulae.set(id, { x: center.x, y: center.y, radius: this.screenRadius(object.center) })
     }
     const stars = new Map<string, Point>()
     for (const [id, object] of this.stars) {
@@ -750,9 +927,9 @@ export class GalaxyScene {
     for (const [id, object] of this.nebulae) {
       if (id === this.current) continue
       const center = this.project(object.center)
-      const edge = this.project(this.world.copy(object.center).add(new THREE.Vector3(NEBULA_RADIUS * 0.85, 0, 0)))
+      if (center.behind) continue
       const distance = Math.hypot(center.x - x, center.y - y)
-      if (distance < Math.abs(edge.x - center.x) && distance < closest) { closest = distance; nebula = id }
+      if (distance < this.screenRadius(object.center) * 0.85 && distance < closest) { closest = distance; nebula = id }
     }
     return nebula ? { nebula } : {}
   }
@@ -767,8 +944,9 @@ export class GalaxyScene {
     const before = this.distanceGoal
     this.distanceGoal = THREE.MathUtils.clamp(before * factor, MIN_DISTANCE, MAX_DISTANCE)
     const shift = (before - this.distanceGoal) * TAN
-    this.lookGoal.x += ((x / this.width) * 2 - 1) * shift * this.camera.aspect
-    this.lookGoal.y += (1 - (y / this.height) * 2) * shift
+    this.lookGoal.addScaledVector(this.right, ((x / this.width) * 2 - 1) * shift * this.camera.aspect)
+    this.lookGoal.addScaledVector(this.up, (1 - (y / this.height) * 2) * shift)
+    this.spinPause = performance.now() + 6000
     this.clampGoal()
     this.touch()
   }
@@ -792,8 +970,22 @@ export class GalaxyScene {
     this.pointers.set(event.pointerId, this.local(event))
     this.renderer.domElement.setPointerCapture(event.pointerId)
     const spread = this.spread()
-    this.gesture = { moved: this.gesture?.moved ?? false, spread }
+    this.gesture = { moved: this.gesture?.moved ?? false, spread, mid: this.midpoint() }
     if (this.pointers.size === 1) this.gesture.moved = false
+    this.spinPause = performance.now() + 6000
+  }
+
+  private midpoint(): Point | null {
+    const [a, b] = [...this.pointers.values()]
+    return a && b ? { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 } : null
+  }
+
+  /** Slide the sky by a screen distance, along the camera's own axes. */
+  private pan(dx: number, dy: number) {
+    const perPixel = (2 * this.distanceGoal * TAN) / this.height
+    this.lookGoal.addScaledVector(this.right, -dx * perPixel).addScaledVector(this.up, dy * perPixel)
+    this.clampGoal()
+    this.touch()
   }
 
   private spread() {
@@ -828,11 +1020,12 @@ export class GalaxyScene {
     this.pointers.set(event.pointerId, point)
     if (this.pointers.size >= 2) {
       const spread = this.spread()
-      if (this.gesture.spread > 0 && spread > 0) {
-        const [a, b] = [...this.pointers.values()]
-        this.zoomAt((a.x + b.x) / 2, (a.y + b.y) / 2, this.gesture.spread / spread)
-      }
+      const mid = this.midpoint()
+      if (this.gesture.spread > 0 && spread > 0 && mid) this.zoomAt(mid.x, mid.y, this.gesture.spread / spread)
+      // Two fingers moving together slide the sky; in 3D one finger turns it.
+      if (this.gesture.mid && mid) this.pan(mid.x - this.gesture.mid.x, mid.y - this.gesture.mid.y)
       this.gesture.spread = spread
+      this.gesture.mid = mid
       if (!this.gesture.moved) this.options.onGesture(true)
       this.gesture.moved = true
       return
@@ -843,11 +1036,16 @@ export class GalaxyScene {
     if (!this.gesture.moved) this.options.onGesture(true)
     this.gesture.moved = true
     canvas.style.cursor = 'grabbing'
-    const perPixel = (2 * this.distanceGoal * TAN) / this.height
-    this.lookGoal.x -= dx * perPixel
-    this.lookGoal.y += dy * perPixel
-    this.clampGoal()
-    this.touch()
+    this.spinPause = performance.now() + 6000
+    if (this.mixGoal === 1 && !event.shiftKey) {
+      // 3D: dragging turns the sky around the point you are looking at; Shift-drag slides it.
+      this.yaw -= dx * 0.005
+      this.yawGoal = this.yaw
+      this.pitch = this.pitchGoal = THREE.MathUtils.clamp(this.pitch + dy * 0.005, -MAX_PITCH, MAX_PITCH)
+      this.touch()
+      return
+    }
+    this.pan(dx, dy)
   }
 
   private readonly onPointerUp = (event: PointerEvent) => {

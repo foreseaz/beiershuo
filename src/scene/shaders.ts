@@ -88,12 +88,13 @@ void main() {
 `
 
 export const dustFragment = /* glsl */ `
+uniform float uFade;
 varying vec3 vColor;
 void main() {
   vec2 d = gl_PointCoord - 0.5;
   float falloff = exp(-dot(d, d) * 22.0);
   if (falloff < 0.01) discard;
-  gl_FragColor = vec4(vColor * falloff, 1.0);
+  gl_FragColor = vec4(vColor * falloff * uFade, 1.0);
 }
 `
 
