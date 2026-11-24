@@ -166,9 +166,10 @@ class TrackEngine implements Engine {
     cancelAnimationFrame(this.ramp)
     const step = (now: number) => {
       if (!this.alive) return
-      const t = Math.min(1, (now - began) / duration)
+      // A frame's timestamp can predate the call that started the fade, so clamp before easing.
+      const t = Math.min(1, Math.max(0, (now - began) / duration))
       const eased = 1 - (1 - t) ** 3
-      this.audio.volume = from + (target - from) * eased
+      this.audio.volume = Math.min(1, Math.max(0, from + (target - from) * eased))
       if (t < 1) this.ramp = requestAnimationFrame(step)
     }
     this.ramp = requestAnimationFrame(step)

@@ -154,11 +154,22 @@ export function momentSource(moment: Moment) {
   return moment.speaker === 'beier' ? '贝儿 · 核听' : '原声核听'
 }
 
-export async function loadAtlas(signal: AbortSignal): Promise<Atlas> {
-  const response = await fetch('/data/v1/atlas.json', { signal })
-  if (!response.ok || !response.headers.get('content-type')?.includes('json')) {
-    throw new Error('主题数据暂时不可用')
+/**
+ * Fetch the atlas, retrying twice: Cloudflare's edge security sometimes answers a first request with a 403 page
+ * and lets the same request through a moment later.
+ */
+async function fetchAtlas(signal: AbortSignal) {
+  for (let attempt = 0; ; attempt += 1) {
+    const response = await fetch('/data/v1/atlas.json', { signal, cache: attempt ? 'no-store' : 'default' })
+    if (response.ok && response.headers.get('content-type')?.includes('json')) return response
+    if (attempt === 2) throw new Error('主题数据暂时不可用')
+    await new Promise(resolve => setTimeout(resolve, 500 * (attempt + 1)))
+    signal.throwIfAborted()
   }
+}
+
+export async function loadAtlas(signal: AbortSignal): Promise<Atlas> {
+  const response = await fetchAtlas(signal)
   const data = await response.json() as Partial<Atlas>
   if (data.schemaVersion !== 1 || !data.show || !Array.isArray(data.topics) || !data.topics.length ||
     !Array.isArray(data.episodes) || !Array.isArray(data.moments) || !Array.isArray(data.relations)) {
