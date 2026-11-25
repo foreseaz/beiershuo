@@ -50,10 +50,14 @@ type Box = { left: number; top: number; right: number; bottom: number }
 const overlaps = (a: Box, b: Box) => !(a.right < b.left || a.left > b.right || a.bottom < b.top || a.top > b.bottom)
 const grow = (box: Box, by: number): Box => ({ left: box.left - by, top: box.top - by, right: box.right + by, bottom: box.bottom + by })
 
-/** How many of a nebula's labels show while nothing is hovered, strongest first. */
+/**
+ * How many of a nebula's labels show while nothing is hovered, strongest first. A nebula smaller than the desktop
+ * overview's (a phone's pulled-back overview) gets fewer, by its area, so the first view is mostly sky.
+ */
 function labelBudget(radius: number) {
   if (radius >= LABELS_FROM) return Infinity
-  return OVERVIEW_LABELS + Math.max(0, radius - OVERVIEW_RADIUS) * ((18 - OVERVIEW_LABELS) / (LABELS_FROM - OVERVIEW_RADIUS))
+  if (radius < OVERVIEW_RADIUS) return OVERVIEW_LABELS * (radius / OVERVIEW_RADIUS) ** 2
+  return OVERVIEW_LABELS + (radius - OVERVIEW_RADIUS) * ((18 - OVERVIEW_LABELS) / (LABELS_FROM - OVERVIEW_RADIUS))
 }
 
 /**

@@ -12,7 +12,7 @@ const W = 1080
 const MIN_H = 1440
 const MAX_H = 1920
 const PAD = 84
-const FOOT = 380
+const FOOT = 340
 const SERIF = '"Beier Serif", "Source Han Serif SC", "Noto Serif SC", "Songti SC", serif'
 const SANS = '-apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif'
 const IVORY = '#f8f2e6'
@@ -82,6 +82,15 @@ function wrap(ctx: CanvasRenderingContext2D, text: string, width: number, maxLin
 }
 
 const fit = (ctx: CanvasRenderingContext2D, text: string, width: number) => wrap(ctx, text, width, 1)[0] ?? ''
+
+/** Wrap into as few lines as `wrap` would, but as even as possible, so a title never leaves one character alone. */
+function balanced(ctx: CanvasRenderingContext2D, text: string, width: number, maxLines: number) {
+  const count = wrap(ctx, text, width, maxLines).length
+  if (count < 2) return wrap(ctx, text, width, maxLines)
+  let narrow = width
+  while (narrow > 40 && wrap(ctx, text, narrow - 4, 99).length === count) narrow -= 4
+  return wrap(ctx, text, narrow, maxLines)
+}
 
 function loadImage(src: string) {
   return new Promise<HTMLImageElement | null>(resolve => {
@@ -196,7 +205,7 @@ function drawCover(ctx: CanvasRenderingContext2D, entity: Entity, maker: string 
     const inner = w - 26 * u
     const left = x + 15 * u
     const middle = x + 54 * u
-    const lines = wrap(ctx, entity.name, inner, 4)
+    const lines = balanced(ctx, entity.name, inner, 4)
     const block = lines.length * size * 1.28
     let top = design.layout === 'orb' ? y + 60 * u : design.layout === 'poster' ? y + h - 9 * u - 6 * u - 18 * u - (maker ? 9 * u : 0) - block : y + 13 * u
     ctx.textAlign = centred ? 'center' : 'left'

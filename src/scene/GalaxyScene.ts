@@ -1,7 +1,6 @@
 import * as THREE from 'three'
 import {
-  BlendFunction, BloomEffect, EffectComposer, EffectPass, NoiseEffect, RenderPass, ToneMappingEffect, ToneMappingMode,
-  VignetteEffect,
+  BloomEffect, EffectComposer, EffectPass, RenderPass, ToneMappingEffect, ToneMappingMode, VignetteEffect,
 } from 'postprocessing'
 import * as glsl from './shaders'
 
@@ -54,6 +53,10 @@ const DEEP_YAW = -0.32
 const DEEP_PITCH = 0.48
 // The 3D overview stands further back: the near side of the ring would otherwise spill off the screen.
 const OVERVIEW_DEEP = 25
+// An upright phone sees a narrow strip of sky, yet each nebula keeps its size. So there the overview stands further
+// back (by up to MAX_PULLBACK) and the nebulae spread to the wider view: each shows whole, with dark sky between.
+const UPRIGHT_ASPECT = 0.72
+const MAX_PULLBACK = 1.6
 const SPIN = 0.035
 const MAX_PITCH = 1.25
 const BAKE_SIZE = 320
@@ -194,6 +197,8 @@ export class GalaxyScene {
   private readonly lookGoal = new THREE.Vector3()
   private distance = OVERVIEW
   private distanceGoal = OVERVIEW
+  // How much further back than OVERVIEW this screen's overview stands (see UPRIGHT_ASPECT).
+  private pullback = 1
   // 2D ↔ 3D: mix eases from 0 (flat map) to 1 (3D); yaw and pitch orbit the camera around the look point.
   private mix = 0
   private mixGoal = 0
@@ -237,11 +242,13 @@ export class GalaxyScene {
     const bloom = new BloomEffect({
       mipmapBlur: true, luminanceThreshold: 0.3, luminanceSmoothing: 0.25, intensity: 1.15, radius: 0.75, levels: this.low ? 5 : 6,
     })
-    const grain = new NoiseEffect({ blendFunction: BlendFunction.SCREEN, premultiply: false })
-    grain.blendMode.opacity.value = 0.012
-    this.composer.addPass(new EffectPass(
-      this.camera, bloom, new ToneMappingEffect({ mode: ToneMappingMode.NEUTRAL }), new VignetteEffect({ offset: 0.3, darkness: 0.6 }), grain,
-    ))
+    // Dithering, not film grain, keeps the dark gradient free of bands: the canvas runs below the screen's pixel
+    // ratio, so grain shows up as visible speckle, most of all on phones.
+    const finish = new EffectPass(
+      this.camera, bloom, new ToneMappingEffect({ mode: ToneMappingMode.NEUTRAL }), new VignetteEffect({ offset: 0.3, darkness: 0.6 }),
+    )
+    finish.dithering = true
+    this.composer.addPass(finish)
 
     this.skyMaterial = new THREE.ShaderMaterial({
       vertexShader: glsl.fullscreenVertex, fragmentShader: glsl.skyFragment, depthTest: false, depthWrite: false,
@@ -309,7 +316,7 @@ export class GalaxyScene {
     this.spinPause = performance.now() + 4000
     if (!nebula) {
       this.lookGoal.set(0, 0, 0)
-      this.distanceGoal = this.mixGoal ? OVERVIEW_DEEP : OVERVIEW
+      this.distanceGoal = (this.mixGoal ? OVERVIEW_DEEP : OVERVIEW) * this.pullback
       this.frameRight = this.frameLift = 0
     } else {
       const wide = this.width > 680
@@ -367,7 +374,8 @@ export class GalaxyScene {
     this.yawGoal = deep ? DEEP_YAW : 0
     this.pitchGoal = deep ? DEEP_PITCH : 0
     if (!deep) this.lookGoal.z = 0
-    if (!this.current && Math.abs(this.distanceGoal - (deep ? OVERVIEW : OVERVIEW_DEEP)) < 1) this.distanceGoal = deep ? OVERVIEW_DEEP : OVERVIEW
+    const [from, to] = (deep ? [OVERVIEW, OVERVIEW_DEEP] : [OVERVIEW_DEEP, OVERVIEW]).map(distance => distance * this.pullback)
+    if (!this.current && Math.abs(this.distanceGoal - from) < 1) this.distanceGoal = to
     if (this.reducedMotion) {
       this.mix = this.mixGoal
       this.yaw = this.yawGoal
@@ -421,7 +429,7 @@ export class GalaxyScene {
   // ---------------------------------------------------------------- building
 
   private worldAt(x: number, y: number, z: number, target = new THREE.Vector3()) {
-    const half = (OVERVIEW - z) * TAN
+    const half = (OVERVIEW * this.pullback - z) * TAN
     return target.set((x * 2 - 1) * half * this.camera.aspect, (1 - y * 2) * half, z)
   }
 
@@ -680,6 +688,15 @@ export class GalaxyScene {
     this.composer.setSize(this.width, this.height)
     this.camera.aspect = this.width / this.height
     this.camera.updateProjectionMatrix()
+    const pullback = THREE.MathUtils.clamp(UPRIGHT_ASPECT / this.camera.aspect, 1, MAX_PULLBACK)
+    if (pullback !== this.pullback) {
+      // An overview stays an overview when the screen turns; a nebula you went to keeps its distance.
+      if (!this.current) {
+        this.distance *= pullback / this.pullback
+        this.distanceGoal *= pullback / this.pullback
+      }
+      this.pullback = pullback
+    }
     this.renderSky()
     this.layout()
   }
@@ -747,7 +764,7 @@ export class GalaxyScene {
     this.lookGoal.x = THREE.MathUtils.clamp(this.lookGoal.x, -Math.abs(reach.x) * 1.1, Math.abs(reach.x) * 1.1)
     this.lookGoal.y = THREE.MathUtils.clamp(this.lookGoal.y, -Math.abs(reach.y) * 1.1, Math.abs(reach.y) * 1.1)
     this.lookGoal.z = THREE.MathUtils.clamp(this.lookGoal.z, -CROWN * 2, CROWN * 2)
-    this.distanceGoal = THREE.MathUtils.clamp(this.distanceGoal, MIN_DISTANCE, MAX_DISTANCE)
+    this.distanceGoal = THREE.MathUtils.clamp(this.distanceGoal, MIN_DISTANCE, MAX_DISTANCE * this.pullback)
   }
 
   // ---------------------------------------------------------------- loop
@@ -955,7 +972,7 @@ export class GalaxyScene {
   /** Zoom by `factor` keeping the sky under (x, y) where it is. */
   private zoomAt(x: number, y: number, factor: number) {
     const before = this.distanceGoal
-    this.distanceGoal = THREE.MathUtils.clamp(before * factor, MIN_DISTANCE, MAX_DISTANCE)
+    this.distanceGoal = THREE.MathUtils.clamp(before * factor, MIN_DISTANCE, MAX_DISTANCE * this.pullback)
     const shift = (before - this.distanceGoal) * TAN
     this.lookGoal.addScaledVector(this.right, ((x / this.width) * 2 - 1) * shift * this.camera.aspect)
     this.lookGoal.addScaledVector(this.up, (1 - (y / this.height) * 2) * shift)
