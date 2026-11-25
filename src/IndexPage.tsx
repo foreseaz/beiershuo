@@ -40,7 +40,7 @@ export function IndexPage({ atlas, kind, onEntity }: Props) {
             return (
               <article className="index-card" key={item.id}>
                 <button className="index-card-main" type="button" onClick={() => onEntity(item)}>
-                  {kind === 'person' ? <Portrait entity={item} size={84} /> : <Cover entity={item} maker={by?.name} width={112} />}
+                  {kind === 'person' ? <Portrait entity={item} size={84} /> : <Cover entity={item} maker={by?.name} width="min(112px, 100%)" />}
                   <span className="index-card-name">{kind === 'person' ? item.name : `《${item.name}》`}</span>
                   {kind !== 'person' && by && <span className="index-card-by">{by.name}</span>}
                   <span className="index-card-note">{item.note}</span>

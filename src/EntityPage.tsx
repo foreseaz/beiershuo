@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from 'react'
 import { ArrowUpRight, Play, Share2 } from 'lucide-react'
 import { Cover, Portrait, entityLink } from './Visual'
+import { ApplePodcastsIcon, XiaoyuzhouIcon } from './platforms'
 import {
   ENTITY_LABELS, SHOW_XIAOYUZHOU, episodeLabel, timeLabel,
   type Atlas, type Entity, type Episode, type Moment, type Topic,
@@ -14,7 +15,7 @@ type Props = {
   onTopic: (id: string) => void
   onMoment: (moment: Moment) => void
   onPlay: (episode: Episode, startSec: number, title: string) => void
-  onShare: () => void
+  onShare: (trigger: HTMLButtonElement) => void
 }
 
 const shortTitle = (episode: Episode) => episode.title.replace(/^(EP\s*\d+\s*[.．:：|｜]?\s*)/i, '')
@@ -67,19 +68,23 @@ export function EntityPage({ atlas, entity, episodes, onEntity, onTopic, onMomen
   return (
     <div className="entity-content">
         <header className="entity-head">
-          {entity.kind !== 'concept' && (
-            <div className="entity-visual">
-              {entity.kind === 'person' ? <Portrait entity={entity} size={112} />
-                : <Cover entity={entity} maker={byId.get(entity.author ?? entity.people?.[0] ?? '')?.name} width={132} />}
+          <div className={`entity-heading${entity.kind === 'concept' ? '' : ' entity-heading--visual'}`}>
+            {entity.kind !== 'concept' && (
+              <div className="entity-visual">
+                {entity.kind === 'person' ? <Portrait entity={entity} size={112} />
+                  : <Cover entity={entity} maker={byId.get(entity.author ?? entity.people?.[0] ?? '')?.name} width="var(--entity-cover-width)" />}
+              </div>
+            )}
+            <div>
+              <p className="entity-kind">{ENTITY_LABELS[entity.kind]}{entity.kind === 'film' && entity.format ? ` · ${entity.format}${entity.year ? ` · ${entity.year}` : ''}` : ''}</p>
+              <h1 className="entity-name">{entity.kind === 'book' || entity.kind === 'film' ? `《${entity.name}》` : entity.name}</h1>
+              <div className="entity-actions">
+                <button className="entity-link" type="button" onClick={event => onShare(event.currentTarget)}><Share2 size={13} aria-hidden="true" /> 分享卡片</button>
+                {link && <a className="entity-link" href={link.href} target="_blank" rel="noreferrer">{link.label} <ArrowUpRight size={13} aria-hidden="true" /></a>}
+              </div>
             </div>
-          )}
-          <p className="entity-kind">{ENTITY_LABELS[entity.kind]}{entity.kind === 'film' && entity.format ? ` · ${entity.format}${entity.year ? ` · ${entity.year}` : ''}` : ''}</p>
-          <h1 className="entity-name">{entity.kind === 'book' || entity.kind === 'film' ? `《${entity.name}》` : entity.name}</h1>
-          {entity.note && <p className="entity-note">{entity.note}</p>}
-          <div className="entity-actions">
-            <button className="entity-link" type="button" onClick={onShare}><Share2 size={13} aria-hidden="true" /> 分享卡片</button>
-            {link && <a className="entity-link" href={link.href} target="_blank" rel="noreferrer">{link.label} <ArrowUpRight size={13} aria-hidden="true" /></a>}
           </div>
+          {entity.note && <p className="entity-note">{entity.note}</p>}
           {topics.length > 0 && (
             <div className="entity-topics">
               {topics.map(topic => (
@@ -156,11 +161,14 @@ export function EntityPage({ atlas, entity, episodes, onEntity, onTopic, onMomen
             </div>
           </section>
         )}
-        <a className="subscribe-cta" href={SHOW_XIAOYUZHOU} target="_blank" rel="noreferrer">
-          <img src="/brand/show-cover.png" alt="" width="36" height="36" />
-          <span><strong>在小宇宙订阅《次要人生》</strong><small>倪贝儿的心理播客 · 也可在 Apple Podcasts 搜索「次要人生」</small></span>
-          <ArrowUpRight size={15} aria-hidden="true" />
-        </a>
+        <div className="subscribe-cta">
+          <img src="/brand/show-cover.png" alt="" width="44" height="44" />
+          <span className="subscribe-text"><strong>订阅《次要人生》</strong><small>倪贝儿的心理播客</small></span>
+          <span className="subscribe-links">
+            <a href={atlas.show?.xiaoyuzhouUrl ?? SHOW_XIAOYUZHOU} target="_blank" rel="noreferrer"><XiaoyuzhouIcon size={18} />小宇宙</a>
+            {atlas.show?.appleUrl && <a href={atlas.show.appleUrl} target="_blank" rel="noreferrer"><ApplePodcastsIcon size={18} />Apple Podcasts</a>}
+          </span>
+        </div>
         <p className="entity-source">名字是从节目标题、章节和简介里找到的；点「▶」从那一段原声开始听。{entity.image && <> 照片：{entity.image.credit}，<a href={entity.image.source} target="_blank" rel="noreferrer">来源</a>。</>}</p>
     </div>
   )

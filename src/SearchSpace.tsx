@@ -5,6 +5,7 @@ import {
   type Atlas, type Entity, type EntityKind, type Episode, type Moment, type Topic,
 } from './domain'
 import { Portrait } from './Visual'
+import { useDialog, useKeyboardViewport } from './dialog'
 
 type Props = {
   atlas: Atlas
@@ -67,8 +68,11 @@ export function SearchSpace({ atlas, episodes, onTopic, onStar, onEntity, onInde
   const [query, setQuery] = useState('')
   const [active, setActive] = useState(0)
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set())
+  const dialog = useRef<HTMLDialogElement>(null)
   const input = useRef<HTMLInputElement>(null)
   const list = useRef<HTMLDivElement>(null)
+  useDialog(dialog)
+  useKeyboardViewport(dialog)
   const needle = fold(query)
 
   const entities = atlas.entities ?? []
@@ -142,18 +146,6 @@ export function SearchSpace({ atlas, episodes, onTopic, onStar, onEntity, onInde
     list.current?.querySelector('[data-active="1"]')?.scrollIntoView({ block: 'nearest' })
   }, [active])
 
-  // Esc clears the query first, then closes. Capture so the map does not also step back.
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') return
-      event.stopPropagation()
-      if (input.current?.value) setQuery('')
-      else onClose()
-    }
-    window.addEventListener('keydown', onKey, true)
-    return () => window.removeEventListener('keydown', onKey, true)
-  }, [onClose])
-
   const run = (item: Item) => {
     if (item.type === 'topic') onTopic(item.topic.id)
     else if (item.type === 'moment') onMoment(item.moment)
@@ -225,7 +217,11 @@ export function SearchSpace({ atlas, episodes, onTopic, onStar, onEntity, onInde
   }
 
   return (
-    <div className="search" role="dialog" aria-modal="true" aria-label="搜索">
+    <dialog ref={dialog} className="app-dialog search" aria-label="搜索" onCancel={event => {
+      event.preventDefault()
+      if (query) setQuery('')
+      else onClose()
+    }}>
       <button className="search-scrim" type="button" tabIndex={-1} aria-label="关闭搜索" onClick={onClose} />
       <div className="search-sheet">
         <div className="search-bar">
@@ -316,6 +312,6 @@ export function SearchSpace({ atlas, episodes, onTopic, onStar, onEntity, onInde
           </p>
         )}
       </div>
-    </div>
+    </dialog>
   )
 }
