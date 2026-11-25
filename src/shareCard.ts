@@ -1,12 +1,16 @@
 import QRCode from 'qrcode'
-import { ENTITY_LABELS, episodeLabel, timeLabel, type Entity, type Episode, type Moment } from './domain'
+import { ENTITY_LABELS, episodeLabel, timeLabel, type Entity, type Episode, type Moment, type Topic } from './domain'
 import { coverDesign } from './coverDesign'
 import { APPLE_PODCASTS_BADGE, XIAOYUZHOU_BADGE } from './platforms'
+import type { Nebula, SubStar, Thread } from './scene/GalaxyScene'
+import { layoutNebulae } from './StarMap'
+import { renderGalaxyStill, type GalaxyStill } from './scene/still'
 
 /**
  * The share card: 1080px wide, as tall as its content needs between 3:4 (1440) and 9:16 (1920), so it fills a phone
  * screen in a story or a chat. An episode leads with its title and opening chapters. An entity leads with its
- * portrait, cover or name, followed by the episodes that mention it. Both cards end with ways to listen.
+ * portrait, cover or name, followed by the episodes that mention it. The site's own card is the star map itself, its
+ * topics named on it. Every card ends with ways to listen.
  */
 const W = 1080
 const MIN_H = 1440
@@ -21,10 +25,23 @@ const MUTED = 'rgba(217, 205, 184, 0.58)'
 const BLUE = '#a9b8ff'
 const CHAPTERS_PER_EPISODE = 2
 const SOLO_EPISODE_CHAPTERS = 4
+// The site card: the star map fills the top HERO px, then fades into the card.
+const HERO = 1180
+const SUBTOPICS_PER_TOPIC = 2
+
+export type SiteShare = {
+  kind: 'site'
+  topics: Topic[]
+  stars: (SubStar & { name: string })[]
+  threads: Thread[]
+  episodeCount: number
+  momentCount: number
+}
 
 export type ShareSubject =
   | { kind: 'entity'; entity: Entity; tint: string; maker?: string }
   | { kind: 'episode'; episode: Episode; tint: string }
+  | SiteShare
 
 type CardInput = {
   subject: ShareSubject
@@ -34,6 +51,11 @@ type CardInput = {
 }
 type Chapter = { startSec: number; title: string }
 type Block = { episode: Episode; chapters: Chapter[] }
+
+/** Canvas letter-spacing, where the browser supports it. */
+function spacing(ctx: CanvasRenderingContext2D, value: string) {
+  if ('letterSpacing' in ctx) (ctx as unknown as { letterSpacing: string }).letterSpacing = value
+}
 
 const shortTitle = (episode: Episode) => episode.title.replace(/^EP\s*\d+\s*[.．:：|｜]?\s*/i, '')
 
@@ -90,6 +112,13 @@ function balanced(ctx: CanvasRenderingContext2D, text: string, width: number, ma
   let narrow = width
   while (narrow > 40 && wrap(ctx, text, narrow - 4, 99).length === count) narrow -= 4
   return wrap(ctx, text, narrow, maxLines)
+}
+
+/** A sub-topic tag's colour: mostly warm ivory, a third its nebula's tint, at `alpha`. */
+function tag(tint: string, alpha: number) {
+  const hex = tint.replace('#', '')
+  const channel = (index: number, base: number) => Math.round(parseInt(hex.slice(index * 2, index * 2 + 2), 16) * 0.35 + base * 0.65)
+  return `rgba(${channel(0, 228)}, ${channel(1, 221)}, ${channel(2, 210)}, ${alpha.toFixed(2)})`
 }
 
 function loadImage(src: string) {
@@ -239,7 +268,7 @@ function drawCover(ctx: CanvasRenderingContext2D, entity: Entity, maker: string 
 
 /** Draw the share card and return it as a PNG. */
 export async function renderShareCard({ subject, url, episodes, moments }: CardInput): Promise<Blob> {
-  const { tint } = subject
+  const tint = subject.kind === 'site' ? BLUE : subject.tint
   const entity = subject.kind === 'entity' ? subject.entity : undefined
   const episode = subject.kind === 'episode' ? subject.episode : undefined
   await Promise.all([
@@ -254,10 +283,18 @@ export async function renderShareCard({ subject, url, episodes, moments }: CardI
   ])
   const code = document.createElement('canvas')
   await QRCode.toCanvas(code, url, { margin: 0, width: 220, errorCorrectionLevel: 'M', color: { dark: '#141a40', light: '#ffffff' } })
-  const blocks = entity ? blocksFor(entity, episodes, moments) : []
   const canvas = document.createElement('canvas')
   canvas.width = W
   canvas.height = MAX_H
+  const png = () => new Promise<Blob>((resolve, reject) => canvas.toBlob(blob => (blob ? resolve(blob) : reject(new Error('无法生成图片'))), 'image/png'))
+  if (subject.kind === 'site') {
+    // Without WebGL the card still shows the topics, over soft glows where the nebulae would be.
+    const nebulae = layoutNebulae(subject.topics, HERO > W * 1.05)
+    const still = await renderGalaxyStill({ nebulae, stars: subject.stars, threads: subject.threads }, W, HERO).catch(() => null)
+    drawSite(canvas.getContext('2d')!, subject, nebulae, still)
+    return png()
+  }
+  const blocks = entity ? blocksFor(entity, episodes, moments) : []
   const measure = canvas.getContext('2d')!
   // Lay out once without drawing to learn how many episodes fit and how tall the card needs to be, then draw for real.
   const layout = compose(measure, false, MAX_H, null)
@@ -265,11 +302,13 @@ export async function renderShareCard({ subject, url, episodes, moments }: CardI
   canvas.height = height
   const ctx = canvas.getContext('2d')!
   compose(ctx, true, height, layout.plan)
-  return new Promise((resolve, reject) => canvas.toBlob(blob => (blob ? resolve(blob) : reject(new Error('无法生成图片'))), 'image/png'))
+  return png()
 
   /** Lay out the card. Without a plan it decides how many chapters each episode shows (none once out of room) and returns that plan. */
   function compose(ctx: CanvasRenderingContext2D, draw: boolean, H: number, plan: number[] | null) {
-    const spaced = (value: string) => { if ('letterSpacing' in ctx) (ctx as unknown as { letterSpacing: string }).letterSpacing = value }
+    // The site card has its own layout (drawSite).
+    if (subject.kind === 'site') return { bottom: 0, plan: [] }
+    const spaced = (value: string) => spacing(ctx, value)
     const text = (value: string, x: number, y: number) => { if (draw) ctx.fillText(value, x, y) }
     ctx.textBaseline = 'alphabetic'
     if (draw) paintSky(ctx, H)
@@ -522,68 +561,226 @@ export async function renderShareCard({ subject, url, episodes, moments }: CardI
       ctx.stroke()
     }
 
-    function paintFoot(ctx: CanvasRenderingContext2D, H: number) {
-      const top = H - PAD - FOOT + 70
-      ctx.strokeStyle = 'rgba(241, 227, 200, 0.16)'
-      ctx.lineWidth = 1
+  }
+
+  function paintFoot(ctx: CanvasRenderingContext2D, H: number) {
+    const top = H - PAD - FOOT + 70
+    ctx.strokeStyle = 'rgba(241, 227, 200, 0.16)'
+    ctx.lineWidth = 1
+    ctx.beginPath()
+    ctx.moveTo(PAD, top - 30)
+    ctx.lineTo(W - PAD, top - 30)
+    ctx.stroke()
+    // The show, then where to listen, each platform with its own mark.
+    if (showCover) {
+      ctx.save()
       ctx.beginPath()
-      ctx.moveTo(PAD, top - 30)
-      ctx.lineTo(W - PAD, top - 30)
-      ctx.stroke()
-      // The show, then where to listen, each platform with its own mark.
-      if (showCover) {
-        ctx.save()
-        ctx.beginPath()
-        ctx.arc(PAD + 44, top + 44, 44, 0, Math.PI * 2)
-        ctx.clip()
-        ctx.drawImage(showCover, PAD, top, 88, 88)
-        ctx.restore()
+      ctx.arc(PAD + 44, top + 44, 44, 0, Math.PI * 2)
+      ctx.clip()
+      ctx.drawImage(showCover, PAD, top, 88, 88)
+      ctx.restore()
+    }
+    ctx.fillStyle = IVORY
+    ctx.font = `600 38px ${SERIF}`
+    spacing(ctx, '4px')
+    ctx.fillText('次要人生', PAD + 112, top + 42)
+    ctx.font = `400 24px ${SERIF}`
+    ctx.fillStyle = SOFT
+    spacing(ctx, '1px')
+    ctx.fillText('Flip Your Mind · 倪贝儿', PAD + 112, top + 80)
+    let x = PAD
+    const row = top + 113
+    ctx.font = `400 27px ${SERIF}`
+    ctx.fillStyle = IVORY
+    spacing(ctx, '1px')
+    const badges = [{ image: appleBadge, label: 'Apple Podcasts' }, { image: xiaoyuzhouBadge, label: '小宇宙' }]
+    for (const badge of badges) {
+      if (badge.image) {
+        const height = 60
+        const width = height * badge.image.naturalWidth / badge.image.naturalHeight
+        ctx.drawImage(badge.image, x, row, width, height)
+        x += width + 20
+      } else {
+        ctx.fillText(badge.label, x, row + 38)
+        x += ctx.measureText(badge.label).width + 20
       }
-      ctx.fillStyle = IVORY
+    }
+    ctx.font = `400 24px ${SANS}`
+    ctx.fillStyle = MUTED
+    spacing(ctx, '1px')
+    ctx.fillText('搜索「次要人生」收听', PAD, row + 107)
+    ctx.fillText(new URL(url).host, PAD, row + 147)
+    // A code that opens this page, which has the subscribe links.
+    const size = 220
+    const qx = W - PAD - size
+    const qy = top - 4
+    ctx.fillStyle = '#ffffff'
+    ctx.beginPath()
+    ctx.roundRect(qx - 14, qy - 14, size + 28, size + 28, 18)
+    ctx.fill()
+    ctx.drawImage(code, qx, qy, size, size)
+    ctx.font = `400 22px ${SANS}`
+    ctx.fillStyle = MUTED
+    ctx.textAlign = 'center'
+    ctx.fillText(episode ? '扫码打开单集' : '扫码看完整星图', qx + size / 2, qy + size + 56)
+    ctx.textAlign = 'left'
+  }
+
+  /**
+   * The whole site: the star map itself across the top, each topic named on its nebula as a heading with its two
+   * strongest sub-topics beside their stars, fading into the name, one line on what it is, what it holds, and the footer.
+   */
+  function drawSite(ctx: CanvasRenderingContext2D, site: SiteShare, nebulae: Nebula[], still: GalaxyStill | null) {
+    const H = MAX_H
+    paintSky(ctx, H)
+    const hero = document.createElement('canvas')
+    hero.width = W
+    hero.height = HERO
+    const sky = hero.getContext('2d')!
+    const nebulaAt = new Map<string, { x: number; y: number; radius: number }>()
+    if (still) {
+      sky.drawImage(still.image, 0, 0)
+      for (const [id, point] of still.frame.nebulae) nebulaAt.set(id, point)
+    } else {
+      for (const nebula of nebulae) {
+        const point = { x: nebula.x * W, y: nebula.y * HERO, radius: 190 }
+        nebulaAt.set(nebula.id, point)
+        const glow = sky.createRadialGradient(point.x, point.y, 0, point.x, point.y, point.radius * 1.3)
+        glow.addColorStop(0, `${nebula.tint}66`)
+        glow.addColorStop(0.5, `${nebula.tint}22`)
+        glow.addColorStop(1, `${nebula.tint}00`)
+        sky.fillStyle = glow
+        sky.fillRect(0, 0, W, HERO)
+      }
+    }
+    // Fade the map's lower edge into the card.
+    sky.globalCompositeOperation = 'destination-in'
+    const fade = sky.createLinearGradient(0, 0, 0, HERO)
+    fade.addColorStop(0, '#000')
+    fade.addColorStop(0.72, '#000')
+    fade.addColorStop(1, 'rgba(0, 0, 0, 0)')
+    sky.fillStyle = fade
+    sky.fillRect(0, 0, W, HERO)
+    ctx.drawImage(hero, 0, 0)
+
+    // Labels, as on the map: topics are glowing serif headings with a short rule in their colour; sub-topics are
+    // small sans tags tinted towards their nebula. Nothing overlaps, nothing runs off the card.
+    type Box = { left: number; top: number; right: number; bottom: number }
+    const taken: Box[] = [{ left: 0, top: 0, right: W, bottom: 150 }]
+    const clear = (box: Box) => box.left >= PAD * 0.5 && box.right <= W - PAD * 0.5 && box.bottom <= HERO - 70
+      && !taken.some(other => !(box.right < other.left || box.left > other.right || box.bottom < other.top || box.top > other.bottom))
+    const portrait = HERO > W * 1.05
+    const titles: { topic: Topic; x: number; y: number }[] = []
+    ctx.textBaseline = 'alphabetic'
+    for (const topic of site.topics) {
+      const point = nebulaAt.get(topic.id)
+      if (!point) continue
       ctx.font = `600 38px ${SERIF}`
-      spaced('4px')
-      ctx.fillText('次要人生', PAD + 112, top + 42)
-      ctx.font = `400 24px ${SERIF}`
-      ctx.fillStyle = SOFT
-      spaced('1px')
-      ctx.fillText('Flip Your Mind · 倪贝儿', PAD + 112, top + 80)
-      let x = PAD
-      const row = top + 113
-      ctx.font = `400 27px ${SERIF}`
-      ctx.fillStyle = IVORY
-      spaced('1px')
-      const badges = [{ image: appleBadge, label: 'Apple Podcasts' }, { image: xiaoyuzhouBadge, label: '小宇宙' }]
-      for (const badge of badges) {
-        if (badge.image) {
-          const height = 60
-          const width = height * badge.image.naturalWidth / badge.image.naturalHeight
-          ctx.drawImage(badge.image, x, row, width, height)
-          x += width + 20
-        } else {
-          ctx.fillText(badge.label, x, row + 38)
-          x += ctx.measureText(badge.label).width + 20
+      spacing(ctx, '12px')
+      const width = ctx.measureText(topic.title).width - 12
+      const y = point.y - Math.min(point.radius * (portrait ? 0.6 : 0.95), 475) + 4
+      const x = Math.min(Math.max(point.x, PAD + width / 2), W - PAD - width / 2)
+      titles.push({ topic, x, y })
+      // Wide clearance at the sides, so a tag never reads as part of the title.
+      taken.push({ left: x - width / 2 - 40, top: y - 44, right: x + width / 2 + 40, bottom: y + 34 })
+    }
+    if (still) {
+      const byTopic = new Map<string, (SubStar & { name: string })[]>()
+      for (const star of site.stars) byTopic.set(star.nebula, [...(byTopic.get(star.nebula) ?? []), star])
+      for (const topic of site.topics) {
+        const strongest = [...(byTopic.get(topic.id) ?? [])].sort((a, b) => b.weight - a.weight)
+        let shown = 0
+        for (const star of strongest) {
+          if (shown >= SUBTOPICS_PER_TOPIC) break
+          const point = still.frame.stars.get(star.id)
+          if (!point) continue
+          const size = 23 + star.weight * 7
+          ctx.font = `400 ${size}px ${SANS}`
+          spacing(ctx, '0.5px')
+          const width = ctx.measureText(star.name).width
+          const gap = 14 + star.weight * 10
+          const right = { left: point.x + gap, top: point.y - size * 0.75, right: point.x + gap + width, bottom: point.y + size * 0.45 }
+          const left = { ...right, left: point.x - gap - width, right: point.x - gap }
+          const box = clear(right) ? right : clear(left) ? left : null
+          if (!box) continue
+          taken.push(box)
+          shown += 1
+          ctx.save()
+          ctx.shadowColor = 'rgba(5, 7, 20, 0.95)'
+          ctx.shadowBlur = 14
+          ctx.fillStyle = tag(topic.color, 0.6 + star.weight * 0.35)
+          ctx.fillText(star.name, box.left, point.y + size * 0.36)
+          ctx.restore()
         }
       }
-      ctx.font = `400 24px ${SANS}`
-      ctx.fillStyle = MUTED
-      spaced('1px')
-      ctx.fillText('搜索「次要人生」收听', PAD, row + 107)
-      ctx.fillText(new URL(url).host, PAD, row + 147)
-      // A code that opens this page, which has the subscribe links.
-      const size = 220
-      const qx = W - PAD - size
-      const qy = top - 4
-      ctx.fillStyle = '#ffffff'
-      ctx.beginPath()
-      ctx.roundRect(qx - 14, qy - 14, size + 28, size + 28, 18)
-      ctx.fill()
-      ctx.drawImage(code, qx, qy, size, size)
-      ctx.font = `400 22px ${SANS}`
-      ctx.fillStyle = MUTED
-      ctx.textAlign = 'center'
-      ctx.fillText(episode ? '扫码打开单集' : '扫码看完整星图', qx + size / 2, qy + size + 56)
-      ctx.textAlign = 'left'
     }
+    for (const { topic, x, y } of titles) {
+      ctx.font = `600 38px ${SERIF}`
+      spacing(ctx, '12px')
+      ctx.textAlign = 'center'
+      ctx.save()
+      ctx.shadowColor = topic.color
+      ctx.shadowBlur = 36
+      ctx.fillStyle = '#fbf4e6'
+      ctx.fillText(topic.title, x + 6, y)
+      ctx.shadowBlur = 4
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.7)'
+      ctx.fillText(topic.title, x + 6, y)
+      ctx.restore()
+      ctx.textAlign = 'left'
+      ctx.save()
+      ctx.fillStyle = topic.color
+      ctx.shadowColor = topic.color
+      ctx.shadowBlur = 12
+      ctx.fillRect(x - 20, y + 20, 40, 2.5)
+      ctx.restore()
+    }
+
+    // Kicker over the sky.
+    ctx.font = `400 26px ${SERIF}`
+    spacing(ctx, '8px')
+    ctx.fillStyle = MUTED
+    ctx.fillText('次要人生 · 主题星图', PAD, 112)
+
+    // The name, what it is, and what it holds.
+    let y = HERO - 34
+    ctx.save()
+    ctx.font = `600 112px ${SERIF}`
+    spacing(ctx, '14px')
+    ctx.fillStyle = IVORY
+    ctx.shadowColor = 'rgba(130, 150, 255, 0.45)'
+    ctx.shadowBlur = 40
+    ctx.fillText('贝儿说', PAD - 4, y)
+    ctx.restore()
+    y += 76
+    ctx.font = `400 33px ${SERIF}`
+    spacing(ctx, '2px')
+    ctx.fillStyle = SOFT
+    for (const line of ['从一个生活里的问题出发，', '沿着主题找回《次要人生》里的那段话。']) {
+      ctx.fillText(line, PAD, y)
+      y += 52
+    }
+    y += 64
+    const stats: [number, string][] = [
+      [site.episodeCount, '期节目'], [site.topics.length, '个主题'], [site.stars.length, '个小主题'], [site.momentCount, '个章节'],
+    ]
+    const column = (W - PAD * 2) / stats.length
+    for (const [index, [value, label]] of stats.entries()) {
+      const x = PAD + index * column
+      if (index) {
+        ctx.fillStyle = 'rgba(241, 227, 200, 0.16)'
+        ctx.fillRect(x - 26, y - 50, 1, 92)
+      }
+      ctx.font = `600 62px ${SERIF}`
+      spacing(ctx, '1px')
+      ctx.fillStyle = IVORY
+      ctx.fillText(String(value), x, y)
+      ctx.font = `400 24px ${SANS}`
+      spacing(ctx, '2px')
+      ctx.fillStyle = MUTED
+      ctx.fillText(label, x + 2, y + 42)
+    }
+    paintFoot(ctx, H)
   }
 
   // Sky: the site's night gradient, a nebula glow in the topic's colour, a band of dust, scattered stars and threads.
@@ -605,7 +802,7 @@ export async function renderShareCard({ subject, url, episodes, moments }: CardI
     band.addColorStop(1, 'rgba(74, 90, 166, 0)')
     ctx.fillStyle = band
     ctx.fillRect(0, 0, W, H)
-    const id = subject.kind === 'episode' ? subject.episode.id : subject.entity.id
+    const id = subject.kind === 'episode' ? subject.episode.id : subject.kind === 'entity' ? subject.entity.id : 'site'
     const random = seeded([...id].reduce((sum, character) => sum * 31 + character.charCodeAt(0), 7) >>> 0)
     for (let i = 0; i < 360; i += 1) {
       const x = random() * W

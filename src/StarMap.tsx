@@ -72,7 +72,7 @@ function labelMetrics(w: number, z: number) {
  * Topic positions (topics.json) → nebula centres in the overview, spread to use the whole sky. The most connected
  * topic sits in the middle with the rest in a ring; a portrait screen turns the ring a quarter so it runs top to bottom.
  */
-function layoutNebulae(topics: Topic[], portrait: boolean): Nebula[] {
+export function layoutNebulae(topics: Topic[], portrait: boolean): Nebula[] {
   const axis = (i: 0 | 1 | 2) => {
     const values = topics.map(topic => topic.position[i])
     const min = Math.min(...values)
@@ -85,8 +85,9 @@ function layoutNebulae(topics: Topic[], portrait: boolean): Nebula[] {
     const up = uy(topic.position[1])
     return {
       id: topic.id,
-      x: portrait ? 0.24 + up * 0.52 : 0.2 + across * 0.6,
-      y: portrait ? 0.25 + across * 0.55 : 0.2 + (1 - up) * 0.62,
+      // Upright, the ring runs from just under the top bar to just above the browser's bottom toolbar.
+      x: portrait ? 0.21 + up * 0.58 : 0.2 + across * 0.6,
+      y: portrait ? 0.235 + across * 0.585 : 0.2 + (1 - up) * 0.62,
       depth: (uz(topic.position[2]) - 0.5) * 2.5,
       tint: topic.color,
     }

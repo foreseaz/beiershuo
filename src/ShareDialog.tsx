@@ -26,8 +26,8 @@ export function ShareDialog({ subject, path, episodes, moments, onClose }: Props
   const tray = useRef<HTMLDivElement>(null)
   const { leaving, close } = useDialogExit(onClose)
   const url = new URL(path, window.location.origin).href
-  const title = subject.kind === 'entity' ? subject.entity.name : subject.episode.title
-  const name = `贝儿说-${title.replace(/[\\/:*?"<>|]/g, ' ')}.png`
+  const title = subject.kind === 'entity' ? subject.entity.name : subject.kind === 'episode' ? subject.episode.title : '贝儿说 · 次要人生主题星图'
+  const name = subject.kind === 'site' ? '贝儿说-次要人生主题星图.png' : `贝儿说-${title.replace(/[\\/:*?"<>|]/g, ' ')}.png`
   const file = blob ? new File([blob], name, { type: 'image/png' }) : null
   const canShareFile = Boolean(file && navigator.canShare?.({ files: [file] }))
 
@@ -54,7 +54,7 @@ export function ShareDialog({ subject, path, episodes, moments, onClose }: Props
   const share = async () => {
     if (!file) return
     try {
-      await navigator.share({ files: [file], title: `贝儿说 · ${title}`, url })
+      await navigator.share({ files: [file], title: subject.kind === 'site' ? title : `贝儿说 · ${title}`, url })
     } catch (error) {
       if (!(error instanceof DOMException && error.name === 'AbortError')) setNote('暂时无法分享，请保存图片或复制链接')
     }

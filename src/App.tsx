@@ -283,6 +283,14 @@ export function App() {
     const tint = topics.find(item => item.id === (entity.topic ?? entity.topicIds[0]))?.color ?? '#9fb0ff'
     setShared({ subject: { kind: 'entity', entity, tint, maker }, path: entityPath(entity) })
   }
+  const shareSite = (trigger: HTMLButtonElement) => {
+    trigger.focus({ preventScroll: true })
+    if (!atlas) return
+    setShared({
+      subject: { kind: 'site', topics, stars: galaxy.stars, threads: galaxy.threads, episodeCount: atlas.episodes.length, momentCount: atlas.moments.length },
+      path: '/',
+    })
+  }
   const shareEpisode = (episode: Episode, trigger: HTMLButtonElement) => {
     trigger.focus({ preventScroll: true })
     const tint = topics.find(item => item.id === episode.topicIds?.[0])?.color ?? '#9fb0ff'
@@ -410,6 +418,9 @@ export function App() {
           else setPanel('list')
         }} aria-expanded={panel === 'list'}>
           <List size={18} strokeWidth={1.5} aria-hidden="true" /> 列表
+        </button>
+        <button type="button" onClick={event => shareSite(event.currentTarget)} aria-haspopup="dialog" title="分享整张星图">
+          <Share2 size={18} strokeWidth={1.5} aria-hidden="true" /> 分享
         </button>
       </nav>
       {panel === 'search' && (

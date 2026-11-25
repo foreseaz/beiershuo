@@ -38,6 +38,8 @@ export type GalaxyOptions = {
   reducedMotion: boolean
   /** Start in the 3D view (see setDepth). */
   deep?: boolean
+  /** A one-off picture (the share card): full detail on any device, at this pixel ratio. */
+  still?: { pixelRatio: number }
 }
 
 const OVERVIEW = 20
@@ -55,7 +57,7 @@ const DEEP_PITCH = 0.48
 const OVERVIEW_DEEP = 25
 // An upright phone sees a narrow strip of sky, yet each nebula keeps its size. So there the overview stands further
 // back (by up to MAX_PULLBACK) and the nebulae spread to the wider view: each shows whole, with dark sky between.
-const UPRIGHT_ASPECT = 0.72
+const UPRIGHT_ASPECT = 0.64
 const MAX_PULLBACK = 1.6
 const SPIN = 0.035
 const MAX_PITCH = 1.25
@@ -230,10 +232,10 @@ export class GalaxyScene {
       this.pitch = this.pitchGoal = DEEP_PITCH
       this.distance = this.distanceGoal = OVERVIEW_DEEP
     }
-    this.low = window.matchMedia('(max-width: 680px), (pointer: coarse)').matches
+    this.low = !options.still && window.matchMedia('(max-width: 680px), (pointer: coarse)').matches
     this.renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: 'high-performance', stencil: false, depth: false })
     // The look is soft light, so a modest pixel ratio costs nothing visible and saves a lot of fill rate.
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, this.low ? 1 : 1.25))
+    this.renderer.setPixelRatio(options.still?.pixelRatio ?? Math.min(window.devicePixelRatio || 1, this.low ? 1 : 1.25))
     this.renderer.setClearColor(0x000000, 1)
     container.appendChild(this.renderer.domElement)
 

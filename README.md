@@ -22,7 +22,7 @@
 - **搜索。** 按 `⌘K` 或右上角的搜索打开。没输入时列出七个主题、几个常用词和人物、书、影片索引。输入后按类型分组，命中的字高亮。用 ↑↓ 选择，回车打开，Esc 先清空再关闭。小主题会直接选中星图上的那颗星。
 - **手机和平板。** 竖屏时星云上下排列。手机导航用图标，选中星星后详情从底部出现，星星留在卡片上方。搜索占满屏幕宽度，搜索结果和列表会随软键盘调整高度。靠近屏幕右边的星星标签会换到左边。
 - **人物、书、影片和概念页。** 左上角进入索引。人物页展示 Wikimedia Commons 上自由授权的照片和维基百科链接。书和影片用本站设计的封面，分享图沿用同一款设计。宽屏上详情从右侧打开，手机上从底部升起，可以下拉顶部把手关闭。点 ✕、按 Esc 或点星图空白处也能关闭。
-- **分享卡片。** 人物、书、影片、小主题和单集可以生成带二维码的 PNG。卡片按内容调整高度，并带小宇宙和 Apple 播客官方标识。单集卡片突出节目标题，最多显示前四个章节，扫码或打开分享链接可直接展开该集的完整章节。手机上，预览浮在虚化的星图上方，可以打开系统分享、保存图片或复制链接。系统分享取决于浏览器是否支持分享 PNG 文件。 [小宇宙素材中心](https://brand.xyzfm.space/) · [Apple Podcasts 品牌指南](https://marketing.services.apple/apple-podcasts-identity-guidelines)
+- **分享卡片。** 人物、书、影片、小主题和单集可以生成带二维码的 PNG。卡片按内容调整高度，并带小宇宙和 Apple 播客官方标识。单集卡片突出节目标题，最多显示前四个章节，扫码或打开分享链接可直接展开该集的完整章节。右上角的「分享」生成整张星图的卡片：用和网站同一套场景在屏幕外渲染一帧真实的星云，标出七个主题和各自最常出现的两个小主题，下面是一句介绍和节目、主题、小主题、章节的数量。浏览器不支持 WebGL 时，星云换成柔和的光晕，主题名照常标出。手机上，预览浮在虚化的星图上方，可以打开系统分享、保存图片或复制链接。系统分享取决于浏览器是否支持分享 PNG 文件。 [小宇宙素材中心](https://brand.xyzfm.space/) · [Apple Podcasts 品牌指南](https://marketing.services.apple/apple-podcasts-identity-guidelines)
 - **播放器。** 从章节或片段播放时，底部播放条只播这一段：底边细线显示进度，时间按片段计，结尾淡出停下，可以重听或接着听「下一段」。拖到片段结尾之后就一直往下播。还有后退 15 秒；点标题回到星图上这一段的卡片。锁屏和控制中心显示节目封面，可以快退、快进和拖动进度。
 - **背景音乐。** 右下角开关；播放单集时自动压低。
 
@@ -86,7 +86,7 @@ npm run dev            # http://localhost:5173/，读取仓库里现有的 atlas
 
 用 `npm run check` 检查类型，用 `npm run build` 检查生产构建。预览时覆盖 320×568、390×844、430×932 的手机竖屏，844×390 的手机横屏，768×1024、1024×768 的平板和 1440×900 的桌面。缩放窗口时也检查抽屉与侧栏切换的边界。iPhone Safari 的地址栏、软键盘和系统分享在真机上检查，地址栏和键盘也可以在 iOS 模拟器中复现。 [Apple 的 Safari 响应式设计模式文档](https://developer.apple.com/documentation/safari-developer-tools/responsive-design-mode)
 
-- **屏幕边缘。** 在 Safari 地址栏展开、收起，以及旋转屏幕时查看星图。星云背景延伸到屏幕边缘，顶栏、抽屉、播放器的按钮避开刘海和底部手势区。星图背景用 `100lvh` 保持覆盖，交互面板按可见高度布局，控件留出 `env(safe-area-inset-*)`。也检查拖到边缘或打开遮罩时，地址栏后方有没有明显色带。 [WebKit 安全区域文档](https://webkit.org/blog/7929/designing-websites-for-iphone-x/) · [WebKit 视口单位文档](https://webkit.org/blog/12445/new-webkit-features-in-safari-15-4/) · [Safari 工具栏颜色说明](https://bugs.webkit.org/show_bug.cgi?id=301756#c2)
+- **屏幕边缘。** 在 Safari 地址栏展开、收起，以及旋转屏幕时查看星图。星云背景延伸到屏幕边缘，顶栏、抽屉、播放器的按钮避开刘海和底部手势区。星图背景用 `100lvh` 保持覆盖，交互面板按可见高度布局，控件留出 `env(safe-area-inset-*)`。Safari 26 会把贴着屏幕上下边缘的 fixed 元素的背景色铺到状态栏和地址栏后面，形成一条纯色带；星图层没有背景色，也不加贴边色条，所以两条栏后面透出的是星空。也检查拖到边缘或打开遮罩时，地址栏后方有没有明显色带。 [WebKit 安全区域文档](https://webkit.org/blog/7929/designing-websites-for-iphone-x/) · [WebKit 视口单位文档](https://webkit.org/blog/12445/new-webkit-features-in-safari-15-4/) · [Safari 工具栏颜色说明](https://bugs.webkit.org/show_bug.cgi?id=301756#c2)
 - **抽屉、列表和搜索。** 从把手下拉关闭详情和列表，轻拉一点后松手则回弹。在长内容里滚动到最后一行，确认手势不会带着星图移动。有播放器时查看它与抽屉的间距，在搜索和列表筛选中检查软键盘打开时可见的结果。用键盘检查焦点、Esc 和关闭后的焦点恢复，开启「减弱动态效果」后再试一次。 [WAI 模态对话框](https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/) · [WCAG 拖动操作](https://www.w3.org/WAI/WCAG22/Understanding/dragging-movements) · [Chrome 的跨浏览器软键盘调查](https://developer.chrome.com/blog/viewport-resize-behavior)
 - **版面和分享。** 在 320 CSS 像素宽度下看长书名、长节目标题、索引和操作按钮。分别保存人物、书、影片、小主题和单集卡片，核对标题和章节层级、平台标识以及二维码跳转。检查复制单集链接后能否打开完整的章节列表。用支持文件分享的浏览器打开系统分享面板，也检查只有「保存图片」和「复制链接」时的布局。 [WCAG 内容重排](https://www.w3.org/WAI/WCAG22/Understanding/reflow) · [Web Share API](https://www.w3.org/TR/web-share/)
 
