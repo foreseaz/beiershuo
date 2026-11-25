@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { ArrowUpRight, BookOpen, ChevronRight, List, Pause, Play, Search, Share2, Users, VolumeX, X } from 'lucide-react'
+import { ArrowUpRight, BookOpen, ChevronRight, List, Pause, Play, RotateCcw, Search, Share2, SkipForward, Users, VolumeX, X } from 'lucide-react'
 import {
   ENTITY_LABELS, SHOW_XIAOYUZHOU, entityPath, episodeLabel, indexPath, loadAtlas, momentSource, parseRoute, timeLabel, topicMoments,
   type Atlas, type Entity, type EntityKind, type Episode, type Moment, type Topic,
@@ -11,7 +11,7 @@ import { IndexPage } from './IndexPage'
 import { SearchSpace } from './SearchSpace'
 import { useAmbient } from './ambient'
 import { StarMap, type GalaxyStar } from './StarMap'
-import { usePlayer, type Cue } from './player'
+import { segmentsOf, usePlayer } from './player'
 import { ApplePodcastsIcon, XiaoyuzhouIcon } from './platforms'
 import { useDialog, useDialogExit, useKeyboardViewport, usePhoneLayout } from './dialog'
 import { useSheetDrag } from './sheet'
@@ -115,7 +115,8 @@ export function App() {
   const [route, setRoute] = useState(() => parseRoute(window.location.pathname))
   const phone = usePhoneLayout()
   const reducedMotion = useReducedMotion()
-  const player = usePlayer()
+  const segments = useMemo(() => segmentsOf(atlas?.moments ?? []), [atlas])
+  const player = usePlayer(segments.next)
   // Site music sits low under an episode, and goes silent under episodes with their own music bed.
   const music = useAmbient(player.playing ? (player.cue?.episode.musicBed ? 'mute' : 'low') : 'none')
 
@@ -275,7 +276,7 @@ export function App() {
     go(indexPath(kind))
   }, [go])
 
-  const cueFor = useCallback((episode: Episode, startSec: number, title: string): Cue => ({ episode, startSec, title }), [])
+  const cueFor = segments.cue
   const shareEntity = (entity: Entity, trigger: HTMLButtonElement) => {
     trigger.focus({ preventScroll: true })
     const maker = entity.kind === 'concept' ? undefined : entities.get(entity.author ?? entity.people?.[0] ?? '')?.name
@@ -329,7 +330,8 @@ export function App() {
   const star = starId ? entities.get(starId) : undefined
   const entity = route && 'id' in route ? atlas.entities?.find(item => item.kind === route.kind && item.id === route.id) : undefined
   const index = route && 'index' in route ? route.index : null
-  const playerBar = player.cue && <PlayerBar player={player} />
+  const playing = player.cue?.momentId ? moments.get(player.cue.momentId) : undefined
+  const playerBar = player.cue && <PlayerBar player={player} onOpen={playing && (() => selectMoment(playing))} />
 
   let card: ReactNode = null
   if (moment) {
@@ -418,7 +420,7 @@ export function App() {
         <ListPanel atlas={atlas} episodes={episodes} activeMoment={momentId} activeEpisode={listedEpisode} phone={phone}
           player={phone ? playerBar : null} onMoment={selectMoment} onShare={shareEpisode}
           onPlay={item => player.play(cueFor(episodes.get(item.episodeId)!, item.startSec, item.title))}
-          onPlayEpisode={episode => player.play(cueFor(episode, 0, shortTitle(episode)))} onClose={closePanel} />
+          onPlayEpisode={episode => player.play(cueFor(episode, 0, shortTitle(episode), true))} onClose={closePanel} />
       )}
       {shared && <ShareDialog {...shared} episodes={episodes} moments={moments} onClose={closeShare} />}
       <Brand />
@@ -693,18 +695,40 @@ function ListPanel({ atlas, episodes, activeMoment, activeEpisode, phone, player
   )
 }
 
-function PlayerBar({ player }: { player: ReturnType<typeof usePlayer> }) {
-  const cue = player.cue!
+/**
+ * The mini player. It knows the segment it plays: a line along the bottom fills as the segment goes, the time counts
+ * within the segment, and at its end the player stops and offers the next one. The title leads back to the segment's
+ * card on the map.
+ */
+function PlayerBar({ player, onOpen }: { player: ReturnType<typeof usePlayer>; onOpen?: () => void }) {
+  const { cue, playing, loading, finished, position, error, next } = player
+  if (!cue) return null
+  const bounded = cue.endSec !== null
+  const length = bounded ? Math.max(1, cue.endSec! - cue.startSec) : cue.episode.durationSec
+  const elapsed = bounded ? Math.min(length, Math.max(0, position - cue.startSec)) : position
+  const status = error || (finished ? '这段听完了' : loading ? '正在载入…' : `${timeLabel(elapsed)} / ${timeLabel(length)}`)
   return (
-    <div className="player" role="region" aria-label="正在播放">
-      <button className="player-toggle" type="button" onClick={player.toggle} aria-label={player.playing ? '暂停' : '播放'}>
-        {player.playing ? <Pause size={16} aria-hidden="true" /> : <Play size={16} aria-hidden="true" />}
+    <div className={`player${finished ? ' is-finished' : ''}`} role="region" aria-label="正在播放"
+      style={{ '--progress': Math.min(1, elapsed / Math.max(1, length)) } as React.CSSProperties}>
+      <button className={`player-toggle${loading && !finished ? ' is-loading' : ''}`} type="button" onClick={player.toggle}
+        aria-label={finished ? '重听这一段' : playing ? '暂停' : '播放'}>
+        {finished ? <RotateCcw size={16} aria-hidden="true" /> : playing ? <Pause size={16} aria-hidden="true" /> : <Play size={16} aria-hidden="true" />}
       </button>
       <div className="player-text">
-        <span className="player-meta">{episodeLabel(cue.episode)} · {player.error || timeLabel(player.position || cue.startSec)}</span>
-        <span className="player-title">{cue.title}</span>
+        <span className="player-meta">{episodeLabel(cue.episode)} · <span aria-live="polite">{status}</span></span>
+        {onOpen
+          ? <button className="player-title" type="button" onClick={onOpen} title="在星图上找到这一段">{cue.title}</button>
+          : <span className="player-title">{cue.title}</span>}
       </div>
+      {finished && next
+        ? <button className="player-next" type="button" onClick={() => player.play(next)} aria-label={`下一段：${next.title}`}>
+            下一段<SkipForward size={13} aria-hidden="true" />
+          </button>
+        : <button className="icon-button player-back" type="button" aria-label="后退 15 秒" onClick={player.back} disabled={finished}>
+            <RotateCcw size={20} strokeWidth={1.6} aria-hidden="true" /><span aria-hidden="true">15</span>
+          </button>}
       <button className="icon-button" type="button" aria-label="停止播放" onClick={player.close}><X size={16} aria-hidden="true" /></button>
+      <span className="player-progress" aria-hidden="true" />
     </div>
   )
 }
