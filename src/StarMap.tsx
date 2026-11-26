@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { ArrowLeft, ChevronDown, ChevronUp, Minus, Plus } from 'lucide-react'
 import type { Topic } from './domain'
 import { GalaxyScene, type GalaxyFrame, type Nebula, type SubStar, type Thread, type Travel } from './scene/GalaxyScene'
+import { finishBoot } from './boot'
 
 export type GalaxyStar = SubStar & { name: string }
 
@@ -300,14 +301,21 @@ export function StarMap(props: MapProps) {
     const container = canvasRef.current
     if (!container || !GalaxyScene.supported()) {
       setWebgl(false)
+      finishBoot()
       return
     }
     let scene: GalaxyScene
+    // The opening screen gives way on the first frame with the nebulae in it, or after a while if none comes while
+    // the page is in view.
+    const late = window.setTimeout(() => { if (document.visibilityState === 'visible') finishBoot() }, 8000)
     try {
       scene = new GalaxyScene(container, {
         reducedMotion,
         deep,
-        onFrame: frame => place.current(frame),
+        onFrame: frame => {
+          place.current(frame)
+          if (frame.nebulae.size) finishBoot()
+        },
         onNebula: id => latest.current.onNebula(id),
         onStar: id => latest.current.onStar(id),
         onThread: id => latest.current.onThread(id),
@@ -334,11 +342,14 @@ export function StarMap(props: MapProps) {
         },
       })
     } catch {
+      window.clearTimeout(late)
       setWebgl(false)
+      finishBoot()
       return
     }
     sceneRef.current = scene
     return () => {
+      window.clearTimeout(late)
       scene.dispose()
       sceneRef.current = null
     }

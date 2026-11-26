@@ -84,6 +84,25 @@ button { cursor: pointer; touch-action: manipulation; }
   font: 400 18px var(--serif); letter-spacing: 0.2em; color: var(--ivory-soft);
 }
 
+/*
+ * The opening (see boot.ts; the opening screen itself is styled in index.html). Until the map has drawn, it and its
+ * controls stay out of sight behind the opening screen. Then the sky comes up while the nebulae spread (the scene does
+ * that), their titles ride out with them, and the sub-topics and the controls follow once they have settled.
+ */
+html[data-boot='loading'] :is(.galaxy, .corner-library, .corner-actions, .episode-rail) { visibility: hidden; }
+html[data-boot='unfolding'] .star-canvas { animation: open-fade 0.9s ease-out backwards; }
+html[data-boot='unfolding'] .nebula-label { animation: open-fade 1.1s ease 0.4s backwards; }
+html[data-boot='unfolding'] .star-tag { animation: open-fade 0.9s ease 1.25s backwards; }
+html[data-boot='unfolding'] :is(.corner-library, .corner-actions, .episode-rail, .zoom-controls, .info-drawer, .galaxy-crumb) {
+  animation: open-fade 0.9s ease 0.9s backwards;
+}
+@keyframes open-fade { from { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  html[data-boot='unfolding'] :is(.star-canvas, .nebula-label, .star-tag, .corner-library, .corner-actions, .episode-rail, .zoom-controls, .info-drawer, .galaxy-crumb) {
+    animation: open-fade 0.6s ease backwards;
+  }
+}
+
 /* ------------------------------------------------------------ galaxy */
 
 .galaxy { position: absolute; inset: 0; overflow: hidden; overflow: clip; }

@@ -77,6 +77,9 @@ const OVERVIEW_DEEP = 25
 const UPRIGHT_ASPECT = 0.64
 const MAX_PULLBACK = 1.6
 const SPIN = 0.035
+// Opening: the nebulae start gathered at the hub and spread to their places over this many seconds, brightening as
+// they go (not in a share card's still, nor with reduced motion).
+const UNFOLD = 1.8
 const MAX_PITCH = 1.25
 const BAKE_SIZE = 320
 const TAN = Math.tan(THREE.MathUtils.degToRad(FOV) / 2)
@@ -230,6 +233,9 @@ export class GalaxyScene {
   private pitchGoal = 0
   private spinPause = 0
   private threadsStale = false
+  // The opening's progress, 0 to 1 (see UNFOLD), and how far the nebulae have spread out from the hub by now.
+  private unfold: number
+  private opened = 1
   private readonly right = new THREE.Vector3(1, 0, 0)
   private readonly up = new THREE.Vector3(0, 1, 0)
   private readonly pointers = new Map<number, Point>()
@@ -246,6 +252,7 @@ export class GalaxyScene {
 
   constructor(private readonly container: HTMLElement, private readonly options: GalaxyOptions) {
     this.reducedMotion = options.reducedMotion
+    this.unfold = this.opened = options.still || options.reducedMotion ? 1 : 0
     if (options.deep) {
       this.mix = this.mixGoal = 1
       this.yaw = this.yawGoal = DEEP_YAW
@@ -463,6 +470,8 @@ export class GalaxyScene {
 
   setReducedMotion(value: boolean) {
     this.reducedMotion = value
+    // An opening still under way finishes at once (the next frame puts everything in place).
+    if (value && this.unfold < 1) this.unfold = 0.999
     this.touch()
   }
 
@@ -806,18 +815,20 @@ export class GalaxyScene {
     this.touch()
   }
 
-  /** Put every nebula, gas layer and star where the current 2D/3D mix says. */
+  /** Put every nebula, gas layer and star where the current 2D/3D mix (and, while the map opens, its spread) says. */
   private place() {
     const t = this.mix
+    const opened = this.opened
     for (const object of this.nebulae.values()) {
       object.center.lerpVectors(object.flat, object.deep, t)
+      if (opened < 1) object.center.lerpVectors(this.hub, object.center, opened)
       // In 3D the two gas layers part in depth, so turning the sky shows the nebula has thickness.
       object.layers.forEach((mesh, index) => mesh.position.copy(object.center)
         .add(this.world.set(index * 0.3, -index * 0.2, THREE.MathUtils.lerp(-0.6 - index * 0.4, index ? 1.3 : -1.3, t))))
     }
     for (const object of this.stars.values()) {
       const nebula = this.nebulae.get(object.star.nebula)
-      if (nebula) object.mesh.position.copy(nebula.center).add(this.world.lerpVectors(object.offset, object.deepOffset, t))
+      if (nebula) object.mesh.position.copy(nebula.center).add(this.world.lerpVectors(object.offset, object.deepOffset, t).multiplyScalar(0.3 + 0.7 * opened))
     }
   }
 
@@ -879,8 +890,16 @@ export class GalaxyScene {
     const morph = animate ? 1 - Math.pow(0.08, elapsed) : 1
     const morphing = Math.abs(this.mixGoal - this.mix) > 1e-3
     this.mix = morphing ? this.mix + (this.mixGoal - this.mix) * morph : this.mixGoal
-    if (morphing || this.threadsStale) this.place()
-    if (!morphing && this.threadsStale) {
+    // The opening, by capped frame time so the long first frame (building the scene) doesn't skip it. The threads
+    // wait until the nebulae have reached their places.
+    const unfolding = this.unfold < 1 && this.nebulae.size > 0
+    if (unfolding) {
+      this.unfold = Math.min(1, this.unfold + delta / UNFOLD)
+      this.opened = 1 - Math.pow(1 - this.unfold, 4)
+      this.threadsStale = true
+    }
+    if (morphing || unfolding || this.threadsStale) this.place()
+    if (!morphing && !unfolding && this.threadsStale) {
       this.threadsStale = false
       this.layoutThreads()
     }
@@ -913,11 +932,13 @@ export class GalaxyScene {
       this.current = current
       this.options.onView(current)
     }
-    let settling = moving
+    let settling = moving || unfolding
+    // While the map opens, everything brightens as it spreads.
+    const dawn = 0.15 + 0.85 * this.opened
 
     for (const [id, object] of this.nebulae) {
       const quiet = this.episode !== null && ![...this.episodeStars].some(star => this.stars.get(star)?.star.nebula === id)
-      const target = (!current ? 0.34 : id === current ? 0.5 : 0.16) * (quiet ? 0.55 : 1)
+      const target = (!current ? 0.34 : id === current ? 0.5 : 0.16) * (quiet ? 0.55 : 1) * dawn
       object.materials.forEach((material, index) => {
         const u = material.uniforms
         u.uIntensity.value += (target - u.uIntensity.value) * rate
@@ -934,8 +955,8 @@ export class GalaxyScene {
       const base = 0.26 + object.star.weight * 0.7
       const scale = isSelected ? 1.15 : isRelated || inEpisode ? Math.max(base * 1.35, 0.62) : current && !inside ? base * 0.8 : outside ? base * 0.85 : base
       const glow = 0.7 + object.star.weight * 0.6
-      const intensity = isSelected ? 1.9 : isRelated ? 1.3 : inEpisode ? 1.6
-        : (!current ? 0.75 : inside ? (this.selected ? 0.8 : 1.05) : 0.4) * glow * (outside ? 0.3 : 1)
+      const intensity = (isSelected ? 1.9 : isRelated ? 1.3 : inEpisode ? 1.6
+        : (!current ? 0.75 : inside ? (this.selected ? 0.8 : 1.05) : 0.4) * glow * (outside ? 0.3 : 1)) * dawn
       const u = object.material.uniforms
       u.uScale.value += (scale - u.uScale.value) * rate
       u.uIntensity.value += (intensity - u.uIntensity.value) * rate

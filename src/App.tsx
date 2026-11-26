@@ -11,6 +11,7 @@ import { ShareDialog } from './ShareDialog'
 import { IndexPage } from './IndexPage'
 import { SearchSpace } from './SearchSpace'
 import { useAmbient } from './ambient'
+import { failBoot } from './boot'
 import { SHEET_QUERY, useMediaQuery } from './dialog'
 import { StarMap, type GalaxyStar } from './StarMap'
 import { segmentsOf, usePlayer } from './player'
@@ -201,7 +202,10 @@ export function App() {
   useEffect(() => {
     const controller = new AbortController()
     loadAtlas(controller.signal).then(setAtlas).catch(error => {
-      if (!controller.signal.aborted) setFailure(error instanceof Error ? error.message : '星图暂时打不开')
+      if (controller.signal.aborted) return
+      const message = error instanceof Error ? error.message : '星图暂时打不开'
+      setFailure(message)
+      failBoot(message)
     })
     return () => controller.abort()
   }, [])
@@ -382,11 +386,11 @@ export function App() {
     return new Set(galaxy.threads.filter(thread => thread.from === starId || thread.to === starId).map(thread => (thread.from === starId ? thread.to : thread.from)))
   }, [galaxy, starId])
 
+  // The opening screen in index.html (see boot.ts) shows the sky and the progress, and any failure, until the map draws.
   if (!atlas) {
     return (
       <main className="space">
-        <div className="space-fallback" aria-hidden="true" />
-        <p className="space-status" role="status">{failure || '正在展开星图'}</p>
+        {failure && !document.getElementById('boot') && <p className="space-status" role="status">{failure}</p>}
         <Brand />
         <MusicPlayer music={music} />
       </main>
