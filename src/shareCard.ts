@@ -25,8 +25,11 @@ const MUTED = 'rgba(217, 205, 184, 0.58)'
 const BLUE = '#a9b8ff'
 const CHAPTERS_PER_EPISODE = 2
 const SOLO_EPISODE_CHAPTERS = 4
-// The site card: the star map fills the top HERO px, then fades into the card.
-const HERO = 1180
+// The site card: the star map fills the top HERO px and fades into a short band of type at the foot.
+const HERO = 1460
+// Where the ring of nebulae sits on the map, as fractions of HERO: from under the top edge to above the name.
+const SKY_TOP = 0.165
+const SKY_BOTTOM = 0.79
 const SUBTOPICS_PER_TOPIC = 2
 
 export type SiteShare = {
@@ -282,14 +285,19 @@ export async function renderShareCard({ subject, url, episodes, moments }: CardI
     loadImage(XIAOYUZHOU_BADGE),
   ])
   const code = document.createElement('canvas')
-  await QRCode.toCanvas(code, url, { margin: 0, width: 220, errorCorrectionLevel: 'M', color: { dark: '#141a40', light: '#ffffff' } })
+  // Drawn at the size it is shown, so the modules stay sharp.
+  await QRCode.toCanvas(code, url, { margin: 0, width: subject.kind === 'site' ? 144 : 220, errorCorrectionLevel: 'M', color: { dark: '#141a40', light: '#ffffff' } })
   const canvas = document.createElement('canvas')
   canvas.width = W
   canvas.height = MAX_H
   const png = () => new Promise<Blob>((resolve, reject) => canvas.toBlob(blob => (blob ? resolve(blob) : reject(new Error('无法生成图片'))), 'image/png'))
   if (subject.kind === 'site') {
     // Without WebGL the card still shows the topics, over soft glows where the nebulae would be.
-    const nebulae = layoutNebulae(subject.topics, HERO > W * 1.05)
+    // The phone's upright ring, stretched to fill the map from top to bottom.
+    const upright = layoutNebulae(subject.topics, true)
+    const top = Math.min(...upright.map(nebula => nebula.y))
+    const span = Math.max(...upright.map(nebula => nebula.y)) - top || 1
+    const nebulae = upright.map(nebula => ({ ...nebula, y: SKY_TOP + ((nebula.y - top) / span) * (SKY_BOTTOM - SKY_TOP) }))
     const still = await renderGalaxyStill({ nebulae, stars: subject.stars, threads: subject.threads }, W, HERO).catch(() => null)
     drawSite(canvas.getContext('2d')!, subject, nebulae, still)
     return png()
@@ -627,11 +635,20 @@ export async function renderShareCard({ subject, url, episodes, moments }: CardI
   }
 
   /**
-   * The whole site: the star map itself across the top, each topic named on its nebula as a heading with its two
-   * strongest sub-topics beside their stars, fading into the name, one line on what it is, what it holds, and the footer.
+   * The whole site: the star map takes three quarters of the card, each topic named on its nebula with its two
+   * strongest sub-topics beside their stars. Under it, one quiet band: the name with a line on what it is, what it
+   * holds, and the show with where to listen and a code to open the map.
    */
   function drawSite(ctx: CanvasRenderingContext2D, site: SiteShare, nebulae: Nebula[], still: GalaxyStill | null) {
     const H = MAX_H
+    // The band's rows, from the foot up: the code's caption and the address share the last baseline.
+    const last = H - 72
+    const qrPlate = 168
+    const plateTop = last - 38 - qrPlate
+    const ruleY = plateTop - 32
+    const statsY = ruleY - 46
+    const markY = statsY - 84
+    const kickerY = markY - 78
     paintSky(ctx, H)
     const hero = document.createElement('canvas')
     hero.width = W
@@ -643,7 +660,7 @@ export async function renderShareCard({ subject, url, episodes, moments }: CardI
       for (const [id, point] of still.frame.nebulae) nebulaAt.set(id, point)
     } else {
       for (const nebula of nebulae) {
-        const point = { x: nebula.x * W, y: nebula.y * HERO, radius: 190 }
+        const point = { x: nebula.x * W, y: nebula.y * HERO, radius: HERO * 0.158 }
         nebulaAt.set(nebula.id, point)
         const glow = sky.createRadialGradient(point.x, point.y, 0, point.x, point.y, point.radius * 1.3)
         glow.addColorStop(0, `${nebula.tint}66`)
@@ -657,7 +674,7 @@ export async function renderShareCard({ subject, url, episodes, moments }: CardI
     sky.globalCompositeOperation = 'destination-in'
     const fade = sky.createLinearGradient(0, 0, 0, HERO)
     fade.addColorStop(0, '#000')
-    fade.addColorStop(0.72, '#000')
+    fade.addColorStop(0.8, '#000')
     fade.addColorStop(1, 'rgba(0, 0, 0, 0)')
     sky.fillStyle = fade
     sky.fillRect(0, 0, W, HERO)
@@ -666,8 +683,8 @@ export async function renderShareCard({ subject, url, episodes, moments }: CardI
     // Labels, as on the map: topics are glowing serif headings with a short rule in their colour; sub-topics are
     // small sans tags tinted towards their nebula. Nothing overlaps, nothing runs off the card.
     type Box = { left: number; top: number; right: number; bottom: number }
-    const taken: Box[] = [{ left: 0, top: 0, right: W, bottom: 150 }]
-    const clear = (box: Box) => box.left >= PAD * 0.5 && box.right <= W - PAD * 0.5 && box.bottom <= HERO - 70
+    const taken: Box[] = [{ left: 0, top: 0, right: W, bottom: 64 }]
+    const clear = (box: Box) => box.left >= PAD * 0.5 && box.right <= W - PAD * 0.5 && box.bottom <= kickerY - 56
       && !taken.some(other => !(box.right < other.left || box.left > other.right || box.bottom < other.top || box.top > other.bottom))
     const portrait = HERO > W * 1.05
     const titles: { topic: Topic; x: number; y: number }[] = []
@@ -736,51 +753,100 @@ export async function renderShareCard({ subject, url, episodes, moments }: CardI
       ctx.restore()
     }
 
-    // Kicker over the sky.
-    ctx.font = `400 26px ${SERIF}`
+    // What this is, then the name with one line on it, a hairline between them.
+    ctx.font = `400 22px ${SERIF}`
     spacing(ctx, '8px')
     ctx.fillStyle = MUTED
-    ctx.fillText('次要人生 · 主题星图', PAD, 112)
-
-    // The name, what it is, and what it holds.
-    let y = HERO - 34
+    ctx.fillText('次要人生 · 主题星图', PAD, kickerY)
     ctx.save()
-    ctx.font = `600 112px ${SERIF}`
-    spacing(ctx, '14px')
+    ctx.font = `600 64px ${SERIF}`
+    spacing(ctx, '10px')
     ctx.fillStyle = IVORY
-    ctx.shadowColor = 'rgba(130, 150, 255, 0.45)'
-    ctx.shadowBlur = 40
-    ctx.fillText('贝儿说', PAD - 4, y)
+    ctx.shadowColor = 'rgba(130, 150, 255, 0.4)'
+    ctx.shadowBlur = 28
+    ctx.fillText('贝儿说', PAD - 3, markY)
+    const markWidth = ctx.measureText('贝儿说').width - 10
     ctx.restore()
-    y += 76
-    ctx.font = `400 33px ${SERIF}`
-    spacing(ctx, '2px')
+    const lineX = PAD + markWidth + 64
+    ctx.fillStyle = 'rgba(241, 227, 200, 0.22)'
+    ctx.fillRect(lineX - 32, markY - 54, 1, 62)
+    ctx.font = `400 24px ${SERIF}`
+    spacing(ctx, '1.5px')
     ctx.fillStyle = SOFT
-    for (const line of ['从一个生活里的问题出发，', '沿着主题找回《次要人生》里的那段话。']) {
-      ctx.fillText(line, PAD, y)
-      y += 52
-    }
-    y += 64
+    ctx.fillText('从一个生活里的问题出发，', lineX, markY - 30)
+    ctx.fillText('沿着主题找回《次要人生》里的那段话。', lineX, markY + 4)
+
+    // What it holds, in one line.
     const stats: [number, string][] = [
       [site.episodeCount, '期节目'], [site.topics.length, '个主题'], [site.stars.length, '个小主题'], [site.momentCount, '个章节'],
     ]
-    const column = (W - PAD * 2) / stats.length
-    for (const [index, [value, label]] of stats.entries()) {
-      const x = PAD + index * column
-      if (index) {
-        ctx.fillStyle = 'rgba(241, 227, 200, 0.16)'
-        ctx.fillRect(x - 26, y - 50, 1, 92)
-      }
-      ctx.font = `600 62px ${SERIF}`
-      spacing(ctx, '1px')
+    let x = PAD
+    for (const [value, label] of stats) {
+      ctx.font = `600 36px ${SERIF}`
+      spacing(ctx, '0.5px')
       ctx.fillStyle = IVORY
-      ctx.fillText(String(value), x, y)
-      ctx.font = `400 24px ${SANS}`
+      ctx.fillText(String(value), x, statsY)
+      x += ctx.measureText(String(value)).width + 8
+      ctx.font = `400 20px ${SANS}`
       spacing(ctx, '2px')
       ctx.fillStyle = MUTED
-      ctx.fillText(label, x + 2, y + 42)
+      ctx.fillText(label, x, statsY)
+      x += ctx.measureText(label).width + 46
     }
-    paintFoot(ctx, H)
+    ctx.fillStyle = 'rgba(241, 227, 200, 0.14)'
+    ctx.fillRect(PAD, ruleY, W - PAD * 2, 1)
+
+    // The show, where to listen and the address on the left; the code on the right, its top and caption on the
+    // same lines as theirs.
+    const coverSize = 64
+    if (showCover) {
+      ctx.save()
+      ctx.beginPath()
+      ctx.arc(PAD + coverSize / 2, plateTop + coverSize / 2, coverSize / 2, 0, Math.PI * 2)
+      ctx.clip()
+      ctx.drawImage(showCover, PAD, plateTop, coverSize, coverSize)
+      ctx.restore()
+    }
+    ctx.font = `600 28px ${SERIF}`
+    spacing(ctx, '3px')
+    ctx.fillStyle = IVORY
+    ctx.fillText('次要人生', PAD + coverSize + 20, plateTop + 28)
+    ctx.font = `400 19px ${SERIF}`
+    spacing(ctx, '1px')
+    ctx.fillStyle = SOFT
+    ctx.fillText('Flip Your Mind · 倪贝儿', PAD + coverSize + 20, plateTop + 58)
+    const listenY = (plateTop + coverSize + last - 20) / 2
+    x = PAD
+    for (const badge of [{ image: appleBadge, label: 'Apple Podcasts' }, { image: xiaoyuzhouBadge, label: '小宇宙' }]) {
+      if (badge.image) {
+        const height = 40
+        const width = (height * badge.image.naturalWidth) / badge.image.naturalHeight
+        ctx.drawImage(badge.image, x, listenY - height / 2, width, height)
+        x += width + 12
+      } else {
+        ctx.font = `400 22px ${SERIF}`
+        ctx.fillStyle = IVORY
+        ctx.fillText(badge.label, x, listenY + 8)
+        x += ctx.measureText(badge.label).width + 18
+      }
+    }
+    ctx.font = `400 20px ${SANS}`
+    spacing(ctx, '1px')
+    ctx.fillStyle = MUTED
+    ctx.fillText('搜索「次要人生」收听', x + 12, listenY + 7)
+    ctx.fillText(new URL(url).host, PAD, last)
+    const qrX = W - PAD - qrPlate
+    ctx.fillStyle = '#ffffff'
+    ctx.beginPath()
+    ctx.roundRect(qrX, plateTop, qrPlate, qrPlate, 16)
+    ctx.fill()
+    ctx.drawImage(code, qrX + 12, plateTop + 12, qrPlate - 24, qrPlate - 24)
+    ctx.font = `400 19px ${SANS}`
+    spacing(ctx, '2px')
+    ctx.fillStyle = MUTED
+    ctx.textAlign = 'center'
+    ctx.fillText('扫码看完整星图', qrX + qrPlate / 2, last)
+    ctx.textAlign = 'left'
   }
 
   // Sky: the site's night gradient, a nebula glow in the topic's colour, a band of dust, scattered stars and threads.
