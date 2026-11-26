@@ -715,6 +715,131 @@ def export_atlas(store, args):
     return 0
 
 
+# ---------------------------------------------------------------- publish check
+
+# Fail rather than publish when this many chapters that are live today would vanish: show notes get edited one
+# chapter at a time, so more than this means the catalog or the parser went wrong.
+MOMENT_LOSS_LIMIT = 5
+
+
+def episode_label(episode):
+    return f"EP{episode['number']}" if episode.get("number") is not None else episode["title"][:24]
+
+
+def fetch_live_atlas(url, attempts=3):
+    """The atlas the site serves now, or None when it can't be reached."""
+    import time
+    from urllib.request import Request, urlopen
+
+    for attempt in range(attempts):
+        try:
+            request = Request(url, headers={"User-Agent": "Beiershuo-publish-check/1.0", "Cache-Control": "no-cache"})
+            with urlopen(request, timeout=30) as response:
+                return json.load(response)
+        except (OSError, ValueError) as error:
+            print(f"  Live atlas attempt {attempt + 1} failed: {error}", file=sys.stderr)
+            time.sleep(2 * (attempt + 1))
+    return None
+
+
+def compare_atlas(atlas, live):
+    """What changed against the live atlas: (new episodes, problems that block publishing, warnings)."""
+    problems, warnings = [], []
+    episodes = {episode["id"]: episode for episode in atlas["episodes"]}
+    gone = [episode for episode in live["episodes"] if episode["id"] not in episodes]
+    if gone:
+        problems.append("episodes would disappear: " + ", ".join(episode_label(episode) for episode in gone))
+    moments = {moment["id"] for moment in atlas["moments"]}
+    lost = [moment for moment in live["moments"] if moment["id"] not in moments and moment["episodeId"] in episodes]
+    if len(lost) > MOMENT_LOSS_LIMIT:
+        problems.append(f"{len(lost)} live chapters would disappear, so shared links to them would break")
+    elif lost:
+        warnings.append("chapters renamed in the show notes (old links to them now open the episode): "
+                        + "; ".join(moment["title"] for moment in lost))
+    known = {episode["id"] for episode in live["episodes"]}
+    fresh = [episode for episode in atlas["episodes"] if episode["id"] not in known]
+    for episode in fresh:
+        starts = [chapter["startSec"] for chapter in episode["chapters"]]
+        if not starts:
+            warnings.append(f"{episode_label(episode)} has no chapters; check whether its show notes changed format")
+        elif any(later <= earlier for earlier, later in zip(starts, starts[1:])) or starts[-1] >= episode["durationSec"]:
+            problems.append(f"{episode_label(episode)} has chapter times out of order or past its end: {starts}")
+    return fresh, problems, warnings
+
+
+def curation_note(episode, stored, entities, url):
+    """The to-do issue for a new episode: what it links to already and what still needs curating."""
+    mentions = find_mentions(entities, [stored])
+    names = {item["id"]: item["name"] for item in entities}
+    linked = sorted({names[entity_id] for entity_id in mentions})
+    aliases = [_fold(alias) for item in entities for alias in item["aliases"] if _fold(alias)]
+    unmatched = [line for line in stored.get("references", [])
+                 if not re.search(r"延伸书目|延伸阅读|引用书籍|延伸影片|本期提到", line)
+                 and not any(alias in _fold(line) for alias in aliases)]
+    lines = [
+        f"[{episode['title']}]({url}?episode={episode['id']}) · {len(episode['chapters'])} 个章节 · "
+        f"[小宇宙]({episode['xiaoyuzhouUrl']})",
+        "",
+        "已经连上：" + ("、".join(linked) if linked else "无"),
+        "",
+        "书目里没有匹配上的名字（新书、新人物，或者现有条目缺一个别名）：",
+        *([f"- {line}" for line in unmatched] or ["- 无"]),
+        "",
+        "章节（找新概念和搜索词）：",
+        *[f"- {chapter['title']}" for chapter in episode["chapters"]],
+        "",
+        "在 Claude Code 里说「整理 " + episode_label(episode) + "」（`/new-episode`），整理完推送后关掉这个 issue。",
+    ]
+    return "\n".join(lines) + "\n"
+
+
+def check_atlas(store, args):
+    """Compare a freshly exported atlas with the live one before it is published.
+
+    Prints a summary, writes `changed` and `new` for GitHub Actions, and writes one curation note per new episode.
+    Returns non-zero when publishing would lose episodes or many chapters, or a new episode's chapters look broken.
+    """
+    atlas = read_json(args.atlas)
+    validate_atlas(atlas)
+    live = fetch_live_atlas(args.live) if args.live else None
+    if live is None:
+        fresh, problems, warnings = [], [], ["live atlas unavailable: nothing to compare against"]
+        changed = None
+    else:
+        fresh, problems, warnings = compare_atlas(atlas, live)
+        changed = atlas["contentRevision"] != live.get("contentRevision")
+
+    stored = {episode["id"]: episode for episode in store.episodes()}
+    entities = load_entities(args.content_dir)
+    if args.notes_dir:
+        notes = Path(args.notes_dir)
+        notes.mkdir(parents=True, exist_ok=True)
+        for episode in fresh:
+            note = curation_note(episode, stored.get(episode["id"], episode), entities, args.site.rstrip("/") + "/")
+            (notes / f"{episode_label(episode)}.md").write_text(note, encoding="utf-8")
+
+    summary = [f"## 发布检查 · revision {atlas['contentRevision']}", ""]
+    if changed is None:
+        summary.append("没有取到线上的 atlas，无法比较。")
+    elif not changed:
+        summary.append(f"和线上一致（{len(atlas['episodes'])} 集）。")
+    else:
+        summary.append(f"有变化：{len(atlas['episodes'])} 集，线上 {len(live['episodes'])} 集。")
+    summary += [f"- 新单集：{episode['title']}（{len(episode['chapters'])} 个章节）" for episode in fresh]
+    summary += [f"- 注意：{warning}" for warning in warnings]
+    summary += [f"- **不能发布**：{problem}" for problem in problems]
+    text = "\n".join(summary) + "\n"
+    print(text)
+    if args.summary:
+        with open(args.summary, "a", encoding="utf-8") as output:
+            output.write(text)
+    if args.github_output:
+        with open(args.github_output, "a", encoding="utf-8") as output:
+            output.write(f"changed={'unknown' if changed is None else str(changed).lower()}\n")
+            output.write(f"new={len(fresh)}\n")
+    return 1 if problems else 0
+
+
 # ---------------------------------------------------------------- fonts
 
 def _serif_text(atlas):
@@ -789,4 +914,6 @@ def run(store, args):
         return 0
     if args.command == "export":
         return export_atlas(store, args)
+    if args.command == "check":
+        return check_atlas(store, args)
     raise RuntimeError(f"`{args.command}` works on reviewed transcript moments and arrives with the M2 pilot.")

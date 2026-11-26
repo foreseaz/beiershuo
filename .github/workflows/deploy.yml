@@ -1,13 +1,27 @@
 name: Deploy
 
+# Every run rebuilds the data from Apple's catalog and content/, so a new episode goes live without anyone pushing.
+# Pushes always deploy. Scheduled runs deploy only when the data or the code differs from what the site serves.
 on:
   push:
     branches:
       - main
+  # Hourly from 12:00 to 24:00 Beijing time, when the show publishes.
+  schedule:
+    - cron: '17 4-16 * * *'
+  workflow_dispatch:
 
+# Queue rather than cancel: a scheduled run that found nothing new must not cancel a push that is mid-deploy.
 concurrency:
   group: cloudflare-deploy
-  cancel-in-progress: true
+  cancel-in-progress: false
+
+env:
+  SITE: https://beiershuo.chenxizh.workers.dev
+  # Source Han Serif 2.003, the same file the local export subsets (see README · 字体).
+  SERIF_URL: https://raw.githubusercontent.com/adobe-fonts/source-han-serif/2.003R/Variable/OTC/SourceHanSerif-VF.otf.ttc
+  SERIF_SHA256: 7cc8506bec282fb58858c201c2d6e1935a52954dfff045daf065f1347ca6a13e
+  SERIF_FONT: .fonts/SourceHanSerif-VF.otf.ttc
 
 jobs:
   deploy:
@@ -15,21 +29,84 @@ jobs:
     timeout-minutes: 20
     permissions:
       contents: read
+      issues: write
     steps:
       - name: Checkout
         uses: actions/checkout@v7
 
+      - name: Python
+        run: |
+          python3 -m venv .venv
+          .venv/bin/pip install --quiet 'fonttools[woff]>=4.60'
+
+      - name: Cache the serif font
+        uses: actions/cache@v6
+        with:
+          path: .fonts
+          key: serif-${{ env.SERIF_SHA256 }}
+
+      - name: Download the serif font
+        run: |
+          if [ ! -f "$SERIF_FONT" ]; then
+            mkdir -p .fonts
+            curl -fsSL --retry 3 "$SERIF_URL" -o "$SERIF_FONT"
+          fi
+          echo "$SERIF_SHA256  $SERIF_FONT" | sha256sum -c -
+
+      - name: Sync and export
+        run: |
+          .venv/bin/python -m pipeline sync
+          .venv/bin/python -m pipeline export --serif-font "$SERIF_FONT"
+
+      - name: Check against the live site
+        id: check
+        run: .venv/bin/python -m pipeline check --notes-dir var/notes --summary "$GITHUB_STEP_SUMMARY" --github-output "$GITHUB_OUTPUT"
+
+      - name: Decide
+        id: plan
+        env:
+          EVENT: ${{ github.event_name }}
+          CHANGED: ${{ steps.check.outputs.changed }}
+        run: |
+          deployed=$(curl -fsS --retry 2 "$SITE/version.txt" | head -c 40 || true)
+          if [ "$EVENT" != schedule ] || [ "$CHANGED" = true ] || [ "$deployed" != "$GITHUB_SHA" ]; then
+            echo "deploy=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "deploy=false" >> "$GITHUB_OUTPUT"
+            echo "Nothing new since the last deploy." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
       - name: Setup Node
+        if: steps.plan.outputs.deploy == 'true'
         uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
 
       - name: Install
+        if: steps.plan.outputs.deploy == 'true'
         run: npm ci
 
       - name: Deploy to Cloudflare
+        if: steps.plan.outputs.deploy == 'true'
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-        run: npm run deploy
+        run: |
+          echo "$GITHUB_SHA" > public/version.txt
+          npm run deploy
+
+      # One issue per new episode, listing what it already links to and what still needs curating.
+      - name: Open curation issues
+        if: steps.plan.outputs.deploy == 'true' && steps.check.outputs.new != '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for note in var/notes/*.md; do
+            [ -f "$note" ] || continue
+            title="$(basename "$note" .md) 待整理"
+            if gh issue list --state all --search "\"$title\" in:title" --json title --jq '.[].title' | grep -qxF "$title"; then
+              continue
+            fi
+            gh issue create --title "$title" --body-file "$note"
+          done

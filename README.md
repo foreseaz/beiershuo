@@ -31,19 +31,23 @@
 ```mermaid
 flowchart LR
   A[Apple 播客目录<br/>标题 · 简介 · 章节 · 延伸书目] -->|sync| D[(var/content.sqlite3)]
-  C[Claude Code 会话] -->|直接编写| J[content/*.json<br/>主题 · 人物 · 书 · 影片 · 概念 · 关键词]
+  C[Claude Code 会话<br/>/new-episode] -->|直接编写| J[content/*.json<br/>主题 · 人物 · 书 · 影片 · 概念 · 关键词]
   W[Wikimedia Commons] -->|portraits| P[content/portraits.json<br/>public/people/]
   D --> E[export<br/>按别名找出每一项出现的单集和章节]
   J --> E
   P --> E
-  E --> S[public/data/v1/atlas.json<br/>+ 字体子集]
-  S --> F[React + Three.js 前端<br/>星图连线在浏览器里计算]
-  F -->|push main → GitHub Actions| CF[Cloudflare Workers<br/>Static Assets]
+  E --> S[atlas.json + 字体子集<br/>每次部署时生成，不进 git]
+  S --> K{check<br/>和线上比较}
+  K -->|有新内容或新代码| CF[Cloudflare Workers<br/>Static Assets]
+  K -->|有新单集| I[「EP52 待整理」issue]
+  I -.-> C
+  CF --> F[React + Three.js 前端<br/>星图连线在浏览器里计算]
   X[小宇宙音源] -. 浏览器直接请求 .-> F
 ```
 
-- **数据源只有公开目录。** `sync` 读取 Apple 播客的节目目录（54 集、892 个章节），存进本地 SQLite。小宇宙链接和音源地址也来自这里。
-- **由 Claude Code 会话整理内容，不用 API key。** 会话直接编写 `content/` 下的文件，内容都留在 git 里，可以追溯。
+- **数据源只有公开目录。** `sync` 读取 Apple 播客的节目目录（55 集、912 个章节），存进本地 SQLite。小宇宙链接和音源地址也来自这里。
+- **新单集自动上线。** GitHub Actions 每天 12:00–24:00（北京时间）每小时同步一次目录。发现新单集就重新导出、部署，并开一个「EPxx 待整理」issue，列出它已经连上的条目、书目里没匹配上的名字和全部章节。见「发布」。
+- **由 Claude Code 会话整理内容，不用 API key。** 会话直接编写 `content/` 下的文件，内容都留在 git 里，可以追溯。新单集用项目 skill `/new-episode`（`.claude/skills/new-episode/SKILL.md`）整理：在会话里说「整理 EP52」即可。
 - **出现位置靠别名匹配。** `export` 在单集标题、官方主题、章节标题和延伸书目里查找每一项的别名，重叠时以较长的别名为准，比如《笛卡尔的错误》算作这本书，不再单独算作「笛卡尔」。新单集同步后重新导出就会更新，不用手工补。
 - **星图上的线在浏览器里计算**（`src/App.tsx` 的 `buildGalaxy`）：两个小主题在同一期都出现过，就算一次连接。每个小主题保留 3 个连接最强的伙伴，每对最多画最近的 3 期，一期一条线。星星的大小按连接的伙伴数取对数。
 - **网站是纯静态的。** Cloudflare 只托管网页、`atlas.json`、字体子集和图片，没有服务端代码。播放时浏览器直接请求小宇宙的原节目音源，从章节时间戳开始。
@@ -61,26 +65,26 @@ flowchart LR
 
 ## 本地开发
 
-需要 Node 22.12+。只有刷新数据时才需要 Python 3.12。
+需要 Node 22.12+ 和 Python 3.12。`atlas.json` 和字体子集是生成文件，不在 git 里，第一次运行前先生成：
 
 ```bash
 npm install
-npm run dev            # http://localhost:5173/，读取仓库里现有的 atlas.json
+/opt/homebrew/bin/python3.12 -m venv .venv
+.venv/bin/pip install -r requirements.txt   # 只刷新数据的话，装 'fonttools[woff]' 就够了
+
+npm run data           # sync + export：拉取 Apple 目录，写 public/data/v1/atlas.json 和字体子集
+npm run dev            # http://localhost:5173/
 ```
 
-刷新数据：
+其他命令：
 
 ```bash
-/opt/homebrew/bin/python3.12 -m venv .venv
-.venv/bin/pip install -r requirements.txt
-
-.venv/bin/python -m pipeline sync        # 重新拉取 Apple 目录
 .venv/bin/python -m pipeline portraits   # 补人物照片和维基百科链接（有节流，会慢）
-.venv/bin/python -m pipeline export      # 校验引用，写 public/data/v1/atlas.json 和字体子集
+.venv/bin/python -m pipeline check       # 和线上的 atlas 比较：新单集、会消失的单集或章节
 .venv/bin/python -m pipeline status
 ```
 
-加新的人物、书或概念：在 `content/entities.json` 里加一项（概念要写所属主题 `topic`），然后运行 `export`。字体子集是按快照里实际用到的字从思源宋体生成的，所以加了新字也要重新导出；本机没有思源宋体时不会生成子集，新加的字会用系统宋体显示。
+加新的人物、书或概念：在 `content/entities.json` 里加一项（概念要写所属主题 `topic`），然后运行 `npm run data`。新单集的完整整理流程在 `/new-episode` skill 里。字体子集是按快照里实际用到的字从思源宋体生成的，所以加了新字也要重新导出。本机没有思源宋体时不会生成子集，新加的字会用系统宋体显示；线上不受影响，CI 每次部署都会重新生成。
 
 ### 响应式检查
 
@@ -101,7 +105,7 @@ npm run dev            # http://localhost:5173/，读取仓库里现有的 atlas
 .venv/bin/python -m pipeline review serve   # http://127.0.0.1:8787
 ```
 
-目前一条都还没通过，所以快照里单集的 `topicIds` 和 `chapterPaths` 都是空的，网站也没用到它们。通过的条目会在下一次 `export` 时进入快照。
+目前一条都还没通过，所以快照里单集的 `topicIds` 和 `chapterPaths` 都是空的，网站也没用到它们。通过的条目会在下一次 `export` 时进入快照。注意：审核结果存在本机的 `var/content.sqlite3` 里，而线上的快照是 CI 从空数据库生成的，看不到这些结果。真要启用审核队列，先把通过的结果导出到 `content/` 下的文件里，让 `export` 从那里读。
 
 ## 没有启用的部分
 
@@ -119,8 +123,8 @@ npm run dev            # http://localhost:5173/，读取仓库里现有的 atlas
 | --- | --- |
 | `show` | 节目名、主播、小宇宙和 Apple 链接 |
 | `topics` | 7 个主题 |
-| `episodes` | 54 集：Apple GUID、标题、期号、发布时间、时长、音源、小宇宙和 Apple 链接、官方主题、章节（延伸书目只在导出时用来找出现位置，不进快照） |
-| `moments` | 892 个片段，目前全部来自章节时间戳（`source: "show_notes"`）：所属单集、起止时间、标题、摘要 |
+| `episodes` | 每一集：Apple GUID、标题、期号、发布时间、时长、音源、小宇宙和 Apple 链接、官方主题、章节（延伸书目只在导出时用来找出现位置，不进快照） |
+| `moments` | 每个章节一个片段，目前全部来自章节时间戳（`source: "show_notes"`）：所属单集、起止时间、标题、摘要 |
 | `entities` | 160 项人物、书、影片和概念，以及每一处出现的单集、章节和起播点 |
 | `keywords` | 搜索建议词和它们在目录里出现的次数 |
 | `relations`、`chapterPaths` | 留给审核通过的连线，目前为空 |
@@ -134,7 +138,17 @@ npm run dev            # http://localhost:5173/，读取仓库里现有的 atlas
 
 ## 发布
 
-推送到 `main` 后，GitHub Actions（`.github/workflows/deploy.yml`）会安装依赖、构建，并用 `wrangler deploy` 发布到 Cloudflare，大约 40 秒。仓库需要两个 secret：`CLOUDFLARE_API_TOKEN`（用「Edit Cloudflare Workers」模板创建，包含 `chenxi.dev` 这个 zone）和 `CLOUDFLARE_ACCOUNT_ID`。不要把本机 `wrangler login` 的登录信息复制给 CI：它的刷新令牌只能用一次，CI 用掉后本机和 CI 会一起掉线。
+GitHub Actions（`.github/workflows/deploy.yml`）在三种情况下运行：推送到 `main`、定时检查新单集（每天 04:17–16:17 UTC 每小时一次，即北京时间 12:17–00:17），以及在 Actions 页面手动运行。每次运行都：
+
+1. 从 Adobe 的仓库下载固定版本的思源宋体（2.003，校验 sha256，之后走缓存）；
+2. `sync` 和 `export`，从 Apple 目录和 `content/` 生成 `atlas.json` 和字体子集；
+3. `check`：从 workers.dev 地址取线上的 atlas 比较。有单集会消失、超过 5 个线上章节会消失，或者新单集的章节时间倒序、超出时长时，就停下来不部署（GitHub 会发邮件）。章节被改名只记一条提醒，旧链接会退回到单集；
+4. 推送和手动运行一定部署。定时运行只在数据变了，或者线上的 `/version.txt` 不是当前提交时才部署，所以漏掉的部署下一个小时会补上；
+5. 有新单集时，开一个「EPxx 待整理」issue。
+
+GitHub 对公开仓库的定时任务有两条限制：触发时间可能晚几分钟到半小时；仓库 60 天没有任何活动会暂停定时任务，到时 GitHub 会发邮件，在 Actions 页面重新启用即可。
+
+部署本身是 `npm ci`、构建，再用 `wrangler deploy` 发布到 Cloudflare，大约 40 秒。仓库需要两个 secret：`CLOUDFLARE_API_TOKEN`（用「Edit Cloudflare Workers」模板创建，包含 `chenxi.dev` 这个 zone）和 `CLOUDFLARE_ACCOUNT_ID`。不要把本机 `wrangler login` 的登录信息复制给 CI：它的刷新令牌只能用一次，CI 用掉后本机和 CI 会一起掉线。
 
 ```bash
 npm run build          # tsc + vite build，输出到 dist/
@@ -164,4 +178,4 @@ sips -s format jpeg -s formatOptions 84 --resampleWidth 2160 "$TMPDIR/landing.pn
 
 ## 字体
 
-`public/fonts/beier-serif-*.woff2` 是思源宋体的子集，按 SIL Open Font License 1.1 分发，见 `public/fonts/NOTICE.txt`。
+`public/fonts/beier-serif-*.woff2` 是思源宋体的子集，按 SIL Open Font License 1.1 分发，见 `public/fonts/NOTICE.txt`。本机用 `~/Library/Fonts/SourceHanSerif-VF.otf.ttc`；CI 从 `adobe-fonts/source-han-serif` 的 `2.003R` 标签下载同一个文件，两边生成的子集相同。

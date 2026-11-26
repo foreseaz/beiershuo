@@ -10,3 +10,9 @@ var/
 __pycache__/
 *.py[cod]
 *.tsbuildinfo
+
+# Built from content/ and Apple's catalog on every deploy (`npm run data` locally).
+public/data/v1/atlas.json
+public/fonts/beier-serif-*.woff2
+public/version.txt
+.fonts/

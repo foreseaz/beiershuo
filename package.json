@@ -8,6 +8,7 @@
   },
   "scripts": {
     "dev": "vite",
+    "data": ".venv/bin/python -m pipeline sync && .venv/bin/python -m pipeline export",
     "check": "tsc --noEmit",
     "build": "npm run check && vite build",
     "preview": "vite preview",

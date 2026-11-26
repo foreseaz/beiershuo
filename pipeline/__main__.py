@@ -16,6 +16,9 @@ from .store import Store, read_json
 
 
 ROOT = Path(__file__).resolve().parents[1]
+SITE = "https://beiershuo.chenxi.dev"
+# Same deployment as SITE, without the chenxi.dev zone's security rules, which sometimes turn scripts away.
+WORKERS_DEV = "https://beiershuo.chenxizh.workers.dev"
 
 
 def parser():
@@ -65,6 +68,15 @@ def parser():
     export.add_argument("--fonts-dir", type=Path, default=ROOT / "public/fonts")
     export.add_argument("--serif-font", type=Path, help="Source Han Serif / Noto Serif SC file to subset")
     export.add_argument("--no-fonts", action="store_true")
+
+    check = commands.add_parser("check", help="Compare an exported atlas with the live site before publishing")
+    check.add_argument("--atlas", type=Path, default=ROOT / "public/data/v1/atlas.json")
+    check.add_argument("--live", default=f"{WORKERS_DEV}/data/v1/atlas.json",
+                       help="The atlas the site serves now ('' to skip the comparison)")
+    check.add_argument("--site", default=SITE, help="Public address used in curation notes")
+    check.add_argument("--notes-dir", type=Path, help="Write a curation note per new episode here")
+    check.add_argument("--summary", help="Append a Markdown summary to this file (GITHUB_STEP_SUMMARY)")
+    check.add_argument("--github-output", help="Append changed=… and new=… to this file (GITHUB_OUTPUT)")
     return cli
 
 
