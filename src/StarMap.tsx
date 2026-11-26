@@ -11,6 +11,8 @@ type MapProps = {
   threads: Thread[]
   selected: string | null
   related: Set<string>
+  /** The highlighted episode and the sub-topics it mentions, or null. */
+  episode: { id: string; stars: Set<string> } | null
   current: string | null
   travel: Travel
   reducedMotion: boolean
@@ -95,7 +97,7 @@ export function layoutNebulae(topics: Topic[], portrait: boolean): Nebula[] {
 }
 
 export function StarMap(props: MapProps) {
-  const { topics, stars, threads, selected, related, current, travel, reducedMotion, card, cardKey } = props
+  const { topics, stars, threads, selected, related, episode, current, travel, reducedMotion, card, cardKey } = props
   const canvasRef = useRef<HTMLDivElement>(null)
   const cardRef = useRef<HTMLDivElement>(null)
   const leaderRef = useRef<SVGPathElement>(null)
@@ -160,7 +162,8 @@ export function StarMap(props: MapProps) {
    */
   const place = useRef((frame: GalaxyFrame) => {
     lastFrame.current = frame
-    const { selected: chosen, related: linked, current: inside } = latest.current
+    const { selected: chosen, related: linked, current: inside, episode } = latest.current
+    const lit = episode?.stars
     const hovered = hoverStar.current
     const reach = hovered ? partnersRef.current.get(hovered) : undefined
     const section = sectionRef.current
@@ -216,6 +219,8 @@ export function StarMap(props: MapProps) {
         decided.set(id, { show: '1', tone: 'lit', point })
       } else if (linked.has(id)) {
         decided.set(id, { show: '1', tone: 'near', point })
+      } else if (lit?.has(id)) {
+        decided.set(id, { show: '1', tone: 'lit', point })
       } else {
         const nebula = frame.nebulae.get(parentRef.current.get(id) ?? '')
         const budget = nebula ? labelBudget(nebula.radius * scale) : 0
@@ -245,7 +250,7 @@ export function StarMap(props: MapProps) {
         taken.push(box)
         boxes.current.set(id, box)
         kept.add(id)
-        decided.set(id, { show: chosen ? 'dim' : '1', tone: '', point, side: box.side })
+        decided.set(id, { show: chosen || lit ? 'dim' : '1', tone: '', point, side: box.side })
       }
       resting.current = kept
     }
@@ -339,6 +344,7 @@ export function StarMap(props: MapProps) {
 
   useEffect(() => { sceneRef.current?.setGalaxy(nebulae, stars, threads) }, [nebulae, stars, threads])
   useEffect(() => { sceneRef.current?.setSelection(selected, related) }, [selected, related])
+  useEffect(() => { sceneRef.current?.setEpisode(episode?.id ?? null, episode?.stars ?? new Set()) }, [episode])
   useEffect(() => { sceneRef.current?.travel(travel) }, [travel, stars])
   useEffect(() => { sceneRef.current?.setReducedMotion(reducedMotion) }, [reducedMotion])
 
@@ -355,7 +361,7 @@ export function StarMap(props: MapProps) {
     const timer = window.setTimeout(() => setHint(false), 4500)
     return () => window.clearTimeout(timer)
   }, [hint])
-  useEffect(() => { if (lastFrame.current) place.current(lastFrame.current) }, [selected, related, current, card])
+  useEffect(() => { if (lastFrame.current) place.current(lastFrame.current) }, [selected, related, episode, current, card])
   useEffect(() => setCollapsed(false), [cardKey])
 
   // Measure label widths once (after the web font loads), never inside the frame loop. Width scales with font

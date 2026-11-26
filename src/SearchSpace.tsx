@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { BookOpen, Clapperboard, CornerDownLeft, Search, Users, X } from 'lucide-react'
 import {
-  episodeLabel, timeLabel,
+  dayLabel, episodeLabel, shortTitle, timeLabel,
   type Atlas, type Entity, type EntityKind, type Episode, type Moment, type Topic,
 } from './domain'
 import { Portrait } from './Visual'
@@ -15,29 +15,31 @@ type Props = {
   onEntity: (entity: Entity) => void
   onIndex: (kind: EntityKind) => void
   onMoment: (moment: Moment) => void
+  onEpisode: (id: string) => void
   onClose: () => void
 }
 
 type Item =
   | { type: 'topic'; key: string; topic: Topic; stars: number }
   | { type: 'entity'; key: string; entity: Entity; episodes: number; topic?: Topic; by?: string }
+  | { type: 'episode'; key: string; episode: Episode; chapters: number }
   | { type: 'moment'; key: string; moment: Moment; episode: Episode }
 type Group = { id: string; title: string; items: Item[]; total: number }
 
 /** Everyday words people bring to the show; each one has results. */
 const SUGGESTED = ['内耗', '讨好', '拖延', '孤独', '安全感', '羞耻', '配得感', '迷茫', '边界感', '低精力', '亲密关系', '自责']
-const LIMITS: Record<string, number> = { topic: 7, concept: 6, person: 5, book: 5, film: 3, moment: 6 }
+const LIMITS: Record<string, number> = { topic: 7, concept: 6, person: 5, book: 5, film: 3, episode: 4, moment: 6 }
 const GROUPS: { id: string; title: string }[] = [
   { id: 'topic', title: '主题' },
   { id: 'concept', title: '小主题' },
   { id: 'person', title: '人物' },
   { id: 'book', title: '书' },
   { id: 'film', title: '影片与节目' },
+  { id: 'episode', title: '单集' },
   { id: 'moment', title: '章节' },
 ]
 
 const fold = (text: string) => text.normalize('NFKC').replace(/[\s·・•‧\-—_.,'’]/g, '').toLowerCase()
-const shortTitle = (episode: Episode) => episode.title.replace(/^EP\s*\d+\s*[.．:：|｜]?\s*/i, '')
 
 /** 3 for an exact name, 2 when a name starts with the query, 1 when it only contains it. */
 function score(terms: string[], needle: string) {
@@ -62,9 +64,9 @@ function Marked({ text, query }: { text: string; query: string }) {
 
 /**
  * Search: a quiet sheet over the map. Empty, it offers the seven topics, a few everyday words and the indexes;
- * typing lists topics, sub-topics, people, books, films and chapters in groups, best match first.
+ * typing lists topics, sub-topics, people, books, films, episodes and chapters in groups, best match first.
  */
-export function SearchSpace({ atlas, episodes, onTopic, onStar, onEntity, onIndex, onMoment, onClose }: Props) {
+export function SearchSpace({ atlas, episodes, onTopic, onStar, onEntity, onIndex, onMoment, onEpisode, onClose }: Props) {
   const [query, setQuery] = useState('')
   const [active, setActive] = useState(0)
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set())
@@ -112,6 +114,17 @@ export function SearchSpace({ atlas, episodes, onTopic, onStar, onEntity, onInde
         rank: rank * 1000 + entity.mentions.length,
       })
     }
+    // Episodes: by title (without its number) or official topic, or by number (EP52), newest first among equals.
+    const chapterCount = new Map<string, number>()
+    for (const moment of atlas.moments) chapterCount.set(moment.episodeId, (chapterCount.get(moment.episodeId) ?? 0) + 1)
+    for (const episode of episodes.values()) {
+      const rank = Math.max(score([shortTitle(episode), episode.officialTopic ?? ''], needle), fold(episodeLabel(episode)) === needle ? 3 : 0)
+      if (!rank) continue
+      found.get('episode')!.push({
+        item: { type: 'episode', key: `p-${episode.id}`, episode, chapters: chapterCount.get(episode.id) ?? 0 },
+        rank: rank * 1e12 + Date.parse(episode.publishedAt) / 1000,
+      })
+    }
     // Chapters: titles that contain the words first, then chapters where a closely matching name comes up.
     const named = new Set(entities.filter(entity => strong.has(entity.id)).flatMap(entity => entity.mentions.map(point => point.momentId)).filter(Boolean))
     for (const moment of atlas.moments) {
@@ -149,6 +162,7 @@ export function SearchSpace({ atlas, episodes, onTopic, onStar, onEntity, onInde
   const run = (item: Item) => {
     if (item.type === 'topic') onTopic(item.topic.id)
     else if (item.type === 'moment') onMoment(item.moment)
+    else if (item.type === 'episode') onEpisode(item.episode.id)
     else if (item.entity.kind === 'concept' && item.entity.topic) onStar(item.entity.id)
     else onEntity(item.entity)
   }
@@ -182,6 +196,10 @@ export function SearchSpace({ atlas, episodes, onTopic, onStar, onEntity, onInde
       lead = <span className="search-lead search-lead--topic" style={{ '--tint': item.topic.color } as React.CSSProperties}><i /></span>
       name = <Marked text={item.topic.title} query={query} />
       sub = `${item.stars} 个小主题 · ${item.topic.description}`
+    } else if (item.type === 'episode') {
+      lead = <span className="search-lead search-lead--time">{episodeLabel(item.episode)}</span>
+      name = <Marked text={shortTitle(item.episode)} query={query} />
+      sub = [dayLabel(item.episode.publishedAt), item.chapters ? `${item.chapters} 个章节` : '', item.episode.officialTopic].filter(Boolean).join(' · ')
     } else if (item.type === 'moment') {
       lead = <span className="search-lead search-lead--time">{timeLabel(item.moment.startSec)}</span>
       name = <Marked text={item.moment.title} query={query} />

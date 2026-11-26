@@ -10,7 +10,12 @@ export type Nebula = { id: string; x: number; y: number; depth: number; tint: st
 /** A sub-topic star inside a nebula. weight (0–1) grows with how often the show comes back to it. */
 export type SubStar = { id: string; nebula: string; weight: number }
 /** One episode that talks about both sub-topics. Several episodes between the same pair bend apart. */
-export type Thread = { id: string; from: string; to: string; bend: number; primary: boolean }
+/**
+ * A line between two sub-topics. A shared-episode thread shows while one of its stars is hovered or selected. An
+ * episode path (`episode` set) is one step of an episode's walk through the sky, and shows only while that episode
+ * is highlighted.
+ */
+export type Thread = { id: string; from: string; to: string; bend: number; primary: boolean; episode?: string }
 /** An explicit trip of the camera, from a click: to a nebula, to a star, or back out to the whole sky. */
 export type Travel = { seq: number; nebula?: string | null; star?: string | null }
 export type GalaxyFrame = {
@@ -178,6 +183,9 @@ export class GalaxyScene {
   private starList: SubStar[] = []
   private threadList: Thread[] = []
   private selected: string | null = null
+  // The highlighted episode (hovered on the rail, or opened) and the sub-topics it mentions.
+  private episode: string | null = null
+  private episodeStars = new Set<string>()
   private related = new Set<string>()
   private hovered: string | null = null
   private hoverStar: string | null = null
@@ -306,6 +314,13 @@ export class GalaxyScene {
   setSelection(star: string | null, related: Set<string>) {
     this.selected = star
     this.related = related
+    this.touch()
+  }
+
+  /** Light one episode: its sub-topics come forward, the rest of the sky steps back, and its path shows. */
+  setEpisode(episode: string | null, stars: Set<string>) {
+    this.episode = episode
+    this.episodeStars = stars
     this.touch()
   }
 
@@ -801,7 +816,7 @@ export class GalaxyScene {
     const rate = animate ? 1 - Math.pow(0.0025, elapsed) : 1
     const fly = animate ? 1 - Math.pow(0.02, elapsed) : 1
     // 3D, overview, nobody touching: the sky turns slowly, so depth shows even when you just look.
-    if (animate && this.mixGoal === 1 && !this.current && !this.selected && !this.hoverStar && !this.gesture && performance.now() > this.spinPause) {
+    if (animate && this.mixGoal === 1 && !this.current && !this.selected && !this.episode && !this.hoverStar && !this.gesture && performance.now() > this.spinPause) {
       this.yaw += delta * SPIN
       this.yawGoal += delta * SPIN
     }
@@ -845,7 +860,8 @@ export class GalaxyScene {
     let settling = moving
 
     for (const [id, object] of this.nebulae) {
-      const target = !current ? 0.34 : id === current ? 0.5 : 0.16
+      const quiet = this.episode !== null && ![...this.episodeStars].some(star => this.stars.get(star)?.star.nebula === id)
+      const target = (!current ? 0.34 : id === current ? 0.5 : 0.16) * (quiet ? 0.55 : 1)
       object.materials.forEach((material, index) => {
         const u = material.uniforms
         u.uIntensity.value += (target - u.uIntensity.value) * rate
@@ -856,11 +872,14 @@ export class GalaxyScene {
       const inside = object.star.nebula === current
       const isSelected = id === this.selected
       const isRelated = this.related.has(id)
+      const inEpisode = this.episodeStars.has(id)
+      const outside = this.episode !== null && !inEpisode
       // Better-connected sub-topics are larger and brighter, so the most discussed stand out.
       const base = 0.26 + object.star.weight * 0.7
-      const scale = isSelected ? 1.15 : isRelated ? base * 1.35 : current && !inside ? base * 0.8 : base
+      const scale = isSelected ? 1.15 : isRelated || inEpisode ? Math.max(base * 1.35, 0.62) : current && !inside ? base * 0.8 : outside ? base * 0.85 : base
       const glow = 0.7 + object.star.weight * 0.6
-      const intensity = isSelected ? 1.9 : isRelated ? 1.3 : (!current ? 0.75 : inside ? (this.selected ? 0.8 : 1.05) : 0.4) * glow
+      const intensity = isSelected ? 1.9 : isRelated ? 1.3 : inEpisode ? 1.6
+        : (!current ? 0.75 : inside ? (this.selected ? 0.8 : 1.05) : 0.4) * glow * (outside ? 0.3 : 1)
       const u = object.material.uniforms
       u.uScale.value += (scale - u.uScale.value) * rate
       u.uIntensity.value += (intensity - u.uIntensity.value) * rate
@@ -872,10 +891,12 @@ export class GalaxyScene {
     }
     // Lines stay hidden until they mean something: the hovered or selected sub-topic's episodes.
     for (const [id, object] of this.threads) {
-      const { from, to } = object.thread
+      const { from, to, episode } = object.thread
       const pointed = id === this.hovered
-      const lit = !morphing && !this.threadsStale
-        && (pointed || [this.selected, this.hoverStar].some(star => star !== null && (from === star || to === star)))
+      // While an episode is highlighted its own path stands in for the selected star's threads.
+      const lit = !morphing && !this.threadsStale && (episode
+        ? episode === this.episode
+        : pointed || [this.episode ? null : this.selected, this.hoverStar].some(star => star !== null && (from === star || to === star)))
       const u = object.material.uniforms
       if (!lit && u.uOpacity.value < 0.005) {
         object.mesh.visible = false

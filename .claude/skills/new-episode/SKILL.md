@@ -50,7 +50,6 @@ cat var/notes/EP52.md              # 已经连上的条目、书目里没匹配�
    - `people` 填相关人物，`note` 写一句白话定义。
    - 别名要足够具体，不能误配到无关的标题。
 5. **搜索词**（`content/keywords.json`）。收听众会去搜的日常说法（例如「松弛」「着急」），而且要在标题或章节里真的出现过，否则导出时会被丢掉。
-6. **背景音乐。** 问用户这一集是否自带背景音乐。如果有，在 `content/episodes.json` 里给它加 `"musicBed": true`。光看元数据判断不了，不要猜。
 
 ## 3. 检查
 
@@ -74,5 +73,5 @@ npm run data
   2. 运行 `git push origin HEAD:main`，CI 会重新导出并部署；
   3. 部署通过后，用 `gh issue close <编号> --comment "<摘要>"` 关掉 issue。
 - 作为定时任务运行、没有人可以问的时候：
-  - 推到新分支 `curate/ep52` 并开 PR，正文写摘要，把是否有背景音乐列为待确认；
+  - 推到新分支 `curate/ep52` 并开 PR，正文写摘要；
   - 不要直接推 main。

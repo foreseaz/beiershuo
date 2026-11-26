@@ -3,8 +3,8 @@ import { ArrowUpRight, Play, Share2 } from 'lucide-react'
 import { Cover, Portrait, entityLink } from './Visual'
 import { ApplePodcastsIcon, XiaoyuzhouIcon } from './platforms'
 import {
-  ENTITY_LABELS, SHOW_XIAOYUZHOU, episodeLabel, timeLabel,
-  type Atlas, type Entity, type Episode, type Moment, type Topic,
+  ENTITY_LABELS, SHOW_XIAOYUZHOU, episodeLabel, shortTitle, timeLabel,
+  type Atlas, type Entity, type Episode, type Mention, type Moment, type Topic,
 } from './domain'
 
 type Props = {
@@ -17,8 +17,6 @@ type Props = {
   onPlay: (episode: Episode, startSec: number, title: string) => void
   onShare: (trigger: HTMLButtonElement) => void
 }
-
-const shortTitle = (episode: Episode) => episode.title.replace(/^(EP\s*\d+\s*[.．:：|｜]?\s*)/i, '')
 
 /** One page shape for people, books and concepts, over the same starfield as the map. */
 export function EntityPage({ atlas, entity, episodes, onEntity, onTopic, onMoment, onPlay, onShare }: Props) {
@@ -52,18 +50,29 @@ export function EntityPage({ atlas, entity, episodes, onEntity, onTopic, onMomen
     related.push({ label: '相关人物', items: entity.people.map(id => byId.get(id)).filter((item): item is Entity => Boolean(item)) })
   }
 
+  // A person's books and films count as theirs: someone named only through a book's title still comes up in that
+  // episode. Their own mentions come first, and a chapter or note already listed is not listed twice.
+  const works = entity.kind === 'person'
+    ? entities.filter(item => item.author === entity.id || (item.kind === 'film' && item.people?.includes(entity.id)))
+    : []
+  type Point = Mention & { work?: Entity }
+  const groups = new Map<string, Point[]>()
+  for (const point of [...entity.mentions, ...works.flatMap(work => work.mentions.map(mention => ({ ...mention, work })))] as Point[]) {
+    const list = groups.get(point.episodeId) ?? []
+    if (!list.some(other => (other.momentId ?? other.via) === (point.momentId ?? point.via))) list.push(point)
+    groups.set(point.episodeId, list)
+  }
+  const ordered = [...groups].sort(([a], [b]) => episodes.get(b)!.publishedAt.localeCompare(episodes.get(a)!.publishedAt))
+  const throughWorks = ordered.length > 0 && !entity.mentions.length
+
   // Everything else named in the same episodes, most shared first.
-  const own = new Set(entity.mentions.map(point => point.episodeId))
+  const own = new Set(groups.keys())
   const nearby = entities
     .filter(item => item.id !== entity.id && !related.some(group => group.items.includes(item)))
     .map(item => ({ item, shared: new Set(item.mentions.filter(point => own.has(point.episodeId)).map(point => point.episodeId)).size }))
     .filter(entry => entry.shared > 0)
     .sort((a, b) => b.shared - a.shared || b.item.mentions.length - a.item.mentions.length)
     .slice(0, 12)
-
-  const groups = new Map<string, typeof entity.mentions>()
-  for (const point of entity.mentions) groups.set(point.episodeId, [...(groups.get(point.episodeId) ?? []), point])
-  const ordered = [...groups].sort(([a], [b]) => episodes.get(b)!.publishedAt.localeCompare(episodes.get(a)!.publishedAt))
 
   return (
     <div className="entity-content">
@@ -111,7 +120,9 @@ export function EntityPage({ atlas, entity, episodes, onEntity, onTopic, onMomen
         ))}
 
         <section className="entity-section card">
-          <p className="panel-section">{ordered.length ? `在 ${ordered.length} 集里出现` : '节目里还没有提到'}</p>
+          <p className="panel-section">
+            {!ordered.length ? '节目里还没有提到' : throughWorks ? `通过著作在 ${ordered.length} 集里出现` : `在 ${ordered.length} 集里出现`}
+          </p>
           {ordered.map(([episodeId, points]) => {
             const episode = episodes.get(episodeId)!
             return (
@@ -139,7 +150,9 @@ export function EntityPage({ atlas, entity, episodes, onEntity, onTopic, onMomen
                       </button>
                       <a className="row-main" href={episode.xiaoyuzhouUrl} target="_blank" rel="noreferrer">
                         <span className="row-when">{point.via === 'notes' ? '节目简介' : '单集标题'}</span>
-                        <span className="row-title">在这一集的{point.via === 'notes' ? '延伸书目' : '标题'}里提到 <ArrowUpRight size={13} aria-hidden="true" /></span>
+                        <span className="row-title">
+                          在这一集的{point.via === 'notes' ? '延伸书目' : '标题'}里提到{point.work ? `《${point.work.name}》` : ''} <ArrowUpRight size={13} aria-hidden="true" />
+                        </span>
                       </a>
                     </div>
                   )

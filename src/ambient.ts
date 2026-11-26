@@ -198,8 +198,9 @@ async function hasTrack() {
   }
 }
 
+/** Off until the listener turns it on; after that the choice is remembered. */
 function readPreference() {
-  try { return window.localStorage.getItem(PREFERENCE) !== 'off' } catch { return true }
+  try { return window.localStorage.getItem(PREFERENCE) === 'on' } catch { return false }
 }
 
 function writePreference(on: boolean) {
@@ -212,9 +213,9 @@ export const TRACK_CREDIT = '《Iki》Hideyuki Hashimoto'
 type Source = 'pending' | 'file' | 'generative'
 
 /**
- * Starts the site music on load and ducks it under episodes. A file at /audio/bgm.mp3 is used
- * when present; otherwise the generated piece. If a browser blocks audible autoplay, the next
- * click or key starts it.
+ * The site music, off by default: it plays once the listener turns it on (and on later visits, if they left it on),
+ * and ducks under episodes. A file at /audio/bgm.mp3 is used when present; otherwise the generated piece. If a
+ * browser blocks audible autoplay on a later visit, the next click or key starts it.
  */
 export function useAmbient(duck: Duck) {
   const [enabled, setEnabled] = useState(readPreference)

@@ -149,6 +149,13 @@ export function episodeLabel(episode: Episode) {
   return episode.number === null ? '单集' : `EP${episode.number}`
 }
 
+/** The title without its leading episode number. */
+export const shortTitle = (episode: Episode) => episode.title.replace(/^EP\s*\d+\s*[.．:：|｜]?\s*/i, '')
+
+/** Month and day in Beijing time, when the show publishes: 11月26日. */
+export const dayLabel = (iso: string) =>
+  new Date(iso).toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', timeZone: 'Asia/Shanghai' })
+
 export function momentSource(moment: Moment) {
   if (moment.source === 'show_notes') return '节目导读'
   return moment.speaker === 'beier' ? '贝儿 · 核听' : '原声核听'

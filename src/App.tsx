@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { ArrowUpRight, BookOpen, ChevronRight, List, Pause, Play, RotateCcw, Search, Share2, SkipForward, Users, VolumeX, X } from 'lucide-react'
+import { ArrowUpRight, BookOpen, Pause, Play, RotateCcw, Search, Share2, SkipForward, Users, VolumeX, X } from 'lucide-react'
 import {
-  ENTITY_LABELS, SHOW_XIAOYUZHOU, entityPath, episodeLabel, indexPath, loadAtlas, momentSource, parseRoute, timeLabel, topicMoments,
-  type Atlas, type Entity, type EntityKind, type Episode, type Moment, type Topic,
+  ENTITY_LABELS, SHOW_XIAOYUZHOU, dayLabel, entityPath, episodeLabel, indexPath, loadAtlas, momentSource, parseRoute, shortTitle, timeLabel,
+  topicMoments, type Atlas, type Entity, type EntityKind, type Episode, type Moment, type Topic,
 } from './domain'
 import { EntityPage } from './EntityPage'
+import { EpisodeRail } from './EpisodeRail'
 import { Overlay } from './Overlay'
 import { ShareDialog } from './ShareDialog'
 import { IndexPage } from './IndexPage'
@@ -13,12 +14,10 @@ import { useAmbient } from './ambient'
 import { StarMap, type GalaxyStar } from './StarMap'
 import { segmentsOf, usePlayer } from './player'
 import { ApplePodcastsIcon, XiaoyuzhouIcon } from './platforms'
-import { useDialog, useDialogExit, useKeyboardViewport, usePhoneLayout } from './dialog'
-import { useSheetDrag } from './sheet'
 import type { ShareSubject } from './shareCard'
 import type { Thread, Travel } from './scene/GalaxyScene'
 
-type Panel = 'search' | 'list' | null
+type Panel = 'search' | null
 type Partner = { id: string; shared: number }
 /** What a thread stands for: one episode, and where in it each of the two sub-topics comes up. */
 type ThreadInfo = { id: string; from: string; to: string; episodeId: string; fromMoment: string | null; toMoment: string | null }
@@ -98,7 +97,32 @@ function buildGalaxy(atlas: Atlas | null) {
       })
     })
   }
-  return { stars, threads, info, partners }
+  // Each episode's sub-topics in the order it comes to them (the title's first), and a path through them that
+  // shows while that episode is highlighted: the episode drawn as its own constellation.
+  const firstAt = new Map<string, Map<string, number>>()
+  for (const item of concepts) {
+    for (const point of item.mentions) {
+      const seen = firstAt.get(point.episodeId) ?? new Map<string, number>()
+      seen.set(item.id, Math.min(seen.get(item.id) ?? Infinity, point.startSec ?? -1))
+      firstAt.set(point.episodeId, seen)
+    }
+  }
+  const episodeStars = new Map<string, string[]>()
+  for (const [episodeId, seen] of firstAt) {
+    const path = [...seen].sort((a, b) => a[1] - b[1]).map(([id]) => id)
+    episodeStars.set(episodeId, path)
+    path.slice(1).forEach((to, index) => {
+      const from = path[index]
+      const id = `path|${episodeId}|${index}`
+      threads.push({ id, from, to, bend: index % 2 ? -0.5 : 0.5, primary: false, episode: episodeId })
+      info.set(id, {
+        id, from, to, episodeId,
+        fromMoment: byId.get(from)!.mentions.find(point => point.episodeId === episodeId && point.momentId)?.momentId ?? null,
+        toMoment: byId.get(to)!.mentions.find(point => point.episodeId === episodeId && point.momentId)?.momentId ?? null,
+      })
+    })
+  }
+  return { stars, threads, info, partners, episodeStars }
 }
 
 export function App() {
@@ -110,10 +134,11 @@ export function App() {
   const [threadId, setThreadId] = useState('')
   const [shared, setShared] = useState<{ subject: ShareSubject; path: string } | null>(null)
   const [momentId, setMomentId] = useState(() => readUrl().moment)
-  const [listedEpisode, setListedEpisode] = useState(() => readUrl().episode)
-  const [panel, setPanel] = useState<Panel>(() => readUrl().episode ? 'list' : null)
+  // The episode whose card is open, and the one under the pointer on the rail; either lights its sub-topics.
+  const [episodeId, setEpisodeId] = useState(() => readUrl().episode)
+  const [previewEpisode, setPreviewEpisode] = useState<string | null>(null)
+  const [panel, setPanel] = useState<Panel>(null)
   const [route, setRoute] = useState(() => parseRoute(window.location.pathname))
-  const phone = usePhoneLayout()
   const reducedMotion = useReducedMotion()
   const segments = useMemo(() => segmentsOf(atlas?.moments ?? []), [atlas])
   const player = usePlayer(segments.next)
@@ -135,10 +160,9 @@ export function App() {
         window.history.replaceState({ depth: 0 }, '', '/')
       }
       const nextRoute = parseRoute(window.location.pathname)
-      const episode = nextRoute ? '' : readUrl().episode
       setRoute(nextRoute)
-      setListedEpisode(episode)
-      setPanel(episode ? 'list' : null)
+      if (!nextRoute) setEpisodeId(readUrl().episode)
+      setPanel(null)
     }
     window.addEventListener('popstate', onPop)
     return () => window.removeEventListener('popstate', onPop)
@@ -187,17 +211,20 @@ export function App() {
   const topics = atlas?.topics ?? []
   const galaxy = useMemo(() => buildGalaxy(atlas), [atlas])
   const closeShare = useCallback(() => setShared(null), [])
-  const closePanel = useCallback(() => {
-    setPanel(null)
-    setListedEpisode('')
-  }, [])
+  const closePanel = useCallback(() => setPanel(null), [])
+  // Newest first, so the latest episode sits at the top of the rail.
+  const timeline = useMemo(() => [...(atlas?.episodes ?? [])].sort((a, b) => b.publishedAt.localeCompare(a.publishedAt)), [atlas])
+  const highlight = previewEpisode || episodeId
+  const litEpisode = useMemo(
+    () => (highlight ? { id: highlight, stars: new Set(galaxy.episodeStars.get(highlight) ?? []) } : null), [highlight, galaxy],
+  )
 
   // Drop deep-link values that no longer exist once the data arrives.
   useEffect(() => {
     if (!atlas) return
     if (starId && !entities.get(starId)?.topic) setStarId('')
     if (momentId && !moments.get(momentId)) setMomentId('')
-    if (listedEpisode && !episodes.has(listedEpisode)) setListedEpisode('')
+    if (episodeId && !episodes.has(episodeId)) setEpisodeId('')
     // Only runs when the atlas loads.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [atlas])
@@ -209,9 +236,9 @@ export function App() {
     if (viewNebula) params.set('topic', viewNebula)
     if (starId) params.set('star', starId)
     if (momentId) params.set('moment', momentId)
-    if (panel === 'list' && listedEpisode) params.set('episode', listedEpisode)
+    if (episodeId) params.set('episode', episodeId)
     window.history.replaceState(null, '', params.size ? `/?${params}` : '/')
-  }, [viewNebula, starId, momentId, route, panel, listedEpisode])
+  }, [viewNebula, starId, momentId, route, episodeId])
 
   const fly = useCallback((trip: Omit<Travel, 'seq'>) => setTravel(previous => ({ seq: previous.seq + 1, ...trip })), [])
 
@@ -221,6 +248,7 @@ export function App() {
     setStarId('')
     setThreadId('')
     setMomentId('')
+    setEpisodeId('')
     setPanel(null)
     fly({ nebula: id })
     leavePage()
@@ -231,6 +259,7 @@ export function App() {
     setStarId(id)
     setThreadId('')
     setMomentId('')
+    setEpisodeId('')
     setPanel(null)
     fly({ star: id })
     leavePage()
@@ -240,28 +269,43 @@ export function App() {
     setThreadId(id)
     setStarId('')
     setMomentId('')
+    setEpisodeId('')
   }, [])
 
   const overview = useCallback(() => {
     setStarId('')
     setThreadId('')
     setMomentId('')
+    setEpisodeId('')
     fly({})
   }, [fly])
 
   // Clicking empty sky steps back one level: card → nebula → whole sky.
   const stepBack = useCallback(() => {
-    if (momentId || threadId || starId) {
+    if (momentId || threadId || starId || episodeId) {
       setMomentId('')
       setThreadId('')
       setStarId('')
+      setEpisodeId('')
     } else if (viewNebula) overview()
-  }, [momentId, threadId, starId, viewNebula, overview])
+  }, [momentId, threadId, starId, episodeId, viewNebula, overview])
+
+  /** Open an episode from the rail: its card, and its sub-topics lit across the whole sky. */
+  const selectEpisode = useCallback((id: string) => {
+    setEpisodeId(id)
+    setStarId('')
+    setThreadId('')
+    setMomentId('')
+    setPanel(null)
+    if (viewNebula) fly({})
+    leavePage()
+  }, [viewNebula, fly, leavePage])
 
   const selectMoment = useCallback((moment: Moment) => {
     setMomentId(moment.id)
     setStarId('')
     setThreadId('')
+    setEpisodeId('')
     setPanel(null)
     leavePage()
   }, [leavePage])
@@ -287,7 +331,7 @@ export function App() {
     trigger.focus({ preventScroll: true })
     if (!atlas) return
     setShared({
-      subject: { kind: 'site', topics, stars: galaxy.stars, threads: galaxy.threads, episodeCount: atlas.episodes.length, momentCount: atlas.moments.length },
+      subject: { kind: 'site', topics, stars: galaxy.stars, threads: galaxy.threads.filter(item => !item.episode), episodeCount: atlas.episodes.length, momentCount: atlas.moments.length },
       path: '/',
     })
   }
@@ -301,13 +345,11 @@ export function App() {
     const onKey = (event: KeyboardEvent) => {
       if (shared || event.defaultPrevented) return
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') { event.preventDefault(); setPanel('search'); return }
-      if (event.key !== 'Escape') return
-      if (panel === 'list' && !phone) closePanel()
-      else if (!panel && !parseRoute(window.location.pathname)) stepBack()
+      if (event.key === 'Escape' && !panel && !parseRoute(window.location.pathname)) stepBack()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [panel, stepBack, shared, phone, closePanel])
+  }, [panel, stepBack, shared])
 
   const related = useMemo(() => {
     if (!starId) return new Set<string>()
@@ -353,7 +395,23 @@ export function App() {
       partners={galaxy.partners.get(star.id) ?? []} onStar={selectStar} onOpen={() => openEntity(star)} onClose={() => setStarId('')}
       onShare={trigger => shareEntity(star, trigger)}
       onPlay={(episode, startSec, title) => player.play(cueFor(episode, startSec, title))} />
+  } else if (episodeId && episodes.has(episodeId)) {
+    const episode = episodes.get(episodeId)!
+    card = <EpisodeCard episode={episode} stars={galaxy.episodeStars.get(episodeId) ?? []} topics={topics} entities={entities}
+      chapters={atlas.moments.filter(item => item.episodeId === episodeId).sort((a, b) => a.startSec - b.startSec)}
+      onStar={selectStar} onEntity={openEntity} onClose={() => setEpisodeId('')} onShare={shareEpisode}
+      onPlay={(startSec, title) => player.play(cueFor(episode, startSec, title))}
+      onPlayAll={() => player.play(cueFor(episode, 0, shortTitle(episode), true))} />
   }
+
+  // The rail marks the episodes behind whatever is open: every episode that mentions the chosen star, in its
+  // nebula's colour; the open episode, moment or thread is the active tick.
+  const marks = new Map<string, string>()
+  if (star) {
+    const color = topics.find(item => item.id === star.topic)?.color ?? '#9fb0ff'
+    for (const point of star.mentions) marks.set(point.episodeId, color)
+  }
+  const railActive = episodeId || (moment?.episodeId ?? thread?.episodeId ?? '')
 
   return (
     <main className={`space${entity || index ? ' space--page' : ''}`}>
@@ -363,6 +421,7 @@ export function App() {
         threads={galaxy.threads}
         selected={star?.id ?? null}
         related={related}
+        episode={litEpisode}
         current={viewNebula}
         travel={travel}
         reducedMotion={reducedMotion}
@@ -374,8 +433,10 @@ export function App() {
         onBack={stepBack}
         onOverview={overview}
         card={card}
-        cardKey={momentId || threadId || starId}
+        cardKey={momentId || threadId || starId || episodeId}
       />
+      <EpisodeRail episodes={timeline} active={railActive} marks={marks} playing={player.cue?.episode.id ?? ''}
+        starCount={id => galaxy.episodeStars.get(id)?.length ?? 0} onPreview={setPreviewEpisode} onSelect={selectEpisode} />
       {(entity || index) && (
         <Overlay
           label={entity ? `${ENTITY_LABELS[entity.kind]} · ${entity.name}` : ENTITY_LABELS[index!]}
@@ -412,31 +473,19 @@ export function App() {
         }} aria-expanded={panel === 'search'}>
           <Search size={18} strokeWidth={1.5} aria-hidden="true" /> 搜索
         </button>
-        <button type="button" onClick={event => {
-          event.currentTarget.focus({ preventScroll: true })
-          if (panel === 'list') closePanel()
-          else setPanel('list')
-        }} aria-expanded={panel === 'list'}>
-          <List size={18} strokeWidth={1.5} aria-hidden="true" /> 列表
-        </button>
-        <button type="button" onClick={event => shareSite(event.currentTarget)} aria-haspopup="dialog" title="分享整张星图">
-          <Share2 size={18} strokeWidth={1.5} aria-hidden="true" /> 分享
+        <button className="corner-share" type="button" onClick={event => shareSite(event.currentTarget)} aria-haspopup="dialog"
+          aria-label="分享整张星图" title="分享整张星图">
+          <Share2 size={16} strokeWidth={1.5} aria-hidden="true" />
         </button>
       </nav>
       {panel === 'search' && (
         <SearchSpace atlas={atlas} episodes={episodes} onTopic={focusNebula} onStar={selectStar} onEntity={openEntity} onIndex={openIndex}
-          onMoment={selectMoment} onClose={closePanel} />
-      )}
-      {panel === 'list' && (
-        <ListPanel atlas={atlas} episodes={episodes} activeMoment={momentId} activeEpisode={listedEpisode} phone={phone}
-          player={phone ? playerBar : null} onMoment={selectMoment} onShare={shareEpisode}
-          onPlay={item => player.play(cueFor(episodes.get(item.episodeId)!, item.startSec, item.title))}
-          onPlayEpisode={episode => player.play(cueFor(episode, 0, shortTitle(episode), true))} onClose={closePanel} />
+          onMoment={selectMoment} onEpisode={selectEpisode} onClose={closePanel} />
       )}
       {shared && <ShareDialog {...shared} episodes={episodes} moments={moments} onClose={closeShare} />}
       <Brand />
       <MusicPlayer music={music} />
-      {!entity && !index && !(panel === 'list' && phone) && playerBar}
+      {!entity && !index && playerBar}
     </main>
   )
 }
@@ -498,7 +547,81 @@ function MomentCard({ moment, episode, onPlay, onClose, onShare }: {
   )
 }
 
-const shortTitle = (episode: Episode) => episode.title.replace(/^EP\s*\d+\s*[.．:：|｜]?\s*/i, '')
+/**
+ * One episode, opened from the rail: the sub-topics it lights on the map (in the order it comes to them), the people
+ * and books it mentions, and its chapters, each ready to play.
+ */
+function EpisodeCard({ episode, stars, chapters, topics, entities, onStar, onEntity, onPlay, onPlayAll, onClose, onShare }: {
+  episode: Episode; stars: string[]; chapters: Moment[]; topics: Topic[]; entities: Map<string, Entity>
+  onStar: (id: string) => void; onEntity: (entity: Entity) => void; onPlay: (startSec: number, title: string) => void
+  onPlayAll: () => void; onClose: () => void; onShare: (episode: Episode, trigger: HTMLButtonElement) => void
+}) {
+  const colorOf = (id: string | undefined) => topics.find(item => item.id === id)?.color
+  const tint = colorOf(entities.get(stars[0])?.topic) ?? '#9fb0ff'
+  const order: Record<string, number> = { person: 0, book: 1, film: 2 }
+  const named = [...entities.values()]
+    .filter(item => item.kind !== 'concept' && item.mentions.some(point => point.episodeId === episode.id))
+    .sort((a, b) => order[a.kind] - order[b.kind])
+  return (
+    <article className="card card--star card--episode">
+      <button className="icon-button card-close" type="button" aria-label="关闭" onClick={onClose}><X size={15} aria-hidden="true" /></button>
+      <p className="star-card-topic">
+        <span style={{ background: tint, color: tint }} aria-hidden="true" />
+        {episodeLabel(episode)} · {dayLabel(episode.publishedAt)} · {Math.round(episode.durationSec / 60)} 分钟
+      </p>
+      <h2 className="star-card-name">{shortTitle(episode)}</h2>
+      <div className="episode-card-actions">
+        <button className="card-play" type="button" onClick={onPlayAll}><Play size={13} aria-hidden="true" /> 从头听</button>
+        <button className="star-card-share" type="button" onClick={event => onShare(episode, event.currentTarget)}>
+          <Share2 size={13} aria-hidden="true" /> 分享单集
+        </button>
+      </div>
+      {stars.length > 0 && (
+        <>
+          <p className="star-card-section">谈到 {stars.length} 个小主题</p>
+          <div className="star-card-partners">
+            {stars.map(id => {
+              const concept = entities.get(id)
+              return concept && (
+                <button key={id} type="button" onClick={() => onStar(id)} style={{ '--tint': colorOf(concept.topic) } as React.CSSProperties}>
+                  <span aria-hidden="true" />{concept.name}
+                </button>
+              )
+            })}
+          </div>
+        </>
+      )}
+      {named.length > 0 && (
+        <>
+          <p className="star-card-section">提到的人和书</p>
+          <div className="star-card-partners episode-card-names">
+            {named.map(item => (
+              <button key={item.id} type="button" onClick={() => onEntity(item)}>
+                {item.kind === 'person' ? <Users size={12} aria-hidden="true" /> : <BookOpen size={12} aria-hidden="true" />}
+                {item.name}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+      {chapters.length > 0 && (
+        <>
+          <p className="star-card-section">{chapters.length} 个章节</p>
+          <div className="star-card-rows">
+            {chapters.map(item => (
+              <button className="star-card-row" type="button" key={item.id} onClick={() => onPlay(item.startSec, item.title)}>
+                <Play size={11} aria-hidden="true" />
+                <span className="star-card-when">{timeLabel(item.startSec)}</span>
+                <span className="star-card-title">{item.title}</span>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+      <div className="star-card-foot"><SourceLinks episode={episode} /></div>
+    </article>
+  )
+}
 
 /** A thread: the one episode that connects two sub-topics, with each side's moment ready to play. */
 function ThreadCard({ thread, topics, entities, episodes, moments, onStar, onClose, onPlay, onShare }: {
@@ -602,107 +725,6 @@ function StarCard({ star, topics, entities, episodes, moments, partners, onStar,
         <button className="star-card-share" type="button" onClick={event => onShare(event.currentTarget)}><Share2 size={13} aria-hidden="true" /> 分享</button>
       </div>
     </article>
-  )
-}
-
-/** Every episode, newest first; each folds open to its chapters. */
-function ListPanel({ atlas, episodes, activeMoment, activeEpisode, phone, player, onMoment, onPlay, onPlayEpisode, onShare, onClose }: {
-  atlas: Atlas; episodes: Map<string, Episode>; activeMoment: string; activeEpisode: string; phone: boolean; player: ReactNode
-  onMoment: (moment: Moment) => void; onPlay: (moment: Moment) => void; onPlayEpisode: (episode: Episode) => void; onClose: () => void
-  onShare: (episode: Episode, trigger: HTMLButtonElement) => void
-}) {
-  const [open, setOpen] = useState(() => new Set(activeEpisode ? [activeEpisode] : []))
-  const [filter, setFilter] = useState('')
-  const dialog = useRef<HTMLDialogElement>(null)
-  const sheet = useRef<HTMLDivElement>(null)
-  const handle = useRef<HTMLDivElement>(null)
-  const scroller = useRef<HTMLDivElement>(null)
-  const linked = useRef<HTMLElement>(null)
-  const { leaving, close } = useDialogExit(onClose)
-  useDialog(dialog, phone)
-  useKeyboardViewport(dialog)
-  useSheetDrag({ sheet, handle, scroller, onDismiss: onClose })
-
-  useEffect(() => {
-    const target = linked.current
-    if (!target) return
-    target.scrollIntoView({ block: 'start' })
-    target.querySelector('button')?.focus({ preventScroll: true })
-  }, [activeEpisode])
-
-  const chapters = useMemo(() => {
-    const result = new Map<string, Moment[]>()
-    for (const moment of atlas.moments) result.set(moment.episodeId, [...(result.get(moment.episodeId) ?? []), moment])
-    return result
-  }, [atlas])
-  const needle = filter.trim().toLowerCase()
-  const list = [...episodes.values()]
-    .sort((a, b) => b.publishedAt.localeCompare(a.publishedAt))
-    .filter(episode => !needle || [episode.title, episode.officialTopic ?? '', episodeLabel(episode),
-      ...(chapters.get(episode.id) ?? []).map(moment => moment.title)].some(text => text.toLowerCase().includes(needle)))
-  const toggle = (id: string) => setOpen(previous => {
-    const next = new Set(previous)
-    if (next.has(id)) next.delete(id)
-    else next.add(id)
-    return next
-  })
-  return (
-    <dialog ref={dialog} className={`app-dialog episode-list${leaving ? ' is-leaving' : ''}`} aria-label="全部单集"
-      onCancel={event => { event.preventDefault(); close() }}>
-      {phone && <button className="panel-scrim" type="button" aria-label="关闭" tabIndex={-1} onClick={close} />}
-      <div className="panel panel--list" ref={sheet}>
-        <div className="panel-head" ref={handle}>
-          <span className="sheet-grip" aria-hidden="true" />
-          <p className="panel-title">全部单集 <span className="panel-count">{list.length}</span></p>
-          <button className="icon-button" type="button" aria-label="关闭" onClick={close}><X size={16} aria-hidden="true" /></button>
-        </div>
-        <label className="panel-filter">
-          <Search size={14} strokeWidth={1.6} aria-hidden="true" />
-          <input value={filter} onChange={event => setFilter(event.target.value)} placeholder="按标题或章节筛选" aria-label="筛选单集" />
-        </label>
-        <div className="panel-scroll" ref={scroller}>
-          {list.map(episode => {
-            const items = chapters.get(episode.id) ?? []
-            const expanded = open.has(episode.id) || (needle !== '' && items.some(moment => moment.title.toLowerCase().includes(needle)))
-            return (
-              <section className={`episode-fold${expanded ? ' is-open' : ''}`} key={episode.id} ref={episode.id === activeEpisode ? linked : undefined}>
-                <div className="episode-head">
-                  <button className="episode-toggle" type="button" aria-expanded={expanded} onClick={() => toggle(episode.id)}>
-                    <ChevronRight size={14} aria-hidden="true" className="episode-chevron" />
-                    <span className="episode-number">{episodeLabel(episode)}</span>
-                    <span className="episode-name">{shortTitle(episode)}</span>
-                    {items.length > 0 && <span className="episode-count">{items.length}</span>}
-                  </button>
-                  <button className="row-play" type="button" aria-label={`从头播放 ${episodeLabel(episode)}`} onClick={() => onPlayEpisode(episode)}>
-                    <Play size={12} aria-hidden="true" />
-                  </button>
-                  <button className="row-play" type="button" aria-label={`分享 ${episodeLabel(episode)}`} onClick={event => onShare(episode, event.currentTarget)}>
-                    <Share2 size={12} aria-hidden="true" />
-                  </button>
-                </div>
-                {expanded && (
-                  <div className="episode-chapters">
-                    {items.map(moment => (
-                      <div className={`row row--moment${moment.id === activeMoment ? ' is-active' : ''}`} key={moment.id}>
-                        <button className="row-play" type="button" aria-label={`从 ${timeLabel(moment.startSec)} 开始听`} onClick={() => onPlay(moment)}>
-                          <Play size={11} aria-hidden="true" />
-                        </button>
-                        <button className="row-main" type="button" onClick={() => onMoment(moment)}>
-                          <span className="row-when">{timeLabel(moment.startSec)}</span>
-                          <span className="row-title">{moment.title}</span>
-                        </button>
-                      </div>
-                    ))}
-                    <SourceLinks episode={episode} />
-                  </div>
-                )}
-              </section>
-            )
-          })}
-        </div>
-      </div>
-      {player}
-    </dialog>
   )
 }
 

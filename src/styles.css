@@ -202,7 +202,7 @@ button { cursor: pointer; touch-action: manipulation; }
 
 /* The detail drawer is docked at the right, so the sky stays free to drag, zoom and click. */
 .info-drawer {
-  position: fixed; right: max(24px, var(--safe-right)); top: 78px; z-index: 7; width: min(352px, calc(100vw - 48px));
+  position: fixed; right: calc(max(14px, var(--safe-right)) + 92px); top: 78px; z-index: 7; width: min(352px, calc(100vw - 136px));
   /* Stops above the 3D and zoom buttons below it. */
   max-height: calc(100vh - 78px - 216px); max-height: calc(100dvh - 78px - 216px); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin;
   border-radius: 14px; transition: opacity 0.25s ease;
@@ -311,6 +311,12 @@ button { cursor: pointer; touch-action: manipulation; }
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
 }
 .corner-actions button:hover, .corner-actions button[aria-expanded='true'] { color: #fff; }
+.corner-actions { align-items: center; gap: 22px; }
+.corner-actions .corner-share {
+  justify-content: center; width: 32px; height: 32px; padding: 0; border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.16); background: rgba(12, 15, 36, 0.4);
+}
+.corner-actions .corner-share:hover { border-color: rgba(200, 210, 255, 0.5); }
 
 .brand { position: fixed; left: max(50px, var(--safe-left)); bottom: max(44px, env(safe-area-inset-bottom)); z-index: 5; display: flex; align-items: center; gap: 22px; }
 .brand a { text-decoration: none; }
@@ -355,24 +361,7 @@ button { cursor: pointer; touch-action: manipulation; }
 }
 .app-dialog::backdrop { background: transparent; }
 .app-dialog:not([open]) { display: none; }
-.episode-list { z-index: 10; pointer-events: none; }
-.episode-list .panel, .episode-list .player { pointer-events: auto; }
-
-.panel {
-  position: fixed; top: 80px; right: max(32px, var(--safe-right)); z-index: 10; display: flex; flex-direction: column;
-  width: min(420px, calc(100vw - 32px)); max-height: calc(100vh - 190px); max-height: calc(100dvh - 190px);
-  background: rgba(12, 15, 35, 0.84); border: 1px solid var(--hairline); border-radius: 16px;
-  -webkit-backdrop-filter: blur(18px) saturate(120%);
-  backdrop-filter: blur(18px) saturate(120%);
-  box-shadow: 0 24px 70px rgba(2, 4, 16, 0.5);
-}
-.panel-head { display: flex; align-items: center; gap: 10px; padding: 12px 12px 12px 16px; border-bottom: 1px solid var(--hairline); }
-.panel-head input { flex: 1; min-width: 0; background: none; border: 0; outline: none; font-size: 16px; color: var(--ivory-bright); }
-.panel-head input::placeholder { color: var(--muted); }
-.panel-title { flex: 1; margin: 0; font: 600 18px var(--serif); letter-spacing: 0.06em; }
-.panel-scroll { overflow-y: auto; padding: 6px 8px 14px; overscroll-behavior: contain; }
 .panel-section { margin: 12px 8px 4px; font-size: 12px; letter-spacing: 0.2em; color: var(--muted); }
-.panel-empty { margin: 18px 8px; color: var(--muted); }
 .row {
   display: grid; grid-template-columns: auto 1fr; align-items: baseline; gap: 2px 10px; width: 100%;
   padding: 8px; text-align: left; background: none; border: 0; border-radius: 10px;
@@ -678,29 +667,6 @@ button.row:hover, .row-main:hover { background: rgba(255, 255, 255, 0.05); }
 .cover--poster .cover-rule { width: 10cqw; margin: 4cqw auto; }
 .cover--poster .cover-foot { margin-top: 4cqw; }
 
-/* Episode list: one row per episode, chapters folded away until opened. */
-.panel-count { margin-left: 6px; font: 400 12px var(--sans); color: var(--muted); letter-spacing: 0.05em; }
-.panel-filter {
-  display: flex; align-items: center; gap: 8px; margin: 10px 12px 2px; padding: 7px 12px; border-radius: 10px;
-  background: rgba(255, 255, 255, 0.04); border: 1px solid var(--hairline); color: var(--muted);
-}
-.panel-filter input { flex: 1; min-width: 0; background: none; border: 0; outline: none; font-size: 13.5px; color: var(--ivory); }
-.episode-fold { border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
-.episode-head { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 6px; padding: 2px 4px; }
-.episode-toggle {
-  display: grid; grid-template-columns: 14px auto minmax(0, 1fr) auto; align-items: baseline; gap: 8px; padding: 9px 6px; text-align: left;
-  background: none; border: 0; border-radius: 8px; color: inherit;
-}
-.episode-toggle:hover { background: rgba(255, 255, 255, 0.04); }
-.episode-chevron { align-self: center; color: var(--muted); transition: transform 0.2s ease; }
-.episode-fold.is-open .episode-chevron { transform: rotate(90deg); color: var(--ivory); }
-.episode-number { font: 400 12.5px var(--serif); color: var(--blue); white-space: nowrap; }
-.episode-name { font: 400 14.5px/1.45 var(--serif); color: var(--ivory-bright); overflow-wrap: anywhere; }
-.episode-count { font-size: 11px; color: var(--muted); }
-.episode-chapters { padding: 0 0 8px 26px; animation: fade-in 0.2s ease both; }
-.episode-chapters .card-links { margin: 6px 0 4px; }
-.episode-chapters .card-links a { min-height: 32px; font-size: 13px; }
-
 /* Share card dialog: the sky behind is blurred and dimmed so the card stands apart, and the card floats on its own. */
 .share {
   position: fixed; inset: 0; z-index: 30; display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -766,6 +732,11 @@ button.row:hover, .row-main:hover { background: rgba(255, 255, 255, 0.05); }
 .star-card-foot .star-card-page { margin: 0; padding: 0; border: 0; width: auto; }
 .star-card-share { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 99px; border: 1px solid rgba(255, 255, 255, 0.14); background: none; font-size: 12.5px; color: var(--ivory-soft); }
 .star-card-share:hover { color: #fff; border-color: rgba(200, 210, 255, 0.5); }
+.episode-card-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 14px; }
+.episode-card-names button { --tint: #c4cbef; gap: 5px; }
+.episode-card-names button svg { color: var(--muted); }
+.card--episode .star-card-foot { justify-content: flex-start; }
+.card--episode .card-links a { font-size: 14.5px; }
 .subscribe-cta {
   display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 12px 14px; margin-top: 34px; padding: 16px 18px;
   border-radius: 14px; border: 1px solid rgba(160, 175, 255, 0.25); background: rgba(80, 100, 255, 0.08); color: var(--ivory);
@@ -838,6 +809,52 @@ button.player-title:hover { text-decoration: underline; text-decoration-color: r
 }
 .player.is-finished .player-progress::after { opacity: 0.5; }
 
+/* ------------------------------------------------------------ episode rail */
+
+/*
+ * Every episode as a tick down the right edge, newest at the top, like Time Machine's timeline. Ticks swell under the
+ * pointer (--boost, set from JS); the first tick of each month is a little longer, so the rail reads like a ruler.
+ */
+.episode-rail {
+  position: fixed; z-index: 8; right: max(14px, var(--safe-right)); top: 96px; bottom: 236px; width: 52px;
+  touch-action: none; cursor: pointer; outline: none; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none;
+}
+.episode-rail:focus-visible { outline: 1px solid rgba(170, 185, 255, 0.3); outline-offset: 4px; border-radius: 10px; }
+.rail-tick {
+  position: absolute; right: 2px; height: 2px; margin-top: -1px; border-radius: 1px; pointer-events: none;
+  width: calc(8px + var(--extra, 0px) + var(--boost, 0) * 22px);
+  background: rgba(214, 220, 255, calc(0.26 + var(--boost, 0) * 0.6));
+  transition: width 0.16s cubic-bezier(0.2, 0.8, 0.2, 1), background-color 0.2s ease, box-shadow 0.2s ease;
+}
+.rail-tick.is-month { --extra: 4px; background: rgba(214, 220, 255, calc(0.4 + var(--boost, 0) * 0.5)); }
+.rail-tick.is-marked { --extra: 12px; background: var(--mark); box-shadow: 0 0 8px var(--mark), 0 0 2px var(--mark); }
+.rail-tick.is-active { --extra: 12px; height: 3px; margin-top: -1.5px; background: var(--ivory-bright); box-shadow: 0 0 10px rgba(255, 240, 210, 0.7); }
+.rail-tick.is-preview { --extra: 6px; background: #fff; box-shadow: 0 0 10px rgba(200, 210, 255, 0.8); }
+/* The episode now playing carries a small dot beside its tick. */
+.rail-tick.is-playing::after {
+  content: ''; position: absolute; right: calc(100% + 5px); top: 50%; width: 4px; height: 4px; margin-top: -2px; border-radius: 50%;
+  background: var(--ivory-bright); box-shadow: 0 0 6px rgba(255, 240, 210, 0.8); animation: rail-pulse 1.6s ease-in-out infinite;
+}
+@keyframes rail-pulse { 50% { opacity: 0.35; } }
+.rail-month {
+  position: absolute; right: 44px; transform: translateY(-50%); pointer-events: none; white-space: nowrap;
+  font: 400 10.5px/1 var(--sans, system-ui); letter-spacing: 0.06em; color: var(--muted); opacity: 0.6; transition: opacity 0.25s ease;
+}
+.rail-month.is-year { color: var(--ivory-soft); }
+.episode-rail:hover .rail-month, .episode-rail:focus-visible .rail-month, .episode-rail.is-peeking .rail-month { opacity: 0.95; }
+.rail-callout {
+  position: absolute; right: 48px; z-index: 1; display: grid; gap: 3px; width: max-content; max-width: 280px; padding: 7px 12px 8px;
+  transform: translateY(-50%); pointer-events: none; border-radius: 10px;
+  background: rgba(10, 13, 32, 0.9); border: 1px solid rgba(160, 175, 255, 0.28); box-shadow: 0 10px 30px rgba(2, 4, 16, 0.45);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+}
+.rail-callout-meta { font-size: 11px; letter-spacing: 0.08em; color: var(--blue); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.rail-callout-title { font: 400 13.5px/1.45 var(--serif); color: var(--ivory-bright); }
+/* A finger covers what is beside it, so on touch the callout rides above the finger. */
+@media (pointer: coarse) {
+  .rail-callout { transform: translateY(calc(-100% - 18px)); }
+}
+
 /* ------------------------------------------------------------ touch and mid-size screens */
 
 /* No keyboard hints where there is usually no keyboard. */
@@ -859,11 +876,11 @@ button.player-title:hover { text-decoration: underline; text-decoration-color: r
   .music-switch { bottom: max(14px, env(safe-area-inset-bottom)); }
   .zoom-controls { bottom: calc(62px + env(safe-area-inset-bottom)); }
   .zoom-controls .zoom-step { display: none; }
+  .episode-rail { top: 60px; bottom: calc(108px + env(safe-area-inset-bottom)); }
   .galaxy-crumb { top: 56px; }
   .galaxy-crumb-note { display: none; }
   /* Full height, so it moves left of the 3D and music buttons instead of covering them. */
-  .info-drawer { top: 58px; right: calc(84px + var(--safe-right)); max-height: calc(100vh - 72px); max-height: calc(100dvh - 72px - env(safe-area-inset-bottom)); }
-  .panel { top: 56px; max-height: calc(100vh - 70px); max-height: calc(100dvh - 70px); }
+  .info-drawer { top: 58px; right: calc(106px + var(--safe-right)); max-height: calc(100vh - 72px); max-height: calc(100dvh - 72px - env(safe-area-inset-bottom)); }
   .search { padding-top: 12px; padding-bottom: 12px; }
   .space:has(.player) .brand { bottom: 84px; }
   /* The share card keeps the full height, with its buttons in a column beside it. */
@@ -887,10 +904,17 @@ button.player-title:hover { text-decoration: underline; text-decoration-color: r
   .brand-show img { width: 22px; height: 22px; }
   .corner-actions, .corner-library { top: calc(8px + env(safe-area-inset-top)); gap: 0; }
   .corner-actions { right: max(6px, var(--safe-right)); }
-  .corner-library { left: auto; right: calc(max(6px, var(--safe-right)) + 132px); }
+  .corner-library { left: auto; right: calc(max(6px, var(--safe-right)) + 88px); }
   .corner-actions button, .corner-library button { justify-content: center; width: 44px; height: 44px; padding: 0; gap: 0; font-size: 0; }
   .corner-library button span { display: none; }
   .corner-actions button svg, .corner-library button svg { width: 20px; height: 20px; }
+  .corner-actions .corner-share { width: 44px; height: 44px; border: 0; background: none; }
+  /* The rail runs from under the 3D button to above the player, and stops above the card sheet while one is open. */
+  .episode-rail { right: max(4px, var(--safe-right)); top: calc(150px + env(safe-area-inset-top)); bottom: calc(92px + env(safe-area-inset-bottom)); width: 44px; z-index: 6; }
+  .space:has(.info-drawer:not(.is-empty)) .episode-rail { bottom: calc(min(54dvh, 480px) + 20px + env(safe-area-inset-bottom)); }
+  .space:has(.info-drawer.is-collapsed) .episode-rail { bottom: calc(112px + env(safe-area-inset-bottom)); }
+  .space:has(.player):has(.info-drawer:not(.is-empty)) .episode-rail { bottom: calc(min(54dvh, 480px) + 90px + env(safe-area-inset-bottom)); }
+  .rail-month { right: 38px; font-size: 9.5px; letter-spacing: 0.02em; }
   .music-switch { right: max(10px, var(--safe-right)); bottom: auto; top: calc(58px + env(safe-area-inset-top)); }
   .zoom-controls { right: max(14px, var(--safe-right)); bottom: auto; top: calc(106px + env(safe-area-inset-top)); }
   .zoom-controls .zoom-step { display: none; }
@@ -928,7 +952,7 @@ button.player-title:hover { text-decoration: underline; text-decoration-color: r
 }
 
 @media (max-width: 680px), (pointer: coarse) and (max-height: 560px) {
-  .search, .episode-list {
+  .search {
     top: var(--keyboard-top, 0px); bottom: auto; height: var(--keyboard-height, 100%);
   }
   .search { padding: 0; align-items: stretch; }
@@ -944,26 +968,7 @@ button.player-title:hover { text-decoration: underline; text-decoration-color: r
   .search-body { padding-bottom: calc(24px + env(safe-area-inset-bottom)); }
   .search-row { grid-template-columns: 34px minmax(0, 1fr); min-height: 56px; }
   .search-more { margin-left: 58px; }
-  .episode-list { pointer-events: auto; }
-  .panel-scrim {
-    position: absolute; inset: 0; border: 0; padding: 0; background: rgba(4, 6, 18, 0.55);
-    opacity: calc(1 - var(--sheet-drag, 0)); animation: fade-in 0.3s ease backwards;
-  }
-  .episode-list.is-leaving .panel-scrim { animation: fade-out 0.22s ease forwards; }
-  .panel {
-    position: absolute; inset: calc(env(safe-area-inset-top) + 14px) 0 0; width: auto; max-height: none; border: 0;
-    padding: 0 var(--safe-right) 0 var(--safe-left); border-radius: 20px 20px 0 0;
-    box-shadow: 0 -18px 60px rgba(2, 4, 16, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.09);
-    animation: sheet-up 0.46s cubic-bezier(0.32, 0.72, 0, 1) backwards;
-  }
-  .episode-list.is-leaving .panel { animation: sheet-down 0.22s cubic-bezier(0.32, 0.72, 0, 1) forwards; }
-  .panel-head { position: relative; padding: 14px 8px 6px 16px; touch-action: pinch-zoom; }
-  .panel-head .icon-button, .overlay-close { width: 44px; height: 44px; }
-  .panel-filter input { font-size: 16px; }
-  .panel-scroll { min-height: 0; padding-bottom: calc(24px + env(safe-area-inset-bottom)); }
-  .space:has(.player) .panel-scroll { padding-bottom: calc(96px + env(safe-area-inset-bottom)); }
-  .episode-list .player { position: absolute; }
-  .episode-head > .row-play { width: 40px; height: 40px; }
+  .overlay-close { width: 44px; height: 44px; }
 
   /* Pages rise as a sheet from the bottom, leaving a strip of sky above; drag the header (or the top of the page) down to close. */
   .overlay-scrim { background: rgba(4, 6, 18, 0.55); opacity: calc(1 - var(--sheet-drag, 0)); }
@@ -1029,11 +1034,11 @@ button.player-title:hover { text-decoration: underline; text-decoration-color: r
 
 /* Scrims reach as far down as the sky does, under Safari's toolbar too (see .space). */
 @supports (height: 100lvh) {
-  .search-scrim, .overlay-scrim, .share-scrim, .panel-scrim { bottom: auto; height: 100lvh; }
+  .search-scrim, .overlay-scrim, .share-scrim { bottom: auto; height: 100lvh; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }
   .music-bars i { animation: none !important; height: 8px; }
-  .overlay-panel, .panel, .search-sheet, .share-stage, .share-tray, .share-skeleton::after { animation: none !important; }
+  .overlay-panel, .search-sheet, .share-stage, .share-tray, .share-skeleton::after { animation: none !important; }
 }
