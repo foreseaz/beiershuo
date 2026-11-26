@@ -441,5 +441,16 @@
       "credit": "Colleen Sturtevant · CC BY-SA 4.0",
       "source": "https://commons.wikimedia.org/wiki/File:Tony_Kaye_2026.jpg"
     }
+  },
+  "john-kay": {
+    "link": {
+      "href": "https://en.wikipedia.org/wiki/John%20Kay%20%28economist%29",
+      "label": "维基百科"
+    },
+    "image": {
+      "src": "/people/john-kay.jpg",
+      "credit": "Policy Exchange · CC BY 2.0",
+      "source": "https://commons.wikimedia.org/wiki/File:Professor_John_Kay_Policy_Exchange_2012.jpg"
+    }
   }
 }

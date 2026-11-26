@@ -12,7 +12,7 @@
     {"id": "winnicott", "name": "温尼科特", "aliases": ["温尼科特", "Winnicott"], "note": "英国儿科医生、精神分析师，提出「足够好的母亲」和「虚假自体」。", "wiki": "Donald_Winnicott"},
     {"id": "bowlby", "name": "鲍尔比", "aliases": ["鲍尔比", "Bowlby"], "note": "英国精神病学家，依恋理论的奠基人。", "wiki": "John_Bowlby"},
     {"id": "fairbairn", "name": "费尔贝恩", "aliases": ["费尔贝恩", "Fairbairn"], "note": "苏格兰精神分析师，客体关系理论的代表人物。", "wiki": "Ronald_Fairbairn"},
-    {"id": "horney", "name": "卡伦·霍妮", "aliases": ["霍妮", "Horney"], "note": "德裔美国精神分析师，提出「应该的暴政」。", "wiki": "Karen_Horney"},
+    {"id": "horney", "name": "卡伦·霍妮", "aliases": ["霍妮", "霍尼", "Horney"], "note": "德裔美国精神分析师，提出「应该的暴政」。", "wiki": "Karen_Horney"},
     {"id": "fromm", "name": "弗洛姆", "aliases": ["弗洛姆", "Fromm"], "note": "德裔美国社会心理学家，著有《逃避自由》《爱的艺术》。", "wiki": "Erich_Fromm"},
     {"id": "adler", "name": "阿德勒", "aliases": ["阿德勒", "Adler"], "note": "奥地利心理学家，个体心理学的创始人。", "wiki": "Alfred_Adler"},
     {"id": "descartes", "name": "笛卡尔", "aliases": ["笛卡尔", "Descartes"], "note": "法国哲学家，提出「我思故我在」。", "wiki": "René_Descartes"},
@@ -44,7 +44,8 @@
     {"id": "ma-tianyu", "name": "马天宇", "aliases": ["马天宇"], "note": "中国演员、歌手。", "wiki": "Ma_Tianyu"},
     {"id": "jules-verne", "name": "儒勒·凡尔纳", "aliases": ["凡尔纳", "Jules Verne"], "note": "法国小说家，《海底两万里》的作者。", "wiki": "Jules_Verne"},
     {"id": "denis-villeneuve", "name": "丹尼斯·维伦纽瓦", "aliases": ["维伦纽瓦", "Denis Villeneuve"], "note": "加拿大导演，执导电影《降临》。", "wiki": "Denis_Villeneuve"},
-    {"id": "tony-kaye", "name": "托尼·凯耶", "aliases": ["托尼·凯耶", "Tony Kaye"], "note": "英国导演，执导电影《超脱》。", "wiki": "Tony_Kaye_(director)"}
+    {"id": "tony-kaye", "name": "托尼·凯耶", "aliases": ["托尼·凯耶", "Tony Kaye"], "note": "英国导演，执导电影《超脱》。", "wiki": "Tony_Kaye_(director)"},
+    {"id": "john-kay", "name": "约翰·凯", "aliases": ["约翰·凯", "John Kay"], "note": "英国经济学家，主张许多目标只能迂回地去实现。", "wiki": "John_Kay_(economist)"}
   ],
   "books": [
     {"id": "mans-search-for-meaning", "name": "活出生命的意义", "author": "frankl", "aliases": ["活出生命的意义", "Man's Search for Meaning"], "note": "弗兰克尔记录集中营经历，并阐述意义疗法。"},
@@ -74,7 +75,10 @@
     {"id": "on-becoming-a-person", "name": "个人形成论", "author": "rogers", "aliases": ["个人形成论", "On Becoming a Person"], "note": "罗杰斯谈人本主义治疗与「人生是过程」。"},
     {"id": "myth-of-sisyphus", "name": "西西弗神话", "author": "camus", "aliases": ["西西弗斯神话", "西西弗神话", "The Myth of Sisyphus"], "note": "加缪以推石头的西西弗谈荒诞与反抗。"},
     {"id": "quiet", "name": "安静", "author": "susan-cain", "aliases": ["内向者的力量", "Quiet"], "note": "凯恩谈内向者在偏爱外向的文化里的力量。"},
-    {"id": "twenty-thousand-leagues", "name": "海底两万里", "author": "jules-verne", "aliases": ["海底两万里", "Twenty Thousand Leagues Under the Seas"], "note": "凡尔纳的科幻小说，讲鹦鹉螺号在海底的航行。"}
+    {"id": "twenty-thousand-leagues", "name": "海底两万里", "author": "jules-verne", "aliases": ["海底两万里", "Twenty Thousand Leagues Under the Seas"], "note": "凡尔纳的科幻小说，讲鹦鹉螺号在海底的航行。"},
+    {"id": "neurosis-and-human-growth", "name": "神经症与人的成长", "author": "horney", "aliases": ["神经症与人的成长", "Neurosis and Human Growth"], "note": "霍妮晚年的代表作，讲人为追逐理想化的自我而背离真实的自己。"},
+    {"id": "obliquity", "name": "迂回", "author": "john-kay", "aliases": ["迂回", "Obliquity"], "note": "约翰·凯认为，幸福、财富这类目标往往要迂回地追求才能实现。"},
+    {"id": "almanack-of-naval-ravikant", "name": "纳瓦尔宝典", "author": "naval", "aliases": ["纳瓦尔宝典", "The Almanack of Naval Ravikant"], "note": "埃里克·乔根森整理的纳瓦尔访谈与推文，谈财富、判断和幸福。"}
   ],
   "films": [
     {"id": "arrival", "name": "降临", "aliases": ["降临", "Arrival"], "people": ["denis-villeneuve"], "year": 2016, "format": "电影", "note": "如果提前知道会失去，你还会选择相遇吗？"},
@@ -153,8 +157,11 @@
     {"id": "authenticity", "name": "真实", "aliases": ["真实", "人设", "面具"], "note": "不背叛自己，而不是毫无修饰。", "topic": "self-trust"},
     {"id": "choosing-or-must", "name": "我选择还是我必须", "aliases": ["我选择", "我必须", "我想要"], "note": "分辨一件事是出于想要，还是出于不得不。", "topic": "self-trust"},
     {"id": "intuition", "name": "直觉与本能", "aliases": ["直觉", "本能"], "note": "身体和经验里比语言更快的判断。", "topic": "self-trust"},
+    {"id": "actualizing-tendency", "name": "实现倾向", "aliases": ["实现倾向", "自我实现倾向"], "note": "罗杰斯：每个生命都有朝向成长、实现自身的内在驱动力。", "people": ["rogers"], "topic": "self-trust"},
     {"id": "comparison", "name": "比较", "aliases": ["比较", "同龄人", "零和"], "note": "拿别人当尺子，有时会让尺子变成裁判。", "topic": "self-worth"},
     {"id": "money", "name": "金钱", "aliases": ["金钱", "谈钱", "花钱", "赚钱"], "note": "人和钱的关系，常常映出人和自己的关系。", "topic": "self-worth"},
+    {"id": "idealized-self", "name": "理想自我", "aliases": ["理想自我", "理想化自我", "自我憎恨"], "note": "霍妮：人塑造出一个完美的自己，再用它来憎恨、鞭打真实的自己。", "people": ["horney"], "topic": "self-worth"},
+    {"id": "humanity-as-end", "name": "人是目的", "aliases": ["人是目的", "工具人"], "note": "康德：人永远不该只被当作手段，无论是别人还是你自己。", "people": ["kant"], "topic": "self-worth"},
     {"id": "trauma", "name": "创伤", "aliases": ["创伤", "CPTSD", "闪回"], "note": "过去的伤没有被消化，仍在身体和关系里起作用。", "topic": "emotion-body"},
     {"id": "addiction", "name": "上瘾", "aliases": ["上瘾", "成瘾"], "note": "反复回到一种能暂时止痛的行为。", "topic": "emotion-body"},
     {"id": "anxiety", "name": "焦虑与恐惧", "aliases": ["焦虑", "恐惧"], "note": "身体在为可能的危险做准备。", "topic": "emotion-body"},
@@ -164,7 +171,9 @@
     {"id": "action", "name": "行动力", "aliases": ["行动力", "停滞"], "note": "从知道到开始做，中间要过好几道关。", "topic": "rhythm"},
     {"id": "provisional-life", "name": "临时的生活", "aliases": ["临时的生活", "先苦后甜", "等以后"], "note": "总把真正的生活推迟到以后。", "topic": "rhythm"},
     {"id": "no-feedback", "name": "无反馈期", "aliases": ["无反馈", "负反馈"], "note": "努力了却迟迟看不到结果的阶段。", "topic": "rhythm"},
+    {"id": "urgency", "name": "着急", "aliases": ["着急"], "note": "想快点抵达的那股劲，能推人向前，也会变成枷锁。", "topic": "rhythm"},
     {"id": "confusion", "name": "迷茫", "aliases": ["迷茫"], "note": "不知道要去哪里，常常是太久没有为自己选择。", "topic": "meaning"},
-    {"id": "freedom-of-choice", "name": "选择与自由", "aliases": ["选择自由", "错误选择", "二选一", "两难"], "note": "选择带来自由，也带来眩晕和代价。", "topic": "meaning"}
+    {"id": "freedom-of-choice", "name": "选择与自由", "aliases": ["选择自由", "错误选择", "二选一", "两难"], "note": "选择带来自由，也带来眩晕和代价。", "topic": "meaning"},
+    {"id": "aspiration", "name": "愿力", "aliases": ["愿力"], "note": "从心里长出来的力量，朝向方向而不是结果，和被勾起的欲望不同。", "topic": "meaning"}
   ]
 }
