@@ -14,6 +14,12 @@ type Props = {
 }
 
 /**
+ * iPhone and iPad. Safari there files a downloaded image under Files, and a page can't reach Photos; the share
+ * sheet's 存储图像 (or a long press on the image) is the way into the camera roll. iPadOS reports itself as a Mac.
+ */
+const ios = () => /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+
+/**
  * Preview the share card over a blurred sky, then hand it to the system share sheet, save it, or copy the page link.
  * On phones the card sits above a tray of large buttons that can be dragged down to close.
  */
@@ -30,6 +36,8 @@ export function ShareDialog({ subject, path, episodes, moments, onClose }: Props
   const name = subject.kind === 'site' ? '贝儿说-次要人生主题星图.png' : `贝儿说-${title.replace(/[\\/:*?"<>|]/g, ' ')}.png`
   const file = blob ? new File([blob], name, { type: 'image/png' }) : null
   const canShareFile = Boolean(file && navigator.canShare?.({ files: [file] }))
+  // On iOS, 保存图片 opens the share sheet with the image alone, so 存储图像 sits at the top and the card lands in Photos.
+  const toPhotos = canShareFile && ios()
 
   useDialog(dialog)
   useSheetDrag({ sheet: tray, handle: tray, onDismiss: onClose })
@@ -60,6 +68,15 @@ export function ShareDialog({ subject, path, episodes, moments, onClose }: Props
     }
   }
 
+  const save = async () => {
+    if (!file) return
+    try {
+      await navigator.share({ files: [file] })
+    } catch (error) {
+      if (!(error instanceof DOMException && error.name === 'AbortError')) setNote('长按上面的图片，选「添加到照片」')
+    }
+  }
+
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(url)
@@ -87,14 +104,20 @@ export function ShareDialog({ subject, path, episodes, moments, onClose }: Props
               <span className="share-action-icon"><Share2 size={19} aria-hidden="true" /></span>分享
             </button>
           )}
-          <a className={blob ? '' : 'is-disabled'} href={preview || undefined} download={name} aria-disabled={!blob}>
-            <span className="share-action-icon"><Download size={19} aria-hidden="true" /></span>保存图片
-          </a>
+          {toPhotos ? (
+            <button type="button" onClick={save}>
+              <span className="share-action-icon"><Download size={19} aria-hidden="true" /></span>保存图片
+            </button>
+          ) : (
+            <a className={blob ? '' : 'is-disabled'} href={preview || undefined} download={name} aria-disabled={!blob}>
+              <span className="share-action-icon"><Download size={19} aria-hidden="true" /></span>保存图片
+            </a>
+          )}
           <button type="button" onClick={copy}>
             <span className="share-action-icon"><Link2 size={19} aria-hidden="true" /></span>复制链接
           </button>
         </div>
-        <p className="share-note" aria-live="polite">{note}</p>
+        <p className="share-note" aria-live="polite">{note || (toPhotos ? '点「保存图片」后选「存储图像」，或长按图片，就能存进相册' : '')}</p>
       </div>
     </dialog>
   )
