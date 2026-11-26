@@ -417,6 +417,10 @@ export function StarMap(props: MapProps) {
   }, [])
 
   const focused = topics.find(topic => topic.id === current)
+  // The nebulae the lit episode reaches: their titles stay a little clearer than the rest while it is lit.
+  const reached = useMemo(
+    () => new Set(episode ? stars.filter(star => episode.stars.has(star.id)).map(star => star.nebula) : []), [stars, episode],
+  )
   const counts = useMemo(() => {
     const result = new Map<string, number>()
     for (const star of stars) result.set(star.nebula, (result.get(star.nebula) ?? 0) + 1)
@@ -433,7 +437,7 @@ export function StarMap(props: MapProps) {
   }
 
   return (
-    <section ref={sectionRef} className={`galaxy${current ? ' is-focused' : ''}${webgl ? '' : ' galaxy--flat'}`} aria-label="主题星图">
+    <section ref={sectionRef} className={`galaxy${current ? ' is-focused' : ''}${episode ? ' is-episode' : ''}${webgl ? '' : ' galaxy--flat'}`} aria-label="主题星图">
       <div className="star-canvas" ref={canvasRef} aria-hidden="true" />
       <svg className="star-leader" aria-hidden="true">
         <path ref={leaderRef} />
@@ -443,7 +447,7 @@ export function StarMap(props: MapProps) {
         <button
           key={topic.id}
           ref={element => { if (element) nebulaRefs.current.set(topic.id, element); else nebulaRefs.current.delete(topic.id) }}
-          className="nebula-label"
+          className={`nebula-label${reached.has(topic.id) ? ' is-reached' : ''}`}
           style={{ '--tint': topic.color } as React.CSSProperties}
           type="button"
           onClick={() => props.onNebula(topic.id)}

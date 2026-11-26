@@ -696,14 +696,15 @@ export async function renderShareCard({ subject, url, episodes, moments }: CardI
 
   /**
    * One episode: the star map leads, as on the site's card, with this episode's sub-topics lit, named and joined in
-   * the order it comes to them. Under it: the episode's number, date and length, its title, what it covers, and the
-   * band. The nebulae it never reaches keep their names, quieter, so the constellation reads against the whole sky.
+   * the order it comes to them. The sub-topics are the names that read; the topics' titles sink into the sky behind
+   * them, a little clearer where the episode reaches, and give way wherever a sub-topic's name needs the room. Under
+   * the map: the episode's number, date and length, its title, what it covers, and the band.
    */
   function drawEpisode(ctx: CanvasRenderingContext2D, share: EpisodeShare, nebulae: Nebula[], still: GalaxyStill | null) {
     const H = MAX_H
     const { episode } = share
     const lit = new Set(share.lit)
-    const litNebulae = new Set(share.stars.filter(star => lit.has(star.id)).map(star => star.nebula))
+    const reached = new Set(share.stars.filter(star => lit.has(star.id)).map(star => star.nebula))
     // The band's rows, from the foot up, then the title, which decides how far up the type begins.
     const last = H - 72
     const plateTop = last - 38 - 168
@@ -717,16 +718,12 @@ export async function renderShareCard({ subject, url, episodes, moments }: CardI
     paintSky(ctx, H)
     const nebulaAt = paintHero(ctx, nebulae, still)
 
-    // The masthead holds the top left; a topic's title may sit beside it.
+    // The masthead holds the top left; the sub-topics' names fill the rest of the sky.
     ctx.font = `400 22px ${SERIF}`
     spacing(ctx, '8px')
     const taken: Box[] = [{ left: 0, top: 0, right: PAD + ctx.measureText('贝儿说 · 次要人生').width + 24, bottom: 132 }]
     const floor = kickerY - 50
     const inside = (box: Box) => box.left >= PAD * 0.5 && box.right <= W - PAD * 0.5 && box.top >= 0 && box.bottom <= floor
-    const titles = placeTitles(share.topics, nebulaAt, 32, [])
-    // The nebulae this episode reaches are named first; the others only where nothing of the episode's sits.
-    const [loud, quiet] = [titles.filter(title => litNebulae.has(title.topic.id)), titles.filter(title => !litNebulae.has(title.topic.id))]
-    for (const title of loud) taken.push(title.box)
     ctx.textBaseline = 'alphabetic'
     const tags: { name: string; color: string; x: number; y: number }[] = []
     if (still) {
@@ -754,8 +751,12 @@ export async function renderShareCard({ subject, url, episodes, moments }: CardI
         tags.push({ name: star.name, color: colorOf.get(star.nebula) ?? tint, x: box.left, y: box.baseline })
       }
     }
-    for (const title of quiet) if (title.box.bottom <= floor && !overlaps(title.box, taken)) drawTitle(ctx, title, 32, 0.42)
-    for (const title of loud) drawTitle(ctx, title, 32, 1)
+    // The topics' titles, in the background: only where they clear the masthead, the type and every sub-topic's name.
+    for (const title of placeTitles(share.topics, nebulaAt, 30, [])) {
+      const { box } = title
+      const core = { left: box.left + 28, top: box.top, right: box.right - 28, bottom: box.bottom }
+      if (box.bottom <= floor && !overlaps(core, taken)) drawTitle(ctx, title, 30, reached.has(title.topic.id) ? 0.5 : 0.26)
+    }
     for (const tag of tags) {
       ctx.font = `500 30px ${SANS}`
       spacing(ctx, '1px')
