@@ -11,6 +11,7 @@ import { ShareDialog } from './ShareDialog'
 import { IndexPage } from './IndexPage'
 import { SearchSpace } from './SearchSpace'
 import { useAmbient } from './ambient'
+import { SHEET_QUERY, useMediaQuery } from './dialog'
 import { StarMap, type GalaxyStar } from './StarMap'
 import { segmentsOf, usePlayer } from './player'
 import { ApplePodcastsIcon, XiaoyuzhouIcon } from './platforms'
@@ -242,6 +243,23 @@ export function App() {
 
   const fly = useCallback((trip: Omit<Travel, 'seq'>) => setTravel(previous => ({ seq: previous.seq + 1, ...trip })), [])
 
+  // On an upright phone an episode's card opens as a short sheet and the map fits the episode's sub-topics into the
+  // sky above it; closing the card goes back to the whole sky.
+  const sheet = useMediaQuery(SHEET_QUERY)
+  const episodeCard = !!episodeId && !starId && !momentId && !threadId
+  const framed = useRef(false)
+  useEffect(() => {
+    if (!sheet) return
+    const lit = episodeCard ? galaxy.episodeStars.get(episodeId) ?? [] : []
+    if (lit.length) {
+      framed.current = true
+      fly({ stars: lit })
+    } else if (framed.current) {
+      framed.current = false
+      if (!episodeId && !starId && !momentId && !threadId) fly({})
+    }
+  }, [sheet, episodeCard, episodeId, starId, momentId, threadId, galaxy, fly])
+
   const leavePage = useCallback(() => { if (parseRoute(window.location.pathname)) closeOverlay() }, [closeOverlay])
 
   const focusNebula = useCallback((id: string) => {
@@ -335,10 +353,18 @@ export function App() {
       path: '/',
     })
   }
+  // An episode's card is the map with that episode lit, so it carries the sky and the episode's own path.
   const shareEpisode = (episode: Episode, trigger: HTMLButtonElement) => {
     trigger.focus({ preventScroll: true })
-    const tint = topics.find(item => item.id === episode.topicIds?.[0])?.color ?? '#9fb0ff'
-    setShared({ subject: { kind: 'episode', episode, tint }, path: episodePath(episode.id) })
+    const lit = galaxy.episodeStars.get(episode.id) ?? []
+    const tint = topics.find(item => item.id === entities.get(lit[0] ?? '')?.topic)?.color ?? '#9fb0ff'
+    setShared({
+      subject: {
+        kind: 'episode', episode, tint, topics, stars: galaxy.stars, lit,
+        threads: galaxy.threads.filter(item => item.episode === episode.id),
+      },
+      path: episodePath(episode.id),
+    })
   }
 
   useEffect(() => {
@@ -434,6 +460,7 @@ export function App() {
         onOverview={overview}
         card={card}
         cardKey={momentId || threadId || starId || episodeId}
+        peek={sheet && episodeCard}
       />
       <EpisodeRail episodes={timeline} active={railActive} marks={marks} playing={player.cue?.episode.id ?? ''}
         starCount={id => galaxy.episodeStars.get(id)?.length ?? 0} onPreview={setPreviewEpisode} onSelect={selectEpisode} />

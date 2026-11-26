@@ -16,8 +16,11 @@ export type SubStar = { id: string; nebula: string; weight: number }
  * is highlighted.
  */
 export type Thread = { id: string; from: string; to: string; bend: number; primary: boolean; episode?: string }
-/** An explicit trip of the camera, from a click: to a nebula, to a star, or back out to the whole sky. */
-export type Travel = { seq: number; nebula?: string | null; star?: string | null }
+/**
+ * An explicit trip of the camera, from a click: to a nebula, to a star, back out to the whole sky, or (`stars`) to
+ * frame a set of sub-topics, an episode's, in the sky left free above the bottom `below` px of the screen.
+ */
+export type Travel = { seq: number; nebula?: string | null; star?: string | null; stars?: string[]; below?: number }
 export type GalaxyFrame = {
   width: number
   height: number
@@ -49,6 +52,15 @@ export type GalaxyOptions = {
 
 const OVERVIEW = 20
 const CLOSE = 8.5
+// Nearer than this, the camera counts as inside the nebula in front of it.
+const INSIDE = 13
+// Framing a set of stars on a phone: the margins kept free (px) under the top bar, beside the left edge and the
+// episode rail, and the room around each star for its name. The camera stands no nearer than FRAME_NEAREST times
+// the pullback, so the view still counts as the whole sky, even after the screen turns (which scales the distance
+// by the pullback).
+const FRAME_INSET = { top: 104, left: 14, right: 52 }
+const FRAME_MARGIN = 34
+const FRAME_NEAREST = 13.5
 const MIN_DISTANCE = 3.2
 const MAX_DISTANCE = 30
 const FOV = 40
@@ -331,6 +343,10 @@ export class GalaxyScene {
     const star = trip.star ? this.stars.get(trip.star) : undefined
     const nebula = this.nebulae.get(star?.star.nebula ?? trip.nebula ?? '')
     this.spinPause = performance.now() + 4000
+    if (trip.stars?.length && this.frameStars(trip.stars, trip.below ?? 0)) {
+      this.touch()
+      return
+    }
     if (!nebula) {
       this.lookGoal.set(0, 0, 0)
       this.distanceGoal = (this.mixGoal ? OVERVIEW_DEEP : OVERVIEW) * this.pullback
@@ -351,6 +367,46 @@ export class GalaxyScene {
       this.distanceGoal = distance
     }
     this.touch()
+  }
+
+  /**
+   * Fit these stars, with room for their names, into the screen less the top bar, the rail and the bottom `below`
+   * px, standing no nearer than FRAME_NEAREST allows. False when none of them is on the map.
+   */
+  private frameStars(ids: string[], below: number) {
+    const points = ids.flatMap(id => {
+      const object = this.stars.get(id)
+      const nebula = object && this.nebulae.get(object.star.nebula)
+      return object && nebula ? [object.offset.clone().lerp(object.deepOffset, this.mixGoal).add(this.goalCenter(nebula))] : []
+    })
+    if (!points.length) return false
+    // Each point across (along the camera's right) and up, as the camera now faces.
+    const across = points.map(point => point.dot(this.right))
+    const high = points.map(point => point.dot(this.up))
+    const spanX = Math.max(...across) - Math.min(...across)
+    const spanY = Math.max(...high) - Math.min(...high)
+    const free = {
+      width: Math.max(80, this.width - FRAME_INSET.left - FRAME_INSET.right - FRAME_MARGIN * 2),
+      height: Math.max(80, this.height - FRAME_INSET.top - below - FRAME_MARGIN * 2),
+    }
+    // Pixels per world unit that fit both spans, and the distance that gives it.
+    const scale = Math.min(free.width / Math.max(spanX, 1e-3), free.height / Math.max(spanY, 1e-3))
+    const distance = THREE.MathUtils.clamp(this.height / (2 * TAN * scale), FRAME_NEAREST * this.pullback, MAX_DISTANCE * this.pullback)
+    const perPixel = (2 * distance * TAN) / this.height
+    // The middle of the stars' box as the camera sees it, at their average depth, goes to the middle of the free sky.
+    const middle = new THREE.Vector3()
+    for (const point of points) middle.add(point)
+    middle.divideScalar(points.length)
+      .addScaledVector(this.right, (Math.max(...across) + Math.min(...across)) / 2 - middle.dot(this.right))
+      .addScaledVector(this.up, (Math.max(...high) + Math.min(...high)) / 2 - middle.dot(this.up))
+    const screenX = FRAME_INSET.left + (this.width - FRAME_INSET.left - FRAME_INSET.right) / 2
+    const screenY = FRAME_INSET.top + (this.height - FRAME_INSET.top - below) / 2
+    this.lookGoal.copy(middle)
+      .addScaledVector(this.right, (this.width / 2 - screenX) * perPixel)
+      .addScaledVector(this.up, (screenY - this.height / 2) * perPixel)
+    this.distanceGoal = distance
+    this.frameRight = this.frameLift = 0
+    return true
   }
 
   /**
@@ -794,7 +850,7 @@ export class GalaxyScene {
 
   /** The nebula the camera is inside, if it is close enough to count as being in one. */
   private nearestNebula() {
-    if (this.distance > 13) return null
+    if (this.distance > INSIDE) return null
     let best: string | null = null
     let closest = 3.4
     const focus = this.focus.copy(this.look).addScaledVector(this.right, -this.frameRight).addScaledVector(this.up, this.frameLift * this.distance * TAN)

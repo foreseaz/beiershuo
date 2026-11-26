@@ -216,6 +216,9 @@ button { cursor: pointer; touch-action: manipulation; }
   -webkit-mask-image: linear-gradient(#000 60%, transparent);
   mask-image: linear-gradient(#000 60%, transparent);
 }
+/* An episode's card folds to its heading and actions, so its constellation shows in the sky around it. */
+.info-drawer.is-collapsed .card--episode { max-height: none; -webkit-mask-image: none; mask-image: none; }
+.info-drawer.is-collapsed .card--episode .episode-card-actions ~ * { display: none; }
 .drawer-toggle { position: absolute; top: 10px; right: 42px; z-index: 2; }
 @keyframes drawer-in { from { opacity: 0; transform: translateX(14px); } to { opacity: 1; transform: none; } }
 .card-close { position: absolute; top: 10px; right: 10px; }
@@ -715,9 +718,12 @@ button.row:hover, .row-main:hover { background: rgba(255, 255, 255, 0.05); }
   border: 1px solid rgba(255, 255, 255, 0.16); background: rgba(255, 255, 255, 0.07); font: 400 14.5px var(--serif); color: var(--ivory);
   -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); cursor: pointer;
 }
-.share-actions button:hover, .share-actions a:hover { background: rgba(255, 255, 255, 0.14); }
 .share-actions > :first-child { background: var(--ivory); color: #121633; border-color: transparent; }
-.share-actions > :first-child:hover { background: #fff; }
+/* Only where there is a pointer to hover: a finger would leave the button lit after the tap. */
+@media (hover: hover) {
+  .share-actions button:hover, .share-actions a:hover { background: rgba(255, 255, 255, 0.14); }
+  .share-actions > :first-child:hover { background: #fff; }
+}
 .share-action-icon { display: inline-grid; place-items: center; }
 .share-actions .is-disabled { opacity: 0.4; pointer-events: none; }
 .share-note { min-height: 18px; max-width: 100%; margin: 0; font-size: 12.5px; color: var(--muted); overflow-wrap: anywhere; }
@@ -911,10 +917,11 @@ button.player-title:hover { text-decoration: underline; text-decoration-color: r
   .corner-actions .corner-share { width: 44px; height: 44px; border: 0; background: none; }
   /* The rail runs from under the 3D button to above the player, and stops above the card sheet while one is open. */
   .episode-rail { right: max(4px, var(--safe-right)); top: calc(150px + env(safe-area-inset-top)); bottom: calc(92px + env(safe-area-inset-bottom)); width: 44px; z-index: 6; }
-  .space:has(.info-drawer:not(.is-empty)) .episode-rail { bottom: calc(min(54dvh, 480px) + 20px + env(safe-area-inset-bottom)); }
-  .space:has(.info-drawer.is-collapsed) .episode-rail { bottom: calc(112px + env(safe-area-inset-bottom)); }
-  .space:has(.player):has(.info-drawer:not(.is-empty)) .episode-rail { bottom: calc(min(54dvh, 480px) + 90px + env(safe-area-inset-bottom)); }
+  .space:has(.info-drawer:not(.is-empty)) .episode-rail { bottom: calc(var(--drawer-height, 0px) + 22px + env(safe-area-inset-bottom)); }
+  .space:has(.player):has(.info-drawer:not(.is-empty)) .episode-rail { bottom: calc(var(--drawer-height, 0px) + 92px + env(safe-area-inset-bottom)); }
   .rail-month { right: 38px; font-size: 9.5px; letter-spacing: 0.02em; }
+  /* The strip beside the rail is map on a phone, so only the years stay; the months show while a finger is on it. */
+  .episode-rail:not(.is-peeking) .rail-month:not(.is-year) { opacity: 0; }
   .music-switch { right: max(10px, var(--safe-right)); bottom: auto; top: calc(58px + env(safe-area-inset-top)); }
   .zoom-controls { right: max(14px, var(--safe-right)); bottom: auto; top: calc(106px + env(safe-area-inset-top)); }
   .zoom-controls .zoom-step { display: none; }
@@ -936,6 +943,8 @@ button.player-title:hover { text-decoration: underline; text-decoration-color: r
     max-height: min(54vh, 480px); max-height: min(54dvh, 480px); border-radius: 16px;
   }
   .info-drawer .card { animation-name: sheet-in; }
+  /* The sheet folds down and opens up, so its chevron points the other way from the docked drawer's. */
+  .drawer-toggle svg { transform: rotate(180deg); }
   .space:has(.player) .info-drawer { bottom: calc(78px + env(safe-area-inset-bottom)); }
   .card { padding: 16px 16px 14px 18px; }
   .card--star { padding: 16px 16px 14px; }

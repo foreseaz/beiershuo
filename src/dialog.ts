@@ -2,15 +2,19 @@ import { useCallback, useLayoutEffect, useRef, useState, type RefObject } from '
 
 export const PHONE_QUERY = '(max-width: 680px), (pointer: coarse) and (max-height: 560px)'
 
-export function usePhoneLayout() {
-  const [phone, setPhone] = useState(() => window.matchMedia(PHONE_QUERY).matches)
+/** An upright phone, where the detail card is a sheet along the bottom of the screen. */
+export const SHEET_QUERY = '(max-width: 680px)'
+
+export function useMediaQuery(media: string) {
+  const [matches, setMatches] = useState(() => window.matchMedia(media).matches)
   useLayoutEffect(() => {
-    const query = window.matchMedia(PHONE_QUERY)
-    const update = () => setPhone(query.matches)
+    const query = window.matchMedia(media)
+    const update = () => setMatches(query.matches)
+    update()
     query.addEventListener('change', update)
     return () => query.removeEventListener('change', update)
-  }, [])
-  return phone
+  }, [media])
+  return matches
 }
 
 /** Let the browser manage focus, Escape, and the inert page behind a modal. */

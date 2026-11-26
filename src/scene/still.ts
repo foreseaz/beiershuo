@@ -12,10 +12,11 @@ const noop = () => {}
 /**
  * Draw the star map once, off screen, for a share card: the same scene the site shows, at width × height px. The
  * scene is laid out at `width / pixelRatio` CSS px, so stars, glows and dust keep the proportions they have on a phone.
+ * With `episode`, that episode is lit as on the map: its sub-topics forward, its path drawn, the rest of the sky back.
  * Resolves with the picture and the frame's positions (scaled to the picture), then throws the scene away.
  */
 export function renderGalaxyStill(
-  { nebulae, stars, threads }: { nebulae: Nebula[]; stars: SubStar[]; threads: Thread[] },
+  { nebulae, stars, threads, episode }: { nebulae: Nebula[]; stars: SubStar[]; threads: Thread[]; episode?: { id: string; stars: string[] } },
   width: number,
   height: number,
   pixelRatio = 2.5,
@@ -65,6 +66,7 @@ export function renderGalaxyStill(
         onNebula: noop, onStar: noop, onThread: noop, onHover: noop, onHoverStar: noop, onGesture: noop, onView: noop, onEmpty: noop,
       })
       scene.setGalaxy(nebulae, stars, threads)
+      if (episode) scene.setEpisode(episode.id, new Set(episode.stars))
     } catch (error) {
       finish(error instanceof Error ? error : new Error('星图渲染失败'))
     }

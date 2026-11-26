@@ -26,6 +26,8 @@ type MapProps = {
   card: ReactNode
   /** Changes whenever a different card opens, so a collapsed drawer opens again for new content. */
   cardKey: string
+  /** Open new cards collapsed to their heading (an episode's card on a phone, so its constellation shows above it). */
+  peek?: boolean
 }
 
 const NARROW = 680
@@ -116,7 +118,9 @@ export function StarMap(props: MapProps) {
   const zoomStep = useRef(-1)
   const hoverStar = useRef<string | null>(null)
   const drawerBox = useRef<{ left: number; top: number } | null>(null)
-  const [collapsed, setCollapsed] = useState(false)
+  // The person's own collapse or expand holds until a different card opens, which starts as `peek` says.
+  const [toggled, setToggled] = useState<{ key: string; collapsed: boolean } | null>(null)
+  const collapsed = toggled?.key === cardKey ? toggled.collapsed : !!props.peek
   const [deep, setDeep] = useState(readDepth)
   const [hint, setHint] = useState(false)
   const sceneRef = useRef<GalaxyScene | null>(null)
@@ -345,7 +349,25 @@ export function StarMap(props: MapProps) {
   useEffect(() => { sceneRef.current?.setGalaxy(nebulae, stars, threads) }, [nebulae, stars, threads])
   useEffect(() => { sceneRef.current?.setSelection(selected, related) }, [selected, related])
   useEffect(() => { sceneRef.current?.setEpisode(episode?.id ?? null, episode?.stars ?? new Set()) }, [episode])
-  useEffect(() => { sceneRef.current?.travel(travel) }, [travel, stars])
+  // A trip that frames stars keeps them clear of the card sheet along the bottom of the sky.
+  useEffect(() => {
+    const aside = cardRef.current
+    const sky = canvasRef.current
+    const below = aside?.offsetHeight && sky ? Math.max(0, sky.getBoundingClientRect().bottom - aside.getBoundingClientRect().top) : 0
+    sceneRef.current?.travel({ ...travel, below })
+  }, [travel, stars])
+  // The card's height, for what is laid out around it (the episode rail stops above the sheet on a phone).
+  useEffect(() => {
+    const aside = cardRef.current
+    if (!aside) return
+    const root = document.documentElement
+    const observer = new ResizeObserver(() => root.style.setProperty('--drawer-height', `${aside.offsetHeight}px`))
+    observer.observe(aside)
+    return () => {
+      observer.disconnect()
+      root.style.removeProperty('--drawer-height')
+    }
+  }, [])
   useEffect(() => { sceneRef.current?.setReducedMotion(reducedMotion) }, [reducedMotion])
 
   const toggleDepth = () => {
@@ -362,7 +384,6 @@ export function StarMap(props: MapProps) {
     return () => window.clearTimeout(timer)
   }, [hint])
   useEffect(() => { if (lastFrame.current) place.current(lastFrame.current) }, [selected, related, episode, current, card])
-  useEffect(() => setCollapsed(false), [cardKey])
 
   // Measure label widths once (after the web font loads), never inside the frame loop. Width scales with font
   // size (letter spacing is in em), so one measurement per label covers every zoom.
@@ -471,7 +492,7 @@ export function StarMap(props: MapProps) {
       )}
       <aside className={`info-drawer${card ? '' : ' is-empty'}${collapsed ? ' is-collapsed' : ''}`} ref={cardRef} aria-label="详情">
         {card && (
-          <button className="drawer-toggle icon-button" type="button" onClick={() => setCollapsed(value => !value)}
+          <button className="drawer-toggle icon-button" type="button" onClick={() => setToggled({ key: cardKey, collapsed: !collapsed })}
             aria-expanded={!collapsed} aria-label={collapsed ? '展开' : '收起'}>
             {collapsed ? <ChevronDown size={15} aria-hidden="true" /> : <ChevronUp size={15} aria-hidden="true" />}
           </button>
