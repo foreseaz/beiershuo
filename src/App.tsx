@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { ArrowUpRight, BookOpen, Pause, Play, RotateCcw, Search, Share2, SkipForward, Users, VolumeX, X } from 'lucide-react'
+import {
+  ArrowUpRight, BookOpen, Check, Ear, Heart, Mail, MessageCircleHeart, Pause, PenLine, Play, RotateCcw, Search, Share2, SkipForward, Users, VolumeX, X,
+} from 'lucide-react'
 import {
   ENTITY_LABELS, SHOW_XIAOYUZHOU, dayLabel, entityPath, episodeLabel, indexPath, loadAtlas, momentSource, parseRoute, shortTitle, timeLabel,
   topicMoments, type Atlas, type Entity, type EntityKind, type Episode, type Moment, type Topic,
@@ -9,6 +11,8 @@ import { EpisodeRail } from './EpisodeRail'
 import { Overlay } from './Overlay'
 import { ShareDialog } from './ShareDialog'
 import { IndexPage } from './IndexPage'
+import { LetterDialog } from './LetterDialog'
+import { useGiven, type LetterAbout } from './letters'
 import { SearchSpace } from './SearchSpace'
 import { useAmbient } from './ambient'
 import { pageview, track } from './analytics'
@@ -20,7 +24,7 @@ import { ApplePodcastsIcon, XiaoyuzhouIcon } from './platforms'
 import type { ShareSubject } from './shareCard'
 import type { Thread, Travel } from './scene/GalaxyScene'
 
-type Panel = 'search' | null
+type Panel = 'search' | 'letter' | null
 type Partner = { id: string; shared: number }
 /** What a thread stands for: one episode, and where in it each of the two sub-topics comes up. */
 type ThreadInfo = { id: string; from: string; to: string; episodeId: string; fromMoment: string | null; toMoment: string | null }
@@ -141,6 +145,7 @@ export function App() {
   const [episodeId, setEpisodeId] = useState(() => readUrl().episode)
   const [previewEpisode, setPreviewEpisode] = useState<string | null>(null)
   const [panel, setPanel] = useState<Panel>(null)
+  const [letter, setLetter] = useState<{ from: string; about: LetterAbout | null }>({ from: 'corner', about: null })
   const [route, setRoute] = useState(() => parseRoute(window.location.pathname))
   const reducedMotion = useReducedMotion()
   const segments = useMemo(() => segmentsOf(atlas?.moments ?? []), [atlas])
@@ -368,6 +373,15 @@ export function App() {
   }, [go])
 
   const cueFor = segments.cue
+  const writeLetter = (from: string, about: LetterAbout | null = null) => {
+    track('letter_opened', { from })
+    setLetter({ from, about })
+    setPanel('letter')
+  }
+  const writeAbout = (cue: Cue) => writeLetter('player', {
+    label: `${episodeLabel(cue.episode)} · ${cue.title}`,
+    page: `/?${new URLSearchParams(cue.momentId ? { moment: cue.momentId } : { episode: cue.episode.id })}`,
+  })
   const listen = (cue: Cue) => {
     track('episode_played', {
       episode: episodeLabel(cue.episode), title: shortTitle(cue.episode), from: cue.title, start_sec: Math.round(cue.startSec),
@@ -442,7 +456,7 @@ export function App() {
   const entity = route && 'id' in route ? atlas.entities?.find(item => item.kind === route.kind && item.id === route.id) : undefined
   const index = route && 'index' in route ? route.index : null
   const playing = player.cue?.momentId ? moments.get(player.cue.momentId) : undefined
-  const playerBar = player.cue && <PlayerBar player={player} onOpen={playing && (() => selectMoment(playing))} />
+  const playerBar = player.cue && <PlayerBar player={player} onOpen={playing && (() => selectMoment(playing))} onWrite={writeAbout} />
 
   let card: ReactNode = null
   if (moment) {
@@ -535,6 +549,12 @@ export function App() {
         }} aria-expanded={panel === 'search'}>
           <Search size={18} strokeWidth={1.5} aria-hidden="true" /> 搜索
         </button>
+        <button type="button" onClick={event => {
+          event.currentTarget.focus({ preventScroll: true })
+          writeLetter('corner')
+        }} aria-haspopup="dialog" aria-expanded={panel === 'letter'} aria-label="给贝儿留言" title="给贝儿留言">
+          <Mail size={18} strokeWidth={1.5} aria-hidden="true" /> 留言
+        </button>
         <button className="corner-share" type="button" onClick={event => shareSite(event.currentTarget)} aria-haspopup="dialog"
           aria-label="分享整张星图" title="分享整张星图">
           <Share2 size={16} strokeWidth={1.5} aria-hidden="true" />
@@ -543,6 +563,9 @@ export function App() {
       {panel === 'search' && (
         <SearchSpace atlas={atlas} episodes={episodes} onTopic={focusNebula} onStar={selectStar} onEntity={openEntity} onIndex={openIndex}
           onMoment={selectMoment} onEpisode={selectEpisode} onClose={closePanel} />
+      )}
+      {panel === 'letter' && (
+        <LetterDialog {...letter} xiaoyuzhouUrl={atlas.show?.xiaoyuzhouUrl ?? SHOW_XIAOYUZHOU} appleUrl={atlas.show?.appleUrl} onClose={closePanel} />
       )}
       {shared && <ShareDialog {...shared} episodes={episodes} moments={moments} onClose={closeShare} />}
       <Brand />
@@ -743,6 +766,12 @@ function StarCard({ star, topics, entities, episodes, moments, partners, onStar,
   const rows = [...star.mentions]
     .sort((a, b) => episodes.get(b.episodeId)!.publishedAt.localeCompare(episodes.get(a.episodeId)!.publishedAt))
   const count = new Set(rows.map(point => point.episodeId)).size
+  const [given, give] = useGiven()
+  const asked = given.has(`more:${star.id}`)
+  const askMore = () => {
+    give(`more:${star.id}`)
+    track('topic_more', { star: star.name, topic: topic?.title })
+  }
   return (
     <article className="card card--star">
       <button className="icon-button card-close" type="button" aria-label="关闭" onClick={onClose}><X size={15} aria-hidden="true" /></button>
@@ -784,7 +813,13 @@ function StarCard({ star, topics, entities, episodes, moments, partners, onStar,
       )}
       <div className="star-card-foot">
         <button className="star-card-page" type="button" onClick={onOpen}>打开「{star.name}」页面</button>
-        <button className="star-card-share" type="button" onClick={event => onShare(event.currentTarget)}><Share2 size={13} aria-hidden="true" /> 分享</button>
+        <span className="star-card-actions">
+          <button className="star-card-share star-card-ask" type="button" onClick={askMore} disabled={asked} aria-pressed={asked}
+            title={asked ? '已经告诉贝儿，你想听她多说说这个' : '告诉贝儿，你想听她多说说这个'}>
+            {asked ? <Check size={13} aria-hidden="true" /> : <Ear size={13} aria-hidden="true" />}{asked ? '已告诉贝儿' : '多说说这个'}
+          </button>
+          <button className="star-card-share" type="button" onClick={event => onShare(event.currentTarget)}><Share2 size={13} aria-hidden="true" /> 分享</button>
+        </span>
       </div>
     </article>
   )
@@ -795,7 +830,7 @@ function StarCard({ star, topics, entities, episodes, moments, partners, onStar,
  * within the segment, and at its end the player stops and offers the next one. The title leads back to the segment's
  * card on the map.
  */
-function PlayerBar({ player, onOpen }: { player: ReturnType<typeof usePlayer>; onOpen?: () => void }) {
+function PlayerBar({ player, onOpen, onWrite }: { player: ReturnType<typeof usePlayer>; onOpen?: () => void; onWrite?: (cue: Cue) => void }) {
   const { cue, playing, loading, finished, position, error, next } = player
   if (!cue) return null
   const bounded = cue.endSec !== null
@@ -815,6 +850,7 @@ function PlayerBar({ player, onOpen }: { player: ReturnType<typeof usePlayer>; o
           ? <button className="player-title" type="button" onClick={onOpen} title="在星图上找到这一段">{cue.title}</button>
           : <span className="player-title">{cue.title}</span>}
       </div>
+      {bounded && <Reactions cue={cue} onWrite={onWrite} />}
       {finished && next
         ? <button className="player-next" type="button" onClick={() => player.play(next)} aria-label={`下一段：${next.title}`}>
             下一段<SkipForward size={13} aria-hidden="true" />
@@ -825,5 +861,89 @@ function PlayerBar({ player, onOpen }: { player: ReturnType<typeof usePlayer>; o
       <button className="icon-button" type="button" aria-label="停止播放" onClick={player.close}><X size={16} aria-hidden="true" /></button>
       <span className="player-progress" aria-hidden="true" />
     </div>
+  )
+}
+
+const REACTIONS = [
+  { kind: 'resonates', label: '说中我了', Icon: Heart },
+  { kind: 'more', label: '想多听这个', Icon: Ear },
+] as const
+
+/**
+ * Feedback on the segment playing, folded into one small button in the player so it never gets in the way. Opened, a
+ * row of reactions floats above the player: each tap is counted for 贝儿 (README · 统计) and remembered on this
+ * device, and 我有话说 opens a letter about the segment.
+ */
+function Reactions({ cue, onWrite }: { cue: Cue; onWrite?: (cue: Cue) => void }) {
+  const [given, give] = useGiven()
+  const [open, setOpen] = useState(false)
+  const [flash, setFlash] = useState('')
+  const segment = `${cue.episode.id}@${Math.round(cue.startSec)}`
+  const reacted = REACTIONS.some(({ kind }) => given.has(`${kind}:${segment}`))
+
+  useEffect(() => setOpen(false), [segment])
+  // After a reaction: a moment to read 已告诉贝儿, then the row folds away.
+  useEffect(() => {
+    if (!flash) return
+    const timer = window.setTimeout(() => {
+      setFlash('')
+      setOpen(false)
+    }, 1500)
+    return () => window.clearTimeout(timer)
+  }, [flash])
+  // A press anywhere outside the player, or Escape, folds it too.
+  useEffect(() => {
+    if (!open) return
+    const onPointer = (event: PointerEvent) => {
+      if (!(event.target instanceof Element && event.target.closest('.player'))) setOpen(false)
+    }
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return
+      event.preventDefault()
+      setOpen(false)
+    }
+    document.addEventListener('pointerdown', onPointer)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('pointerdown', onPointer)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [open])
+
+  return (
+    <>
+      <button className={`icon-button player-react${reacted ? ' is-given' : ''}`} type="button" onClick={() => setOpen(!open)}
+        aria-expanded={open} aria-label="告诉贝儿你对这一段的感受" title="告诉贝儿">
+        <MessageCircleHeart size={18} strokeWidth={1.6} aria-hidden="true" />
+      </button>
+      {open && (
+        <div className="player-reactions" role="group" aria-label="告诉贝儿">
+          {REACTIONS.map(({ kind, label, Icon }) => {
+            const id = `${kind}:${segment}`
+            const done = given.has(id)
+            return (
+              <button key={kind} type="button" disabled={done} aria-pressed={done} onClick={() => {
+                give(id)
+                setFlash(id)
+                track('segment_feedback', {
+                  kind, episode: episodeLabel(cue.episode), title: shortTitle(cue.episode), segment: cue.title, start_sec: Math.round(cue.startSec),
+                })
+              }}>
+                {done ? <Check size={14} aria-hidden="true" /> : <Icon size={14} aria-hidden="true" />}
+                {flash === id ? '已告诉贝儿' : label}
+              </button>
+            )
+          })}
+          {onWrite && (
+            <button type="button" onClick={() => {
+              setOpen(false)
+              onWrite(cue)
+            }}>
+              <PenLine size={14} aria-hidden="true" />我有话说
+            </button>
+          )}
+        </div>
+      )}
+    </>
   )
 }

@@ -25,6 +25,10 @@
 - **分享卡片。** 人物、书、影片、小主题和单集可以生成带二维码的 PNG。卡片按内容调整高度，并带小宇宙和 Apple 播客官方标识。单集卡片和整张星图的卡片一样以星图为主：点亮这一集谈到的小主题，连成它的星座并写出名字，下面是期数、日期、标题，以及小主题、章节和时长的数量，扫码或打开分享链接可直接展开该集。右上角的分享按钮生成整张星图的卡片：用和网站同一套场景在屏幕外渲染一帧真实的星云，标出七个主题和各自最常出现的两个小主题，下面是一句介绍和节目、主题、小主题、章节的数量。浏览器不支持 WebGL 时，星云换成柔和的光晕，主题名照常标出。手机上，预览浮在虚化的星图上方，可以打开系统分享、保存图片或复制链接。系统分享取决于浏览器是否支持分享 PNG 文件。 [小宇宙素材中心](https://brand.xyzfm.space/) · [Apple Podcasts 品牌指南](https://marketing.services.apple/apple-podcasts-identity-guidelines)
 - **播放器。** 从章节或片段播放时，底部播放条只播这一段：底边细线显示进度，时间按片段计，结尾淡出停下，可以重听或接着听「下一段」。拖到片段结尾之后就一直往下播。还有后退 15 秒；点标题回到星图上这一段的卡片。锁屏和控制中心显示节目封面，可以快退、快进和拖动进度。
 - **背景音乐。** 默认开启，第一次点击页面后开始（浏览器不允许有声自动播放），右下角开关可以关掉；播放单集时自动压低。
+- **给贝儿留言和反馈。** 目的是让贝儿看到更多听众的反馈，见「留言和反馈」。
+  - 右上角「留言」写给整个节目的话，可以留称呼和联系方式，也可以不留，不会公开。下面列出贝儿已经在用的渠道：小宇宙、Apple 播客、咨询师回信问题征集表、两个小红书账号、B站。
+  - 播放片段时，播放条上有一个小按钮，点开是「说中我了」「想多听这个」「我有话说」。「我有话说」打开留言，并注明是关于哪一段。
+  - 小主题卡片上有「多说说这个」。
 
 ## 架构
 
@@ -45,6 +49,7 @@ flowchart LR
   CF --> F[React + Three.js 前端<br/>星图连线在浏览器里计算]
   X[小宇宙音源] -. 浏览器直接请求 .-> F
   F -. /stardust .-> PH[PostHog 统计<br/>经 Worker 转发]
+  F -. /api/letters .-> L[(D1 留言<br/>beiershuo-letters)]
 ```
 
 - **数据源只有公开目录。** `sync` 读取 Apple 播客的节目目录（55 集、912 个章节），存进本地 SQLite。小宇宙链接和音源地址也来自这里。
@@ -52,7 +57,7 @@ flowchart LR
 - **由 Claude Code 会话整理内容，不用 API key。** 会话直接编写 `content/` 下的文件，内容都留在 git 里，可以追溯。新单集用项目 skill `/new-episode`（`.claude/skills/new-episode/SKILL.md`）整理：在会话里说「整理 EP52」即可。
 - **出现位置靠别名匹配。** `export` 在单集标题、官方主题、章节标题和延伸书目里查找每一项的别名，重叠时以较长的别名为准，比如《笛卡尔的错误》算作这本书，不再单独算作「笛卡尔」。新单集同步后重新导出就会更新，不用手工补。
 - **星图上的线在浏览器里计算**（`src/App.tsx` 的 `buildGalaxy`）：两个小主题在同一期都出现过，就算一次连接。每个小主题保留 3 个连接最强的伙伴，每对最多画最近的 3 期，一期一条线。星星的大小按连接的伙伴数取对数。
-- **网站基本是静态的。** Cloudflare 托管网页、`atlas.json`、字体子集和图片。唯一的服务端代码是 `worker/index.ts`，只做两件事：处理 `/stardust/*`，把统计转发给 PostHog（见「统计」）；以及运行新单集定时器（见「发布」）。其余请求都是静态资源，不经过它。播放时浏览器直接请求小宇宙的原节目音源，从章节时间戳开始。
+- **网站基本是静态的。** Cloudflare 托管网页、`atlas.json`、字体子集和图片。唯一的服务端代码是 `worker/index.ts`，只做三件事：处理 `/stardust/*`，把统计转发给 PostHog（见「统计」）；处理 `/api/letters`，把留言存进 D1（见「留言和反馈」）；以及运行新单集定时器（见「发布」）。其余请求都是静态资源，不经过它。播放时浏览器直接请求小宇宙的原节目音源，从章节时间戳开始。
 
 ## 内容文件
 
@@ -194,6 +199,40 @@ sips -s format jpeg -s formatOptions 84 --resampleWidth 2160 "$TMPDIR/landing.pn
 
 网站循环播放 `public/audio/bgm.mp3`（《Iki》Hideyuki Hashimoto），文件由站长提供，播放时按钮旁显示署名（`src/ambient.ts` 的 `TRACK_CREDIT`）。默认开启：浏览器不允许有声自动播放，所以一般在第一次点击页面或按键后开始，点右下角开关本身除外。听众关掉后这个选择会记住，下次打开不再播放。播放单集时背景音乐压低，标了 `musicBed` 的单集则完全静音；因为默认开启，自带背景音乐的新单集都要标。没有这个文件时，退回浏览器里实时生成的原创音乐。
 
+## 留言和反馈
+
+为了让贝儿看到更多反馈，分两种轻重：
+
+- **留言**存在 Cloudflare D1 数据库 `beiershuo-letters` 的 `letters` 表里，不进 PostHog。代码在 `src/LetterDialog.tsx`、`src/letters.ts` 和 `worker/index.ts`。
+- **一键反馈**（片段上的「说中我了」「想多听这个」，小主题卡上的「多说说这个」）是 PostHog 事件，见「统计」的表。同一台设备点过的会记在本地存储里（`beiershuo.feedback`），不会重复计数。这和统计本身无关，统计照旧不写本地存储。
+
+**怎么读留言。** Cloudflare 控制台 → Storage & Databases → D1 → `beiershuo-letters` → Console，运行：
+
+```sql
+SELECT datetime(created_at, '+8 hours') AS 北京时间, body, name, contact, about, page
+FROM letters ORDER BY id DESC LIMIT 50;
+```
+
+- `about`：从播放条上的「我有话说」写的，记着是哪一集哪一段。
+- `page`：写信时所在的地址，例如 `/?moment=…`，拼上网站地址就能打开那一段。
+
+**表结构**写在 `worker/index.ts` 的 `SCHEMA` 里。Worker 发现表不存在时会自己建，所以本地开发不用另外初始化。线上的库已经建好，`wrangler.jsonc` 里写了它的 `database_id`，部署不会再建新库。
+
+**防垃圾。**
+- 每个访客每分钟最多寄 2 封，用 Workers 的 Rate Limiting 绑定在内存里计数，不存 IP。
+- 一天最多存 500 封。
+- 正文不能带链接，最多 1000 字。
+- 只接受本站页面发来的请求。
+- 表单里有一个看不见的字段，机器人填了会被告知成功，但不会存下来。
+
+**本地开发**时留言存在 `.wrangler/state` 里的本地库，看本地留言：
+
+```bash
+npx wrangler d1 execute beiershuo-letters --local --command "SELECT * FROM letters ORDER BY id DESC"
+```
+
+还没做：给贝儿的定期汇总邮件，或者一个只有她能看的留言页面。
+
 ## 统计
 
 用 PostHog 统计访问和收听，代码在 `src/analytics.ts`：
@@ -217,6 +256,11 @@ sips -s format jpeg -s formatOptions 84 --resampleWidth 2160 "$TMPDIR/landing.pn
 | `search_result_opened` | 点搜索结果 | `query`、`type` |
 | `share_opened`、`share_sent`、`share_card_saved`、`share_link_copied` | 打开分享面板，用系统分享、保存图片、复制链接 | `kind`、`path` |
 | `music_toggled` | 开关背景音乐 | `on` |
+| `letter_opened` | 打开留言 | `from`（`corner` 右上角，`player` 播放条） |
+| `letter_sent` | 寄出留言（不含内容） | `from`、`about`（关于哪一段）、`with_name`、`with_contact` |
+| `letter_channel_opened` | 点留言里贝儿的其他渠道 | `channel` |
+| `segment_feedback` | 片段上的「说中我了」「想多听这个」 | `kind`（`resonates`、`more`）、`episode`、`title`、`segment`、`start_sec` |
+| `topic_more` | 小主题卡上的「多说说这个」 | `star`、`topic` |
 
 在星图上移动只改地址里的查询参数，不算页面浏览，看了什么由上面的事件记录。链接上的 `utm_*` 参数会一直留在地址里，PostHog 据此归类来源。
 
