@@ -196,7 +196,7 @@ sips -s format jpeg -s formatOptions 84 --resampleWidth 2160 "$TMPDIR/landing.pn
 
 ## 背景音乐
 
-网站循环播放 `public/audio/bgm.mp3`（《Iki》Hideyuki Hashimoto），文件由站长提供，播放时按钮旁显示署名（`src/ambient.ts` 的 `TRACK_CREDIT`）。默认开启：浏览器不允许有声自动播放，所以一般在第一次点击页面或按键后开始，点右下角开关本身除外。听众关掉后这个选择会记住，下次打开不再播放。播放单集时背景音乐压低，标了 `musicBed` 的单集则完全静音；因为默认开启，自带背景音乐的新单集都要标。没有这个文件时，退回浏览器里实时生成的原创音乐。
+网站循环播放 `public/audio/bgm.mp3`（《Iki》Hideyuki Hashimoto），文件由站长提供，播放时按钮旁显示署名（`src/ambient.ts` 的 `TRACK_CREDIT`）。默认开启：浏览器不允许有声自动播放，所以一般在第一次点击页面或按键后开始，点右下角开关本身除外。听众关掉后这个选择会记住，下次打开不再播放。播放单集时背景音乐压低，标了 `musicBed` 的单集则完全静音；因为默认开启，自带背景音乐的新单集都要标。iPhone 和 iPad（包括在微信里打开）不让网页调音量，所以在那里关掉音乐或者播放单集时，背景音乐是暂停，而不是压低。没有这个文件时，退回浏览器里实时生成的原创音乐。
 
 ## 统计
 

@@ -136,17 +136,23 @@ class AmbientEngine implements Engine {
 /**
  * A licensed recording, looped. Volume is ramped on the element itself: routing it through an
  * AudioContext leaves the context suspended on load, so autoplay would succeed and stay silent.
+ * Silence is a pause, not just volume 0: iPhones and iPads (WeChat included) ignore a page's
+ * volume and keep media at full level, so there the music can only play or pause.
  */
 class TrackEngine implements Engine {
   private readonly audio = new Audio(TRACK_URL)
   private ramp = 0
   private alive = true
   private started = false
+  private target = 0
+  private readonly fixedVolume: boolean
 
   constructor() {
     this.audio.loop = true
     this.audio.preload = 'auto'
     this.audio.volume = 0
+    // iOS reads the volume back as 1 whatever was set.
+    this.fixedVolume = this.audio.volume !== 0
   }
 
   async start() {
@@ -157,13 +163,26 @@ class TrackEngine implements Engine {
     return true
   }
 
-  // Recordings are mixed much louder than the generated piece.
+  private play() {
+    if (this.started && this.alive && !document.hidden && this.audio.paused) void this.audio.play().catch(() => undefined)
+  }
+
   level(value: number, seconds = 1.2) {
+    cancelAnimationFrame(this.ramp)
+    if (this.fixedVolume) {
+      // Without volume, sitting low under an episode is a pause too.
+      this.target = value >= LEVELS.none ? 1 : 0
+      if (this.target) this.play()
+      else this.audio.pause()
+      return
+    }
+    // Recordings are mixed much louder than the generated piece.
     const target = Math.min(1, Math.max(0, value * 0.55))
+    this.target = target
+    if (target > 0) this.play()
     const from = this.audio.volume
     const began = performance.now()
     const duration = Math.max(seconds, 0.05) * 1000
-    cancelAnimationFrame(this.ramp)
     const step = (now: number) => {
       if (!this.alive) return
       // A frame's timestamp can predate the call that started the fade, so clamp before easing.
@@ -171,12 +190,13 @@ class TrackEngine implements Engine {
       const eased = 1 - (1 - t) ** 3
       this.audio.volume = Math.min(1, Math.max(0, from + (target - from) * eased))
       if (t < 1) this.ramp = requestAnimationFrame(step)
+      else if (target === 0) this.audio.pause()
     }
     this.ramp = requestAnimationFrame(step)
   }
 
   suspend() { this.audio.pause() }
-  resume() { if (this.started && this.alive) void this.audio.play().catch(() => undefined) }
+  resume() { if (this.target > 0) this.play() }
 
   dispose() {
     this.alive = false
@@ -239,7 +259,9 @@ export function useAmbient(duck: Duck) {
     }
     const current = engine.current
     void current.start().then(ok => {
-      if (!ok || engine.current !== current || !wants.current || !state.current.enabled) return
+      if (!ok || engine.current !== current) return
+      // Turned off while the browser was still starting it.
+      if (!wants.current || !state.current.enabled) return current.level(0, 0.05)
       current.level(LEVELS[state.current.duck], 3)
       setRunning(true)
     })
@@ -265,7 +287,8 @@ export function useAmbient(duck: Duck) {
   }, [enabled, running, source, startIfReady])
 
   useEffect(() => {
-    if (running) engine.current?.level(enabled ? LEVELS[duck] : 0, duck === 'none' ? 2.5 : 0.8)
+    // Turning it off answers at once; coming back up after an episode is slow.
+    if (running) engine.current?.level(enabled ? LEVELS[duck] : 0, !enabled ? 0.6 : duck === 'none' ? 2.5 : 0.8)
   }, [duck, enabled, running])
 
   useEffect(() => {
@@ -281,6 +304,8 @@ export function useAmbient(duck: Duck) {
   const toggle = useCallback(() => {
     const next = !state.current.enabled
     wants.current = true
+    // startIfReady reads state.current, which otherwise only catches up on the next render.
+    state.current = { ...state.current, enabled: next }
     setEnabled(next)
     writePreference(next)
     if (next) startIfReady()
