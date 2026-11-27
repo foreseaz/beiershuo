@@ -198,9 +198,9 @@ async function hasTrack() {
   }
 }
 
-/** Off until the listener turns it on; after that the choice is remembered. */
+/** On unless the listener has turned it off; that choice is remembered. */
 function readPreference() {
-  try { return window.localStorage.getItem(PREFERENCE) === 'on' } catch { return false }
+  try { return window.localStorage.getItem(PREFERENCE) !== 'off' } catch { return true }
 }
 
 function writePreference(on: boolean) {
@@ -213,9 +213,9 @@ export const TRACK_CREDIT = '《Iki》Hideyuki Hashimoto'
 type Source = 'pending' | 'file' | 'generative'
 
 /**
- * The site music, off by default: it plays once the listener turns it on (and on later visits, if they left it on),
- * and ducks under episodes. A file at /audio/bgm.mp3 is used when present; otherwise the generated piece. If a
- * browser blocks audible autoplay on a later visit, the next click or key starts it.
+ * The site music, on by default (unless the listener turned it off on an earlier visit), ducking under episodes. A
+ * file at /audio/bgm.mp3 is used when present; otherwise the generated piece. Browsers block audible autoplay on a
+ * first visit, so it usually starts with the first click or key anywhere except the music switch itself.
  */
 export function useAmbient(duck: Duck) {
   const [enabled, setEnabled] = useState(readPreference)
@@ -250,7 +250,9 @@ export function useAmbient(duck: Duck) {
   // Browsers that reject autoplay still allow play() inside a later gesture.
   useEffect(() => {
     if (!enabled || running || source === 'pending') return
-    const begin = () => {
+    const begin = (event: Event) => {
+      // A press on the switch is someone turning it off; starting first would play a note before the fade.
+      if (event.target instanceof Element && event.target.closest('.music-switch')) return
       wants.current = true
       startIfReady()
     }
