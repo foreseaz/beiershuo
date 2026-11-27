@@ -1,15 +1,21 @@
 name: Deploy
 
 # Every run rebuilds the data from Apple's catalog and content/, so a new episode goes live without anyone pushing.
-# Pushes always deploy. Scheduled runs deploy only when the data or the code differs from what the site serves.
+# The Worker's timer (worker/index.ts) starts a run when Apple lists an episode the site lacks. Pushes and manual runs
+# always deploy; timer and scheduled runs deploy only when the data or the code differs from what the site serves.
 on:
   push:
     branches:
       - main
-  # Hourly from 12:00 to 24:00 Beijing time, when the show publishes.
+  # GitHub's own hourly schedule, kept as a fallback: it has not fired reliably, which is why the Worker has a timer.
   schedule:
     - cron: '17 4-16 * * *'
   workflow_dispatch:
+    inputs:
+      only_if_changed:
+        description: Deploy only if the data or the code differs from the live site (the Worker's timer sets this)
+        type: boolean
+        default: false
 
 # Queue rather than cancel: a scheduled run that found nothing new must not cancel a push that is mid-deploy.
 concurrency:
@@ -65,11 +71,11 @@ jobs:
       - name: Decide
         id: plan
         env:
-          EVENT: ${{ github.event_name }}
+          ONLY_IF_CHANGED: ${{ github.event_name == 'schedule' || inputs.only_if_changed == true }}
           CHANGED: ${{ steps.check.outputs.changed }}
         run: |
           deployed=$(curl -fsS --retry 2 "$SITE/version.txt" | head -c 40 || true)
-          if [ "$EVENT" != schedule ] || [ "$CHANGED" = true ] || [ "$deployed" != "$GITHUB_SHA" ]; then
+          if [ "$ONLY_IF_CHANGED" != true ] || [ "$CHANGED" = true ] || [ "$deployed" != "$GITHUB_SHA" ]; then
             echo "deploy=true" >> "$GITHUB_OUTPUT"
           else
             echo "deploy=false" >> "$GITHUB_OUTPUT"

@@ -6,11 +6,20 @@
   "routes": [
     { "pattern": "beiershuo.chenxi.dev", "custom_domain": true }
   ],
-  // Only the statistics relay runs code; every other request is a free static-asset hit.
+  // Only the statistics relay and the new-episode timer run code; every other request is a free static-asset hit.
   "main": "worker/index.ts",
   "assets": {
     "binding": "ASSETS",
     "not_found_handling": "single-page-application",
     "run_worker_first": ["/stardust/*"]
+  },
+  // Every 20 minutes from 12:00 to 00:40 Beijing time, when the show publishes. Cron runs in UTC.
+  "triggers": {
+    "crons": ["*/20 4-16 * * *"]
+  },
+  // Keep the timer's own log lines (Workers Logs), not a line for every statistics request.
+  "observability": {
+    "enabled": true,
+    "logs": { "invocation_logs": false }
   }
 }

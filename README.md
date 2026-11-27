@@ -30,6 +30,7 @@
 
 ```mermaid
 flowchart LR
+  T[Worker 定时器<br/>每 20 分钟对比 Apple 和线上] -. 发现新单集，启动 GitHub 部署 .-> A
   A[Apple 播客目录<br/>标题 · 简介 · 章节 · 延伸书目] -->|sync| D[(var/content.sqlite3)]
   C[Claude Code 会话<br/>/new-episode] -->|直接编写| J[content/*.json<br/>主题 · 人物 · 书 · 影片 · 概念 · 关键词]
   W[Wikimedia Commons] -->|portraits| P[content/portraits.json<br/>public/people/]
@@ -47,11 +48,11 @@ flowchart LR
 ```
 
 - **数据源只有公开目录。** `sync` 读取 Apple 播客的节目目录（55 集、912 个章节），存进本地 SQLite。小宇宙链接和音源地址也来自这里。
-- **新单集自动上线。** GitHub Actions 每天 12:00–24:00（北京时间）每小时同步一次目录。发现新单集就重新导出、部署，并开一个「EPxx 待整理」issue，列出它已经连上的条目、书目里没匹配上的名字和全部章节。见「发布」。
+- **新单集自动上线。** Worker 的定时器每天 12:00 到次日 00:40（北京时间）每 20 分钟对比一次 Apple 目录和网站。发现新单集就启动 GitHub Actions：同步、导出、部署，并开一个「EPxx 待整理」issue，列出它已经连上的条目、书目里没匹配上的名字和全部章节。见「发布」。
 - **由 Claude Code 会话整理内容，不用 API key。** 会话直接编写 `content/` 下的文件，内容都留在 git 里，可以追溯。新单集用项目 skill `/new-episode`（`.claude/skills/new-episode/SKILL.md`）整理：在会话里说「整理 EP52」即可。
 - **出现位置靠别名匹配。** `export` 在单集标题、官方主题、章节标题和延伸书目里查找每一项的别名，重叠时以较长的别名为准，比如《笛卡尔的错误》算作这本书，不再单独算作「笛卡尔」。新单集同步后重新导出就会更新，不用手工补。
 - **星图上的线在浏览器里计算**（`src/App.tsx` 的 `buildGalaxy`）：两个小主题在同一期都出现过，就算一次连接。每个小主题保留 3 个连接最强的伙伴，每对最多画最近的 3 期，一期一条线。星星的大小按连接的伙伴数取对数。
-- **网站基本是静态的。** Cloudflare 托管网页、`atlas.json`、字体子集和图片。唯一的服务端代码是 `worker/index.ts`，只处理 `/stardust/*`，把统计转发给 PostHog（见「统计」）；其余请求都是静态资源，不经过它。播放时浏览器直接请求小宇宙的原节目音源，从章节时间戳开始。
+- **网站基本是静态的。** Cloudflare 托管网页、`atlas.json`、字体子集和图片。唯一的服务端代码是 `worker/index.ts`，只做两件事：处理 `/stardust/*`，把统计转发给 PostHog（见「统计」）；以及运行新单集定时器（见「发布」）。其余请求都是静态资源，不经过它。播放时浏览器直接请求小宇宙的原节目音源，从章节时间戳开始。
 
 ## 内容文件
 
@@ -139,15 +140,31 @@ npm run dev            # http://localhost:5173/
 
 ## 发布
 
-GitHub Actions（`.github/workflows/deploy.yml`）在三种情况下运行：推送到 `main`、定时检查新单集（每天 04:17–16:17 UTC 每小时一次，即北京时间 12:17–00:17），以及在 Actions 页面手动运行。每次运行都：
+GitHub Actions（`.github/workflows/deploy.yml`）负责同步、导出和部署，有四种启动方式：推送到 `main`；Worker 的定时器发现新单集（见下一节）；GitHub 自己的定时任务（每天 04:17–16:17 UTC 每小时一次，留作备用）；在 Actions 页面手动运行。每次运行都：
 
 1. 从 Adobe 的仓库下载固定版本的思源宋体（2.003，校验 sha256，之后走缓存）；
 2. `sync` 和 `export`，从 Apple 目录和 `content/` 生成 `atlas.json` 和字体子集；
 3. `check`：从 workers.dev 地址取线上的 atlas 比较。有单集会消失、超过 5 个线上章节会消失，或者新单集的章节时间倒序、超出时长时，就停下来不部署（GitHub 会发邮件）。章节被改名只记一条提醒，旧链接会退回到单集；
-4. 推送和手动运行一定部署。定时运行只在数据变了，或者线上的 `/version.txt` 不是当前提交时才部署，所以漏掉的部署下一个小时会补上；
+4. 推送和手动运行一定部署。定时器和定时任务启动的运行只在数据变了，或者线上的 `/version.txt` 不是当前提交时才部署；
 5. 有新单集时，开一个「EPxx 待整理」issue。
 
-GitHub 对公开仓库的定时任务有两条限制：触发时间可能晚几分钟到半小时；仓库 60 天没有任何活动会暂停定时任务，到时 GitHub 会发邮件，在 Actions 页面重新启用即可。
+### 新单集定时器
+
+GitHub 自己的定时任务不可靠：加上之后的头 13 个小时一次都没触发过。公开仓库 60 天没有活动，GitHub 还会暂停它。所以定时放在 Cloudflare 上，真正的活仍然由 GitHub Actions 干，因为导出要跑 Python 和字体子集，Worker 里跑不了。
+
+- **怎么检查。** `worker/index.ts` 的 `scheduled` 每天 04:00–16:40 UTC（北京时间 12:00 到次日 00:40）每 20 分钟运行一次。它取 Apple 目录最新的 10 集，和网站当前的 `atlas.json` 比对。
+- **发现缺集。** 调用 GitHub 接口启动上面的部署，并带上 `only_if_changed`。如果它上一次启动的运行还没结束，或者开始还不到两小时，就先等着，免得部署反复失败时每 20 分钟启动一次。
+- **顺便检查 token。** 不管有没有新单集，每次都会读一次 GitHub，所以 token 失效会马上报错，不会等到下一集才发现。
+- **看结果。** Cloudflare 控制台 → Workers & Pages → beiershuo → Logs。这里只记录定时器自己打印的那几行，统计请求不记。
+
+定时器需要一个 Worker secret `GITHUB_TOKEN`，这一步要你自己设置：
+
+1. 创建 token：GitHub → Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token。
+   - Repository access 只选 `foreseaz/beiershuo`；
+   - Permissions 里把 Actions 设为 Read and write。
+2. 存进 Cloudflare：控制台 → Workers & Pages → beiershuo → Settings → Variables and Secrets → Add，类型选 Secret，名字填 `GITHUB_TOKEN`。以后的部署不会覆盖它。
+
+token 到期后，Logs 里会出现 401，换一个新的即可。没有 token 时，定时器每次都会提示；如果此时又发现了缺集，它会报错。
 
 部署本身是 `npm ci`、构建，再用 `wrangler deploy` 发布到 Cloudflare，大约 40 秒。仓库需要两个 secret：`CLOUDFLARE_API_TOKEN`（用「Edit Cloudflare Workers」模板创建，包含 `chenxi.dev` 这个 zone）和 `CLOUDFLARE_ACCOUNT_ID`。不要把本机 `wrangler login` 的登录信息复制给 CI：它的刷新令牌只能用一次，CI 用掉后本机和 CI 会一起掉线。
 
