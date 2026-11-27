@@ -6,21 +6,13 @@
   "routes": [
     { "pattern": "beiershuo.chenxi.dev", "custom_domain": true }
   ],
-  // Only the statistics relay, the letters and the new-episode timer run code; every other request is a free static-asset hit.
+  // Only the statistics relay and the new-episode timer run code; every other request is a free static-asset hit.
   "main": "worker/index.ts",
   "assets": {
     "binding": "ASSETS",
     "not_found_handling": "single-page-application",
-    "run_worker_first": ["/stardust/*", "/api/*"]
+    "run_worker_first": ["/stardust/*"]
   },
-  // Letters to 贝儿 (worker/index.ts creates the table if it is missing). Created once by hand, not by deploys.
-  "d1_databases": [
-    { "binding": "LETTERS", "database_name": "beiershuo-letters", "database_id": "b599c6d7-c118-4a1a-a2d4-570efc1e8969" }
-  ],
-  // Two letters a minute from one visitor. The namespace id only has to be unique within the Cloudflare account.
-  "ratelimits": [
-    { "name": "LETTER_LIMIT", "namespace_id": "4721", "simple": { "limit": 2, "period": 60 } }
-  ],
   // Every 20 minutes from 12:00 to 00:40 Beijing time, when the show publishes. Cron runs in UTC.
   "triggers": {
     "crons": ["*/20 4-16 * * *"]
