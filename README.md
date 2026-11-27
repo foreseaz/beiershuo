@@ -43,6 +43,7 @@ flowchart LR
   I -.-> C
   CF --> F[React + Three.js 前端<br/>星图连线在浏览器里计算]
   X[小宇宙音源] -. 浏览器直接请求 .-> F
+  F -. /stardust .-> PH[PostHog 统计<br/>经 Worker 转发]
 ```
 
 - **数据源只有公开目录。** `sync` 读取 Apple 播客的节目目录（55 集、912 个章节），存进本地 SQLite。小宇宙链接和音源地址也来自这里。
@@ -50,7 +51,7 @@ flowchart LR
 - **由 Claude Code 会话整理内容，不用 API key。** 会话直接编写 `content/` 下的文件，内容都留在 git 里，可以追溯。新单集用项目 skill `/new-episode`（`.claude/skills/new-episode/SKILL.md`）整理：在会话里说「整理 EP52」即可。
 - **出现位置靠别名匹配。** `export` 在单集标题、官方主题、章节标题和延伸书目里查找每一项的别名，重叠时以较长的别名为准，比如《笛卡尔的错误》算作这本书，不再单独算作「笛卡尔」。新单集同步后重新导出就会更新，不用手工补。
 - **星图上的线在浏览器里计算**（`src/App.tsx` 的 `buildGalaxy`）：两个小主题在同一期都出现过，就算一次连接。每个小主题保留 3 个连接最强的伙伴，每对最多画最近的 3 期，一期一条线。星星的大小按连接的伙伴数取对数。
-- **网站是纯静态的。** Cloudflare 只托管网页、`atlas.json`、字体子集和图片，没有服务端代码。播放时浏览器直接请求小宇宙的原节目音源，从章节时间戳开始。
+- **网站基本是静态的。** Cloudflare 托管网页、`atlas.json`、字体子集和图片。唯一的服务端代码是 `worker/index.ts`，只处理 `/stardust/*`，把统计转发给 PostHog（见「统计」）；其余请求都是静态资源，不经过它。播放时浏览器直接请求小宇宙的原节目音源，从章节时间戳开始。
 
 ## 内容文件
 
@@ -175,6 +176,32 @@ sips -s format jpeg -s formatOptions 84 --resampleWidth 2160 "$TMPDIR/landing.pn
 ## 背景音乐
 
 网站循环播放 `public/audio/bgm.mp3`（《Iki》Hideyuki Hashimoto），文件由站长提供，播放时按钮旁显示署名（`src/ambient.ts` 的 `TRACK_CREDIT`）。默认关闭，听众点右下角开关才开始播放，这个选择会记住；下次打开页面时如果浏览器拦截有声自动播放，第一次点击页面后开始。播放单集时背景音乐压低，标了 `musicBed` 的单集则完全静音。因为默认关闭，新单集不再需要标 `musicBed`。没有这个文件时，退回浏览器里实时生成的原创音乐。
+
+## 统计
+
+用 PostHog 统计访问和收听，代码在 `src/analytics.ts`：
+
+- **只统计线上。** 数据进 PostHog 的「贝儿说」项目（美国区）。本地开发不发送任何数据。项目 key 写在 `KEY` 里，它本来就会出现在网页里，只能发送事件，不能读数据。`KEY` 为空时整个统计不加载。
+- **不用 cookie。** 不写 cookie，也不写本地存储，所以不需要同意弹窗。代价是每打开一次网页算一个新访客：同一个人一天来两次算两个，也分不出回访。没有用 PostHog 自带的 cookieless 模式，因为它会先去掉 IP，就看不到访客的国家和城市了。
+- **经自己的域名转发。** 事件发到 `/stardust`，由 `worker/index.ts` 转给 PostHog，这样大陆访客和装了广告拦截的人也能送达。Worker 只在这个路径上运行，其余请求仍是不计次数的静态资源。PostHog 项目的区域改了的话，`worker/index.ts` 的两个 host 和 `src/analytics.ts` 的 `UI_HOST` 要一起改。
+- **不拖慢开场。** PostHog 的精简版 SDK（约 56 KB gzip）等页面加载完才载入，之前发生的事件先排队。
+- **只记这些：** 没有自动点击采集、录屏和热力图。
+
+| 事件 | 什么时候 | 属性 |
+| --- | --- | --- |
+| `$pageview` | 打开网站，进入或回到条目页、索引页、星图 | |
+| `$pageleave` | 离开网站 | |
+| `episode_opened` | 打开单集卡片，包括从分享链接进来 | `episode`（如 EP52）、`title` |
+| `episode_played` | 点播放 | `episode`、`title`、`from`（从哪一段开始）、`start_sec` |
+| `topic_opened` | 点进一个主题 | `topic` |
+| `star_opened` | 打开一个小主题 | `star`、`topic` |
+| `moment_opened` | 打开一个章节 | `moment`、`episode` |
+| `searched` | 停止输入 1.2 秒后 | `query`、`results`（0 说明节目还没谈到） |
+| `search_result_opened` | 点搜索结果 | `query`、`type` |
+| `share_opened`、`share_sent`、`share_card_saved`、`share_link_copied` | 打开分享面板，用系统分享、保存图片、复制链接 | `kind`、`path` |
+| `music_toggled` | 开关背景音乐 | `on` |
+
+在星图上移动只改地址里的查询参数，不算页面浏览，看了什么由上面的事件记录。链接上的 `utm_*` 参数会一直留在地址里，PostHog 据此归类来源。
 
 ## 字体
 

@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "lucide-react": "^0.577.0",
+    "posthog-js": "^1.455.4",
     "postprocessing": "^6.39.6",
     "qrcode": "^1.5.4",
     "react": "^19.2.0",

@@ -11,10 +11,11 @@ import { ShareDialog } from './ShareDialog'
 import { IndexPage } from './IndexPage'
 import { SearchSpace } from './SearchSpace'
 import { useAmbient } from './ambient'
+import { pageview, track } from './analytics'
 import { failBoot } from './boot'
 import { SHEET_QUERY, useMediaQuery } from './dialog'
 import { StarMap, type GalaxyStar } from './StarMap'
-import { segmentsOf, usePlayer } from './player'
+import { segmentsOf, usePlayer, type Cue } from './player'
 import { ApplePodcastsIcon, XiaoyuzhouIcon } from './platforms'
 import type { ShareSubject } from './shareCard'
 import type { Thread, Travel } from './scene/GalaxyScene'
@@ -242,8 +243,31 @@ export function App() {
     if (starId) params.set('star', starId)
     if (momentId) params.set('moment', momentId)
     if (episodeId) params.set('episode', episodeId)
+    // Campaign tags on the link someone arrived by stay, so statistics can credit where the visit came from.
+    for (const [key, value] of new URLSearchParams(window.location.search)) if (key.startsWith('utm_')) params.set(key, value)
     window.history.replaceState(null, '', params.size ? `/?${params}` : '/')
   }, [viewNebula, starId, momentId, route, episodeId])
+
+  // Statistics (README · 统计): one page view per page (the map, or an entity or index page over it), and what is
+  // opened on the map, including from a shared link.
+  const page = route ? ('id' in route ? `${route.kind}/${route.id}` : route.index) : ''
+  useEffect(() => { pageview() }, [page])
+  useEffect(() => {
+    const episode = episodes.get(episodeId)
+    if (episode) track('episode_opened', { episode: episodeLabel(episode), title: shortTitle(episode) })
+  }, [episodeId, episodes])
+  useEffect(() => {
+    const star = entities.get(starId)
+    if (star) track('star_opened', { star: star.name, topic: topics.find(item => item.id === star.topic)?.title })
+  }, [starId, entities, topics])
+  useEffect(() => {
+    const moment = moments.get(momentId)
+    const episode = moment && episodes.get(moment.episodeId)
+    if (moment && episode) track('moment_opened', { moment: moment.title, episode: episodeLabel(episode) })
+  }, [momentId, moments, episodes])
+  useEffect(() => {
+    if (shared) track('share_opened', { kind: shared.subject.kind, path: shared.path })
+  }, [shared])
 
   const fly = useCallback((trip: Omit<Travel, 'seq'>) => setTravel(previous => ({ seq: previous.seq + 1, ...trip })), [])
 
@@ -267,6 +291,7 @@ export function App() {
   const leavePage = useCallback(() => { if (parseRoute(window.location.pathname)) closeOverlay() }, [closeOverlay])
 
   const focusNebula = useCallback((id: string) => {
+    track('topic_opened', { topic: topics.find(item => item.id === id)?.title ?? id })
     setStarId('')
     setThreadId('')
     setMomentId('')
@@ -274,7 +299,7 @@ export function App() {
     setPanel(null)
     fly({ nebula: id })
     leavePage()
-  }, [fly, leavePage])
+  }, [fly, leavePage, topics])
 
   const selectStar = useCallback((id: string) => {
     if (!entities.get(id)?.topic) return
@@ -343,6 +368,12 @@ export function App() {
   }, [go])
 
   const cueFor = segments.cue
+  const listen = (cue: Cue) => {
+    track('episode_played', {
+      episode: episodeLabel(cue.episode), title: shortTitle(cue.episode), from: cue.title, start_sec: Math.round(cue.startSec),
+    })
+    player.play(cue)
+  }
   const shareEntity = (entity: Entity, trigger: HTMLButtonElement) => {
     trigger.focus({ preventScroll: true })
     const maker = entity.kind === 'concept' ? undefined : entities.get(entity.author ?? entity.people?.[0] ?? '')?.name
@@ -416,22 +447,22 @@ export function App() {
   let card: ReactNode = null
   if (moment) {
     card = <MomentCard moment={moment} episode={episodes.get(moment.episodeId)!} onClose={() => setMomentId('')} onShare={shareEpisode}
-      onPlay={() => player.play(cueFor(episodes.get(moment.episodeId)!, moment.startSec, moment.title))} />
+      onPlay={() => listen(cueFor(episodes.get(moment.episodeId)!, moment.startSec, moment.title))} />
   } else if (thread) {
     card = <ThreadCard thread={thread} topics={topics} entities={entities} episodes={episodes} moments={moments}
-      onStar={selectStar} onClose={() => setThreadId('')} onShare={shareEpisode} onPlay={(episode, startSec, title) => player.play(cueFor(episode, startSec, title))} />
+      onStar={selectStar} onClose={() => setThreadId('')} onShare={shareEpisode} onPlay={(episode, startSec, title) => listen(cueFor(episode, startSec, title))} />
   } else if (star) {
     card = <StarCard star={star} topics={topics} entities={entities} episodes={episodes} moments={moments}
       partners={galaxy.partners.get(star.id) ?? []} onStar={selectStar} onOpen={() => openEntity(star)} onClose={() => setStarId('')}
       onShare={trigger => shareEntity(star, trigger)}
-      onPlay={(episode, startSec, title) => player.play(cueFor(episode, startSec, title))} />
+      onPlay={(episode, startSec, title) => listen(cueFor(episode, startSec, title))} />
   } else if (episodeId && episodes.has(episodeId)) {
     const episode = episodes.get(episodeId)!
     card = <EpisodeCard episode={episode} stars={galaxy.episodeStars.get(episodeId) ?? []} topics={topics} entities={entities}
       chapters={atlas.moments.filter(item => item.episodeId === episodeId).sort((a, b) => a.startSec - b.startSec)}
       onStar={selectStar} onEntity={openEntity} onClose={() => setEpisodeId('')} onShare={shareEpisode}
-      onPlay={(startSec, title) => player.play(cueFor(episode, startSec, title))}
-      onPlayAll={() => player.play(cueFor(episode, 0, shortTitle(episode), true))} />
+      onPlay={(startSec, title) => listen(cueFor(episode, startSec, title))}
+      onPlayAll={() => listen(cueFor(episode, 0, shortTitle(episode), true))} />
   }
 
   // The rail marks the episodes behind whatever is open: every episode that mentions the chosen star, in its
@@ -479,7 +510,7 @@ export function App() {
         >
           {entity
             ? <EntityPage atlas={atlas} entity={entity} episodes={episodes} onEntity={openEntity} onTopic={focusNebula} onMoment={selectMoment}
-                onPlay={(episode, startSec, title) => player.play(cueFor(episode, startSec, title))} onShare={trigger => shareEntity(entity, trigger)} />
+                onPlay={(episode, startSec, title) => listen(cueFor(episode, startSec, title))} onShare={trigger => shareEntity(entity, trigger)} />
             : <IndexPage atlas={atlas} kind={index!} onEntity={openEntity} />}
         </Overlay>
       )}
@@ -526,7 +557,7 @@ function MusicPlayer({ music }: { music: ReturnType<typeof useAmbient> }) {
   return (
     <div className={`music-switch${music.playing ? ' is-on' : ''}`}>
       {music.credit && music.enabled && <span className="music-credit">音乐 · {music.credit}</span>}
-      <button type="button" onClick={music.toggle} aria-pressed={music.enabled} aria-label={music.enabled ? '关闭背景音乐' : '打开背景音乐'} title={music.enabled ? '关闭背景音乐' : '打开背景音乐'}>
+      <button type="button" onClick={() => { track('music_toggled', { on: !music.enabled }); music.toggle() }} aria-pressed={music.enabled} aria-label={music.enabled ? '关闭背景音乐' : '打开背景音乐'} title={music.enabled ? '关闭背景音乐' : '打开背景音乐'}>
         {music.enabled
           ? <span className="music-bars" aria-hidden="true"><i /><i /><i /></span>
           : <VolumeX size={16} strokeWidth={1.6} aria-hidden="true" />}

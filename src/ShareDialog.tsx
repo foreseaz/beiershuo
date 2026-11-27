@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Download, Link2, Share2, X } from 'lucide-react'
+import { track } from './analytics'
 import { type Episode, type Moment } from './domain'
 import { useDialog, useDialogExit } from './dialog'
 import { renderShareCard, type ShareSubject } from './shareCard'
@@ -59,10 +60,13 @@ export function ShareDialog({ subject, path, episodes, moments, onClose }: Props
     }
   }, [subject, url, episodes, moments])
 
+  const done = (action: 'sent' | 'card_saved' | 'link_copied') => track(`share_${action}`, { kind: subject.kind, path })
+
   const share = async () => {
     if (!file) return
     try {
       await navigator.share({ files: [file], title: subject.kind === 'site' ? title : `贝儿说 · ${title}`, url })
+      done('sent')
     } catch (error) {
       if (!(error instanceof DOMException && error.name === 'AbortError')) setNote('暂时无法分享，请保存图片或复制链接')
     }
@@ -72,6 +76,7 @@ export function ShareDialog({ subject, path, episodes, moments, onClose }: Props
     if (!file) return
     try {
       await navigator.share({ files: [file] })
+      done('card_saved')
     } catch (error) {
       if (!(error instanceof DOMException && error.name === 'AbortError')) setNote('长按上面的图片，选「添加到照片」')
     }
@@ -81,6 +86,7 @@ export function ShareDialog({ subject, path, episodes, moments, onClose }: Props
     try {
       await navigator.clipboard.writeText(url)
       setNote('链接已复制')
+      done('link_copied')
     } catch {
       setNote(url)
     }
@@ -109,7 +115,8 @@ export function ShareDialog({ subject, path, episodes, moments, onClose }: Props
               <span className="share-action-icon"><Download size={19} aria-hidden="true" /></span>保存图片
             </button>
           ) : (
-            <a className={blob ? '' : 'is-disabled'} href={preview || undefined} download={name} aria-disabled={!blob}>
+            <a className={blob ? '' : 'is-disabled'} href={preview || undefined} download={name} aria-disabled={!blob}
+              onClick={() => { if (blob) done('card_saved') }}>
               <span className="share-action-icon"><Download size={19} aria-hidden="true" /></span>保存图片
             </a>
           )}

@@ -4,6 +4,7 @@ import {
   dayLabel, episodeLabel, shortTitle, timeLabel,
   type Atlas, type Entity, type EntityKind, type Episode, type Moment, type Topic,
 } from './domain'
+import { track } from './analytics'
 import { Portrait } from './Visual'
 import { useDialog, useKeyboardViewport } from './dialog'
 
@@ -159,7 +160,18 @@ export function SearchSpace({ atlas, episodes, onTopic, onStar, onEntity, onInde
     list.current?.querySelector('[data-active="1"]')?.scrollIntoView({ block: 'nearest' })
   }, [active])
 
+  // Statistics: what people look for once they stop typing, and how much the show has on it (0 = a gap).
+  const results = groups.reduce((sum, group) => sum + group.total, 0)
+  useEffect(() => {
+    if (!needle) return
+    const timer = window.setTimeout(() => track('searched', { query: query.trim(), results }), 1200)
+    return () => window.clearTimeout(timer)
+    // Once per settled query; the count follows from it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [needle])
+
   const run = (item: Item) => {
+    track('search_result_opened', { query: query.trim(), type: item.type === 'entity' ? item.entity.kind : item.type })
     if (item.type === 'topic') onTopic(item.topic.id)
     else if (item.type === 'moment') onMoment(item.moment)
     else if (item.type === 'episode') onEpisode(item.episode.id)
