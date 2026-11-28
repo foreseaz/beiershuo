@@ -25,6 +25,9 @@ export function useDialog(ref: RefObject<HTMLDialogElement | null>, modal = true
     const opener = document.activeElement
     if (modal) dialog.showModal()
     else dialog.show()
+    // Opening moves focus to the dialog's first focusable element (usually its scrim), after React's autoFocus has
+    // already run, so a field marked data-autofocus takes it back.
+    dialog.querySelector<HTMLElement>('[data-autofocus]')?.focus({ preventScroll: true })
     return () => {
       dialog.close()
       if (modal && opener instanceof HTMLElement && opener.isConnected) opener.focus({ preventScroll: true })

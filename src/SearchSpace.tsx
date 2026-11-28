@@ -258,7 +258,7 @@ export function SearchSpace({ atlas, episodes, onTopic, onStar, onEntity, onInde
           <Search className="search-icon" size={19} strokeWidth={1.6} aria-hidden="true" />
           <input
             ref={input}
-            autoFocus
+            data-autofocus
             value={query}
             onChange={event => setQuery(event.target.value)}
             onKeyDown={onKeyDown}
